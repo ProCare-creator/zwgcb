@@ -295,6 +295,7 @@ const VAGUE = ['充实','好好','努力','认真','尽量','高效','顺利','�
 const MOMENTS = ['情绪最强的一刻','最不像自己的一刻','最有劲的一刻','别的时刻'];
 const FORMAT = 'review-archive/v1';
 const OFFLINE_APP = true;
+const APP_VERSION = 'v4';
 const LS_KEY = 'zwgcb-data-v1', LS_DRAFT = 'zwgcb-drafts-v1';
 
 /* ---------- utils ---------- */
@@ -450,6 +451,7 @@ async function init(){
   dlNs = { save:({ filename, data }) => saveFile(filename, data) };
   useLocal();
   try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch (e) {}
+  try { if (sessionStorage.getItem('zwgcb-updated')){ sessionStorage.removeItem('zwgcb-updated'); setTimeout(() => toast('已更新到新版本 ' + APP_VERSION + '。'), 400); } } catch (e) {}
 }
 
 /* ---------- derived ---------- */
@@ -1369,6 +1371,7 @@ function vLog(){
   else if (mode === 'cloud') h += '<p class="muted">记录存在这个页面里只属于你的私人空间：别人即使拿到链接，也读不到你的内容。换设备打开同一个链接，记录还在。</p>';
   else h += '<p class="muted">现在只存在这台设备的浏览器里。清理浏览器数据会把它们一起清掉，记得定期导出。</p>';
   h += '<p class="fine">全部数据导出是一个 JSON 文件，用来备份，也可以在网页版和离线版之间搬家：在一边导出，在另一边导入。导入时这里已有的记录会跳过，不会被覆盖。要把某一天存成 Word，点开那一天，点「保存为 Word」。</p>';
+  if (APP_VERSION) h += '<p class="fine">当前版本：<span class="mono">' + APP_VERSION + '</span></p>';
   h += '<div class="row">' + (dlNs ? '<button type="button" class="btn ghost sm" data-act="export">全部数据导出</button>' : '') + '<button type="button" class="btn ghost sm" data-act="importPick">全部数据导入</button><button type="button" class="btn ghost sm" data-act="copyAll">复制全部为文字</button></div><input type="file" id="importFile" accept=".json,application/json" hidden></div>';
   return h;
 }
@@ -1946,8 +1949,21 @@ init();
 })();
 </script>
 <script>
+// Offline support. When a newer version takes over, reload once so it shows up right away
+// (wait until the person leaves the text box they are typing in).
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-  window.addEventListener('load', () => { navigator.serviceWorker.register('./sw.js').catch(() => {}); });
+  const hadController = !!navigator.serviceWorker.controller;
+  let reloading = false;
+  const reloadNow = () => { if (reloading) return; reloading = true; try { sessionStorage.setItem('zwgcb-updated', '1'); } catch (e) {} location.reload(); };
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (!hadController) return;
+    const a = document.activeElement;
+    if (a && /^(INPUT|TEXTAREA)$/.test(a.tagName)) a.addEventListener('blur', () => setTimeout(reloadNow, 600), { once:true });
+    else reloadNow();
+  });
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js', { updateViaCache:'none' }).then(r => r.update()).catch(() => {});
+  });
 }
 </script>
 </body>
