@@ -1,0 +1,1222 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>自我观察本</title>
+<meta name="description" content="每天的预测、随手记、复盘和自我假设清单，离线可用。">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="自我观察本">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#19202A" media="(prefers-color-scheme: dark)">
+<style>
+:root{ color-scheme:light; padding-top:env(safe-area-inset-top,0px); }
+html,body{ margin:0; } img{ max-width:100%; } [hidden]{ display:none !important; }
+body{ -webkit-tap-highlight-color:transparent; overscroll-behavior-y:none; }
+/* Layout: one narrow column of graph-paper notebook pages, bottom tab bar.
+   Ink: blue-black fountain-pen ink for what you write; red pen only for 落空 / 反例 / 改写. */
+:root{
+  --paper:#F3F5F2; --grid:rgba(30,46,74,.05); --card:#FFFFFF; --field:#FAFBF9; --line:#D7DCD6;
+  --ink:#1D2C45; --ink-2:#4D596B; --ink-3:#7A8494;
+  --blue:#23477A; --blue-soft:rgba(35,71,122,.08); --on-blue:#FFFFFF;
+  --red:#B5362B; --red-soft:rgba(181,54,43,.08);
+  --green:#2C7150; --green-soft:rgba(44,113,80,.10);
+  --f-display:"Noto Serif SC","Songti SC","STSong","SimSun",serif;
+  --f-body:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans SC",system-ui,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  --f-hand:"Long Cang","Kaiti SC","STKaiti","KaiTi",cursive;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --paper:#11161E; --grid:rgba(223,229,238,.03); --card:#19202A; --field:#141A22; --line:#2B3442;
+  --ink:#DDE4EE; --ink-2:#A6B0BF; --ink-3:#7C8797;
+  --blue:#8DB1E4; --blue-soft:rgba(141,177,228,.12); --on-blue:#0E1623;
+  --red:#EA7A6D; --red-soft:rgba(234,122,109,.12);
+  --green:#6CC296; --green-soft:rgba(108,194,150,.12);
+  color-scheme:dark;
+}}
+:root[data-theme="dark"]{
+  --paper:#11161E; --grid:rgba(223,229,238,.03); --card:#19202A; --field:#141A22; --line:#2B3442;
+  --ink:#DDE4EE; --ink-2:#A6B0BF; --ink-3:#7C8797;
+  --blue:#8DB1E4; --blue-soft:rgba(141,177,228,.12); --on-blue:#0E1623;
+  --red:#EA7A6D; --red-soft:rgba(234,122,109,.12);
+  --green:#6CC296; --green-soft:rgba(108,194,150,.12);
+  color-scheme:dark;
+}
+html{ -webkit-text-size-adjust:100%; }
+body{
+  background-color:var(--paper); color:var(--ink); font-family:var(--f-body); font-size:15px; line-height:1.6;
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:24px 24px; background-attachment:fixed;
+}
+*{ box-sizing:border-box; }
+button,input,textarea{ font:inherit; color:inherit; }
+button{ cursor:pointer; }
+:focus-visible{ outline:2px solid var(--blue); outline-offset:2px; }
+#app{ max-width:600px; margin:0 auto; padding-left:max(16px,env(safe-area-inset-left,0px)); padding-right:max(16px,env(safe-area-inset-right,0px)); padding-block:14px calc(96px + env(safe-area-inset-bottom,0px)); }
+.top{ display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:18px; }
+.brand{ font-family:var(--f-display); font-weight:700; font-size:18px; letter-spacing:.06em; }
+.sync{ font-family:var(--f-mono); font-size:11px; color:var(--ink-3); border:1px solid var(--line); border-radius:999px; padding:2px 9px; white-space:nowrap; background:var(--card); }
+.sync.warn{ color:var(--red); border-color:var(--red); }
+.mono{ font-family:var(--f-mono); font-variant-numeric:tabular-nums; }
+.muted{ color:var(--ink-2); margin:0; }
+.fine{ color:var(--ink-3); font-size:12.5px; margin:0; }
+h1.h{ font-family:var(--f-display); font-size:24px; font-weight:700; margin:0 0 4px; text-wrap:balance; letter-spacing:.02em; }
+h2.h2{ font-family:var(--f-display); font-size:17px; font-weight:600; margin:26px 0 10px; }
+.lede{ color:var(--ink-2); margin:0 0 16px; }
+.stack{ display:flex; flex-direction:column; gap:12px; }
+.row{ display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+.card{ background:var(--card); border:1px solid var(--line); border-radius:10px; padding:14px 16px; display:flex; flex-direction:column; gap:10px; min-width:0; }
+.stage{ display:flex; align-items:baseline; gap:8px; font-weight:600; font-size:15px; }
+.stage .tag{ font-family:var(--f-mono); font-size:11px; font-weight:500; color:var(--ink-3); letter-spacing:.04em; }
+.stage .right{ margin-left:auto; font-family:var(--f-mono); font-size:11.5px; font-weight:400; color:var(--ink-3); }
+.btn{ border:1px solid var(--blue); background:var(--blue); color:var(--on-blue); border-radius:8px; padding:9px 14px; font-weight:600; font-size:14.5px; text-decoration:none; display:inline-flex; align-items:center; gap:6px; line-height:1.3; }
+.btn.ghost{ background:transparent; color:var(--ink); border-color:var(--line); font-weight:500; }
+.btn.ghost:hover{ border-color:var(--ink-3); }
+.btn.sm{ padding:6px 11px; font-size:13.5px; }
+.btn.red{ background:var(--red); border-color:var(--red); }
+.btn[disabled]{ opacity:.5; cursor:default; }
+.linkbtn{ border:0; background:none; padding:0; color:var(--blue); font-size:13.5px; text-decoration:underline; text-underline-offset:3px; }
+.dayhead{ display:flex; align-items:flex-end; justify-content:space-between; gap:12px; margin-bottom:14px; }
+.date{ font-family:var(--f-display); font-size:30px; font-weight:700; line-height:1.15; letter-spacing:.02em; }
+.date span{ font-size:16px; color:var(--ink-2); font-weight:600; margin-left:4px; }
+.sub{ font-size:12px; color:var(--ink-3); }
+
+/* field */
+.f{ display:flex; flex-direction:column; gap:6px; min-width:0; }
+.f>label,.lab{ font-size:13.5px; font-weight:600; color:var(--ink-2); }
+.f .hint{ font-size:12.5px; color:var(--ink-3); }
+textarea,input[type=text]{ width:100%; border:1px solid var(--line); background:var(--field); border-radius:8px; padding:9px 11px; font-size:16px; line-height:1.5; }
+textarea{ resize:vertical; min-height:44px; }
+textarea:focus,input[type=text]:focus{ outline:none; border-color:var(--blue); box-shadow:0 0 0 3px var(--blue-soft); }
+.pair{ display:grid; grid-template-columns:auto 1fr; gap:6px 8px; align-items:center; }
+.pair span{ font-size:14px; color:var(--ink-2); white-space:nowrap; }
+.warn{ font-size:12.5px; color:var(--red); }
+.chips{ display:flex; flex-wrap:wrap; gap:6px; }
+.chip{ border:1px solid var(--line); background:var(--card); border-radius:999px; padding:5px 11px; font-size:13.5px; line-height:1.35; color:var(--ink); }
+.chip.on{ background:var(--blue-soft); border-color:var(--blue); color:var(--blue); font-weight:600; }
+.chip.red.on{ background:var(--red-soft); border-color:var(--red); color:var(--red); }
+.chip.green.on{ background:var(--green-soft); border-color:var(--green); color:var(--green); }
+.seg{ display:inline-flex; border:1px solid var(--line); border-radius:8px; overflow:hidden; flex-wrap:wrap; }
+.seg button{ border:0; background:var(--card); padding:6px 12px; font-size:13.5px; border-right:1px solid var(--line); }
+.seg button:last-child{ border-right:0; }
+.seg button.on{ background:var(--blue); color:var(--on-blue); font-weight:600; }
+.sec{ display:flex; flex-direction:column; gap:12px; padding-top:4px; }
+.sec-h{ display:flex; align-items:baseline; gap:10px; font-weight:700; font-size:15.5px; border-bottom:1px solid var(--line); padding-bottom:6px; margin-top:8px; }
+.sec-h .mono{ color:var(--blue); font-size:13px; }
+.sec-h .t{ margin-left:auto; font-family:var(--f-mono); font-size:11.5px; color:var(--ink-3); font-weight:400; }
+
+/* predictions */
+.preds{ list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:10px; }
+.pred{ position:relative; padding:8px 34px 8px 12px; border-left:2px solid var(--blue); background:var(--blue-soft); border-radius:0 8px 8px 0; }
+.pred.r-miss,.pred.r-half{ border-left-color:var(--red); background:var(--red-soft); }
+.pk{ font-size:12px; color:var(--ink-3); display:flex; gap:8px; flex-wrap:wrap; }
+.pt{ font-size:15px; }
+.pa{ font-size:13.5px; color:var(--ink-2); }
+.pen{ font-family:var(--f-hand); color:var(--red); font-size:22px; line-height:1; position:absolute; right:10px; top:8px; transform:rotate(-6deg); }
+.pen.hit{ color:var(--green); }
+.x{ position:absolute; right:6px; top:6px; border:0; background:none; color:var(--ink-3); font-size:18px; line-height:1; padding:4px 6px; }
+
+/* week grid */
+.grid5{ display:grid; grid-template-columns:repeat(7,minmax(0,28px)); gap:6px; }
+.grid5 .wd{ font-size:11px; color:var(--ink-3); text-align:center; font-family:var(--f-mono); }
+.cell{ aspect-ratio:1; max-width:100%; border-radius:4px; border:1px solid var(--line); background:transparent; position:relative; }
+.cell.std{ background:var(--blue); border-color:var(--blue); }
+.cell.min{ background:linear-gradient(135deg,var(--blue) 0 50%,transparent 50%); border-color:var(--blue); }
+.cell.part{ border:2px solid var(--blue); }
+.cell.skip{ background:repeating-linear-gradient(135deg,var(--ink-3) 0 1.5px,transparent 1.5px 6px); border-color:var(--ink-3); }
+.cell.none{ border-style:dashed; }
+.cell.future{ opacity:.35; border-style:dotted; }
+.cell.today{ box-shadow:0 0 0 2px var(--card),0 0 0 3.5px var(--red); }
+.legend{ display:flex; flex-wrap:wrap; gap:4px 12px; font-size:11.5px; color:var(--ink-3); }
+.legend i{ display:inline-block; width:11px; height:11px; vertical-align:-1px; margin-right:4px; border-radius:2px; border:1px solid var(--line); }
+.legend i.std{ background:var(--blue); border-color:var(--blue); }
+.legend i.min{ background:linear-gradient(135deg,var(--blue) 0 50%,transparent 50%); border-color:var(--blue); }
+.legend i.part{ border:2px solid var(--blue); }
+.legend i.skip{ background:repeating-linear-gradient(135deg,var(--ink-3) 0 1.5px,transparent 1.5px 4px); border-color:var(--ink-3); }
+.legend i.none{ border-style:dashed; }
+.figs{ display:flex; flex-wrap:wrap; gap:6px 18px; font-size:13.5px; color:var(--ink-2); }
+.figs b{ font-family:var(--f-mono); color:var(--ink); font-weight:500; font-size:16px; margin:0 2px; }
+.figs .redb b{ color:var(--red); }
+.note{ font-size:13px; color:var(--ink-2); border-top:1px dashed var(--line); padding-top:8px; margin:0; }
+
+/* captures */
+.cap{ border:1px solid var(--line); border-radius:10px; background:var(--card); padding:12px 14px; display:flex; flex-direction:column; gap:6px; min-width:0; }
+.cap.fresh{ border-color:var(--blue); box-shadow:0 0 0 3px var(--blue-soft); }
+.cap-top{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; font-size:12.5px; color:var(--ink-3); }
+.cap-top .mono{ color:var(--ink); font-size:13px; }
+.emo{ display:inline-flex; align-items:center; gap:6px; color:var(--ink); font-size:13px; font-weight:600; }
+.bars{ display:inline-flex; gap:2px; }
+.bars i{ width:5px; height:11px; border-radius:1px; background:var(--line); display:block; }
+.bars i.on{ background:var(--red); }
+.quote{ font-family:var(--f-display); font-size:17px; font-weight:600; line-height:1.5; margin:2px 0; overflow-wrap:anywhere; }
+.quote::before{ content:"「"; color:var(--ink-3); } .quote::after{ content:"」"; color:var(--ink-3); }
+.kv{ display:grid; grid-template-columns:4.6em 1fr; gap:2px 8px; font-size:14px; }
+.kv dt{ color:var(--ink-3); } .kv dd{ margin:0; overflow-wrap:anywhere; min-width:0; }
+.care{ font-size:14px; border-top:1px dashed var(--line); padding-top:6px; }
+.care b{ color:var(--blue); font-weight:600; }
+.pending{ font-size:12px; color:var(--red); }
+.tagline{ display:flex; gap:6px; flex-wrap:wrap; }
+.tg{ font-size:11.5px; border:1px solid var(--line); border-radius:4px; padding:0 6px; color:var(--ink-2); }
+.capmini{ list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:6px; font-size:14px; }
+.capmini li{ display:flex; gap:8px; min-width:0; }
+.capmini .mono{ color:var(--ink-3); font-size:12.5px; flex:none; padding-top:2px; }
+.capmini span.txt{ min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+
+/* hypotheses: index cards */
+.hyp{ background:var(--card); border:1px solid var(--line); border-radius:6px; padding:14px 16px 12px; display:flex; flex-direction:column; gap:8px; background-image:linear-gradient(var(--card) 30px,transparent 30px),repeating-linear-gradient(transparent 0 25px,var(--grid) 25px 26px); min-width:0; }
+.hyp.solid{ border-color:var(--green); }
+.hyp.revised .hs{ text-decoration:line-through; text-decoration-color:var(--red); text-decoration-thickness:1.5px; color:var(--ink-3); }
+.hyp.example{ opacity:.7; border-style:dashed; }
+.hs{ font-size:16px; line-height:1.55; overflow-wrap:anywhere; }
+.hs .pre{ color:var(--ink-3); font-size:13.5px; margin-right:4px; }
+.hmeta{ display:flex; flex-wrap:wrap; gap:4px 16px; align-items:center; font-size:12.5px; color:var(--ink-3); }
+.tally{ display:inline-flex; align-items:center; gap:5px; color:var(--ink-2); }
+.tally svg{ display:block; }
+.tally.con{ color:var(--red); }
+.st{ font-size:11.5px; border-radius:4px; padding:1px 7px; font-weight:600; }
+.st.test{ background:var(--blue-soft); color:var(--blue); }
+.st.solid{ background:var(--green-soft); color:var(--green); }
+.st.revised{ background:var(--red-soft); color:var(--red); }
+.evs{ list-style:none; margin:0; padding:0; font-size:13px; color:var(--ink-2); display:flex; flex-direction:column; gap:2px; }
+.evs .c{ color:var(--red); }
+.suggest{ font-size:13px; color:var(--green); }
+.suggest.r{ color:var(--red); }
+.inline{ border-top:1px dashed var(--line); padding-top:10px; display:flex; flex-direction:column; gap:8px; }
+
+/* banners */
+.banner{ border-color:var(--red); }
+.banner .stage{ color:var(--red); }
+.fuse{ border-color:var(--red); background:var(--red-soft); }
+.copybox textarea{ min-height:180px; font-family:var(--f-mono); font-size:12.5px; }
+
+/* log */
+.logrow{ display:flex; align-items:center; gap:12px; padding:10px 12px; background:var(--card); border:1px solid var(--line); border-radius:8px; width:100%; text-align:left; }
+.logrow .cell{ width:16px; flex:none; }
+.logrow .d{ font-family:var(--f-mono); font-size:13.5px; flex:none; width:6.5em; }
+.logrow .s{ font-size:13px; color:var(--ink-2); min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1; }
+.detail{ border-left:2px solid var(--line); margin:4px 0 8px 8px; padding:4px 0 4px 14px; display:flex; flex-direction:column; gap:10px; }
+
+/* tabs */
+.tabs{ position:fixed; left:0; right:0; bottom:0; z-index:5; background:var(--card); border-top:1px solid var(--line);
+  padding-left:max(8px,env(safe-area-inset-left,0px)); padding-right:max(8px,env(safe-area-inset-right,0px)); padding-bottom:env(safe-area-inset-bottom,0px); }
+.tabs .in{ max-width:600px; margin:0 auto; display:grid; grid-template-columns:repeat(5,1fr); }
+.tabs a{ display:flex; flex-direction:column; align-items:center; gap:2px; padding:8px 2px 9px; text-decoration:none; color:var(--ink-3); font-size:12px; }
+.tabs a svg{ width:22px; height:22px; }
+.tabs a.on{ color:var(--blue); font-weight:600; }
+.tabs a.cap-tab .dot{ width:38px; height:38px; margin-top:-16px; border-radius:50%; background:var(--blue); color:var(--on-blue); display:grid; place-items:center; box-shadow:0 0 0 4px var(--card); }
+.tabs a.cap-tab .dot svg{ width:20px; height:20px; }
+#toast{ position:fixed; left:50%; transform:translateX(-50%); bottom:calc(76px + env(safe-area-inset-bottom,0px)); background:var(--ink); color:var(--paper); padding:8px 14px; border-radius:8px; font-size:14px; z-index:9; max-width:calc(100% - 32px); }
+@media (prefers-reduced-motion: no-preference){ .cap.fresh{ transition:box-shadow .6s; } }
+</style>
+</head>
+<body>
+<div id="app">
+  <header class="top">
+    <div class="brand">自我观察本</div>
+    <div class="sync" id="sync">连接中</div>
+  </header>
+  <main id="view" aria-live="polite"></main>
+</div>
+<nav class="tabs" aria-label="页面">
+  <div class="in">
+    <a href="#today" data-r="today"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 9h16M9 3v4M15 3v4"/></svg>今天</a>
+    <a href="#log" data-r="log"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 4h10l3 3v13H6z"/><path d="M9 10h7M9 14h7M9 18h4"/></svg>记录</a>
+    <a href="#capture" data-r="capture" class="cap-tab"><span class="dot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg></span>随手记</a>
+    <a href="#hyps" data-r="hyps"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="6" width="18" height="13" rx="1.5"/><path d="M3 10h18M7 14h6"/></svg>假设清单</a>
+    <a href="#week" data-r="week"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 18l5-6 4 3 7-9"/><path d="M15 6h5v5"/></svg>周复盘</a>
+  </div>
+</nav>
+<div id="toast" hidden></div>
+
+<script>
+(() => {
+'use strict';
+/* ---------- constants ---------- */
+const KINDS = { avoid:'最可能拖着不做的事', emotion:'最可能让我情绪起伏的', specific:'具体预测' };
+const SRC = { morning:'早上写', late:'补写', eve:'前晚出题' };
+const RES = { hit:'对', miss:'落空', half:'一半' };
+const EMOS = ['焦虑','烦躁','委屈','失落','羞愧','愤怒','紧张','无力','不耐烦','兴奋','被认可','平静'];
+const BODY = ['胸闷','肩颈紧','心跳快','胃里发紧','脸发热','坐不住','想逃开','没力气','呼吸浅','放松'];
+const TAGS = ['预测落空','不像自己','拖延','冲突','纠结','高光'];
+const SKIPR = ['太累','忘了','不想面对','没时间','其他'];
+const VAGUE = ['充实','好好','努力','认真','尽量','高效','顺利','不错','加油','开心','积极','争取','适当','多一点','少一点','状态好'];
+const MOMENTS = ['情绪最强的一刻','最不像自己的一刻','最有劲的一刻','别的时刻'];
+const LS_KEY = 'zwgcb-data-v1', LS_DRAFT = 'zwgcb-drafts-v1';
+
+/* ---------- utils ---------- */
+const $ = s => document.querySelector(s);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const pad = n => String(n).padStart(2, '0');
+const ymd = d => d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+const parse = k => { const a = k.split('-').map(Number); return new Date(a[0], a[1] - 1, a[2]); };
+const dayKey = (d = new Date()) => ymd(new Date(d.getTime() - 4 * 3600e3));
+const addDays = (k, n) => { const d = parse(k); d.setDate(d.getDate() + n); return ymd(d); };
+const weekStart = k => { const d = parse(k); d.setDate(d.getDate() - (d.getDay() + 6) % 7); return ymd(d); };
+const hm = iso => { const d = new Date(iso); return pad(d.getHours()) + ':' + pad(d.getMinutes()); };
+const md = k => { const p = k.split('-'); return (+p[1]) + '月' + (+p[2]) + '日'; };
+const mdShort = k => { const p = k.split('-'); return p[1] + '·' + p[2]; };
+const wdOf = k => '周' + '日一二三四五六'[parse(k).getDay()];
+const newId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+const clone = o => o == null ? o : JSON.parse(JSON.stringify(o));
+const newDay = k => ({ date:k, preds:[], caps:[], evening:null, skip:null });
+const getDay = k => clone(S.days[k]) || newDay(k);
+const hypText = h => '在' + h.sit + '时，我可能会' + h.rea;
+function setPath(o, path, v){ const ps = path.split('.'); let c = o; for (let i = 0; i < ps.length - 1; i++){ if (c[ps[i]] == null || typeof c[ps[i]] !== 'object') c[ps[i]] = {}; c = c[ps[i]]; } c[ps[ps.length - 1]] = v; }
+function getPath(o, path){ return path.split('.').reduce((c, p) => c == null ? undefined : c[p], o); }
+let toastT = null;
+function toast(msg){ const t = $('#toast'); t.textContent = msg; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => { t.hidden = true; }, 3200); }
+function errMsg(e){
+  const c = e && e.code;
+  if (c === 'quota_exceeded') return '存储空间满了，先在「记录」里导出一份备份。';
+  if (c === 'revoked' || c === 'not_granted') return '这个页面暂时不能保存了，刷新试试。';
+  if (c === 'invalid_argument') return '这次没存上：当前身份没有写入权限。';
+  return '这次没存上，网络恢复后再点一次保存。';
+}
+
+/* ---------- state ---------- */
+let S = { days:{}, hyps:{}, weeks:{} };
+let mode = 'init';           // init | cloud | local
+let ready = false, slow = false, migrated = false;
+let route = 'today';
+let form = null;             // {type, key, data, dirty}
+let ui = { skipOpen:false, logOpen:null, hypOpen:null, hypNew:false, copy:null, fresh:null, weekKey:null };
+let drafts = {};
+try { drafts = JSON.parse(localStorage.getItem(LS_DRAFT) || '{}') || {}; } catch (e) { drafts = {}; }
+let dlNs = null;
+
+/* ---------- storage ---------- */
+let base = null;
+const queues = {};
+function lsWrite(){ try { localStorage.setItem(LS_KEY, JSON.stringify({ days:S.days, hyps:S.hyps, weeks:S.weeks, savedAt:Date.now() })); return true; } catch (e) { return false; } }
+function lsRead(){ try { return JSON.parse(localStorage.getItem(LS_KEY) || 'null'); } catch (e) { return null; } }
+function put(col, id, data){
+  S[col] = Object.assign({}, S[col]); S[col][id] = data;
+  if (mode === 'cloud'){
+    const path = col + '/' + id;
+    const p = (queues[path] || Promise.resolve()).catch(() => {}).then(() => base.collection(col).doc(id).set(data));
+    queues[path] = p;
+    return p.catch(e => { toast(errMsg(e)); throw e; });
+  }
+  if (!lsWrite()) toast('这个浏览器不允许保存，刷新后会丢失。');
+  return Promise.resolve();
+}
+function remove(col, id){
+  S[col] = Object.assign({}, S[col]); delete S[col][id];
+  if (mode === 'cloud'){
+    const path = col + '/' + id;
+    const p = (queues[path] || Promise.resolve()).catch(() => {}).then(() => base.collection(col).doc(id).delete());
+    queues[path] = p;
+    return p.catch(e => { toast(errMsg(e)); throw e; });
+  }
+  lsWrite(); return Promise.resolve();
+}
+function saveDrafts(){ try { localStorage.setItem(LS_DRAFT, JSON.stringify(drafts)); } catch (e) {} }
+let draftT = null;
+function draftLater(){ clearTimeout(draftT); draftT = setTimeout(saveDrafts, 400); }
+
+function useLocal(){
+  if (mode === 'cloud') return;
+  mode = 'local';
+  const l = lsRead();
+  if (l){ S = { days:l.days || {}, hyps:l.hyps || {}, weeks:l.weeks || {} }; }
+  ready = true; refresh();
+}
+function startCloud(db, uid){
+  mode = 'cloud';
+  base = db.doc('data/users/' + uid + '/main');
+  const loaded = {}, definite = {};
+  const slowT = setTimeout(() => { if (!(definite.days && definite.hyps && definite.weeks)){ slow = true; syncLabel(); } }, 10000);
+  const done = () => {
+    if (loaded.days && loaded.hyps && loaded.weeks && !ready){ ready = true; }
+    if (definite.days && definite.hyps && definite.weeks){ clearTimeout(slowT); slow = false; migrate(); }
+    refresh();
+  };
+  const sub = (col, q) => q.onSnapshot(snap => {
+    const o = {}; snap.docs.forEach(d => { if (d.exists) o[d.id] = d.data(); });
+    S[col] = o; loaded[col] = true; if (!snap.metadata.fromCache) definite[col] = true; done();
+  }, err => { clearTimeout(slowT); slow = true; loaded[col] = true; definite[col] = true; toast(errMsg(err)); done(); });
+  sub('days', base.collection('days').orderBy('date', 'desc').limit(600));
+  sub('hyps', base.collection('hyps'));
+  sub('weeks', base.collection('weeks'));
+}
+async function migrate(){
+  if (migrated) return; migrated = true;
+  const l = lsRead(); if (!l) return;
+  let n = 0;
+  for (const col of ['days','hyps','weeks']){
+    for (const id of Object.keys(l[col] || {})){
+      if (!S[col][id]){ try { await put(col, id, l[col][id]); n++; } catch (e) { return; } }
+    }
+  }
+  try { localStorage.removeItem(LS_KEY); } catch (e) {}
+  if (n) toast('这台设备上之前的 ' + n + ' 条记录已同步。');
+}
+function refresh(){
+  syncLabel();
+  if (!form || !form.dirty){ if (!ui.hypOpen && !ui.hypNew) render(); }
+}
+function syncLabel(){
+  const el = $('#sync');
+  let t = '连接中', w = false;
+  if (mode === 'cloud') { t = !ready ? '载入中' : slow ? '连接慢，可能不是最新' : '已同步 · 仅自己可见'; w = slow; }
+  else if (mode === 'local') { t = '离线可用 · 存在这部手机'; w = false; }
+  el.textContent = t; el.classList.toggle('warn', w);
+}
+function saveFile(filename, data){
+  const type = /\.docx$/.test(filename) ? 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' : 'application/json';
+  const blob = data instanceof Blob ? data : new Blob([data], { type });
+  const download = () => {
+    const url = URL.createObjectURL(blob), a = document.createElement('a');
+    a.href = url; a.download = filename; document.body.appendChild(a); a.click();
+    setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 4000);
+    return { status:'saved' };
+  };
+  let file = null; try { file = new File([blob], filename, { type }); } catch (e) {}
+  const touch = !!(window.matchMedia && window.matchMedia('(pointer: coarse)').matches);
+  let shareable = false;
+  if (touch && file && navigator.share && navigator.canShare){ try { shareable = navigator.canShare({ files:[file] }); } catch (e) {} }
+  if (shareable){
+    return navigator.share({ files:[file], title:filename }).then(() => ({ status:'saved' }), err => {
+      if (err && err.name === 'AbortError') throw { code:'declined' };
+      return download();
+    });
+  }
+  return Promise.resolve(download());
+}
+function importFile(f){
+  const r = new FileReader();
+  r.onload = () => {
+    let o = null; try { o = JSON.parse(r.result); } catch (e) {}
+    if (!o || typeof o !== 'object' || !o.days || typeof o.days !== 'object'){ toast('这个文件里没有自我观察本的记录。确认是从「导出备份」得到的 JSON。'); return; }
+    let n = 0, skipped = 0;
+    ['days','hyps','weeks'].forEach(col => {
+      const src = (o[col] && typeof o[col] === 'object') ? o[col] : {};
+      Object.keys(src).forEach(id => { if (!S[col][id]){ S[col][id] = src[id]; n++; } else skipped++; });
+    });
+    if (!lsWrite()){ toast('没导入成功：这个浏览器不允许存储。'); return; }
+    toast('导入了 ' + n + ' 条' + (skipped ? '，跳过 ' + skipped + ' 条这里已经有的' : '') + '。');
+    render();
+  };
+  r.onerror = () => toast('这个文件读不出来。');
+  r.readAsText(f);
+}
+function backupLine(){
+  if (Object.keys(S.days).length < 3) return '';
+  let lb = null; try { lb = localStorage.getItem('zwgcb-lastbackup'); } catch (e) {}
+  if (!lb) return '<p class="warn" style="margin:0">记录只存在这部手机里，还没导出过备份。去「记录」页导出一份。</p>';
+  const n = Math.round((parse(dayKey()) - parse(lb)) / 864e5);
+  return n >= 7 ? '<p class="warn" style="margin:0">上次导出备份是 ' + n + ' 天前，去「记录」页再导一份。</p>' : '';
+}
+async function init(){
+  dlNs = { save:({ filename, data }) => saveFile(filename, data) };
+  useLocal();
+  try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch (e) {}
+}
+
+/* ---------- derived ---------- */
+function dayStatus(k, t){
+  if (k > t) return 'future';
+  const d = S.days[k]; if (!d) return 'none';
+  if (d.evening) return d.evening.mode === 'std' ? 'std' : 'min';
+  if (d.skip) return 'skip';
+  if ((d.preds && d.preds.length) || (d.caps && d.caps.length)) return 'part';
+  return 'none';
+}
+function firstDay(){
+  let f = null;
+  for (const k in S.days){ const d = S.days[k]; if ((d.preds && d.preds.some(p => p.src !== 'eve')) || (d.caps && d.caps.length) || d.evening || d.skip){ if (!f || k < f) f = k; } }
+  return f;
+}
+const evCount = (h, kind) => (h.ev || []).filter(e => e.kind === kind).length;
+function weekData(ws){
+  const we = addDays(ws, 6), t = dayKey();
+  const r = { ws, we, days:[], misses:[], surprises:[], skips:{}, emos:{}, tags:{}, capN:0, intSum:0, intN:0, preds:0, late:0, rec:0, newHyps:[], sup:0, con:0, revised:[], newInfo:0, heavy:0 };
+  for (let i = 0; i < 7; i++){
+    const k = addDays(ws, i), st = dayStatus(k, t), d = S.days[k];
+    r.days.push({ k, st });
+    if (st === 'std' || st === 'min') r.rec++;
+    if (!d) continue;
+    (d.preds || []).forEach(p => { if (k > t) return; r.preds++; if (p.src === 'late') r.late++; if (p.result === 'miss' || p.result === 'half') r.misses.push(Object.assign({ k }, p)); });
+    (d.caps || []).forEach(c => { r.capN++; (c.emos || []).forEach(e => { r.emos[e] = (r.emos[e] || 0) + 1; }); if (c.inten){ r.intSum += c.inten; r.intN++; } (c.tags || []).forEach(g => { r.tags[g] = (r.tags[g] || 0) + 1; }); });
+    if (d.skip) r.skips[d.skip.reason] = (r.skips[d.skip.reason] || 0) + 1;
+    if (d.evening && d.evening.surprise) r.surprises.push({ k, text:d.evening.surprise });
+    if (d.evening && d.evening.after === 'heavy') r.heavy++;
+  }
+  Object.values(S.hyps).forEach(h => {
+    if (h.created >= ws && h.created <= we) r.newHyps.push(h);
+    (h.ev || []).forEach(e => { if (e.date >= ws && e.date <= we){ if (e.kind === 'sup') r.sup++; else r.con++; } });
+    if (h.status === 'revised' && h.revisedOn >= ws && h.revisedOn <= we) r.revised.push(h);
+  });
+  r.newInfo = r.misses.length + r.surprises.length + (r.tags['不像自己'] || 0) + r.con + r.revised.length;
+  return r;
+}
+function lastRevision(){ let l = null; Object.values(S.hyps).forEach(h => { if (h.status === 'revised' && h.revisedOn && (!l || h.revisedOn > l)) l = h.revisedOn; }); return l; }
+function fuseOn(){
+  const t = dayKey();
+  const ev = Object.values(S.days).filter(d => d.evening && d.evening.after && d.date >= addDays(t, -6)).sort((a, b) => b.date.localeCompare(a.date)).slice(0, 3);
+  return ev.length === 3 && ev.every(d => d.evening.after === 'heavy');
+}
+const openHyps = () => Object.values(S.hyps).filter(h => h.status !== 'revised').sort((a, b) => (b.updated || '').localeCompare(a.updated || ''));
+
+/* ---------- small renderers ---------- */
+function tally(n){
+  const full = Math.floor(n / 5), rem = n % 5, strokes = ['M2 2.5H12','M7 2.5V12.5','M7 7.5H11','M3.5 7.5V12.5','M1.5 12.5H12.5'];
+  const glyph = k => '<svg width="14" height="15" viewBox="0 0 14 15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="' + strokes.slice(0, k).join('') + '"/></svg>';
+  if (n === 0) return '<span class="mono">0</span>';
+  if (full > 3) return '<span class="mono">' + n + '</span>';
+  let s = ''; for (let i = 0; i < full; i++) s += glyph(5); if (rem) s += glyph(rem);
+  return s + '<span class="mono">' + n + '</span>';
+}
+function bars(n){ let s = '<span class="bars" aria-label="强度 ' + (n || 0) + '/5">'; for (let i = 1; i <= 5; i++) s += '<i class="' + (i <= n ? 'on' : '') + '"></i>'; return s + '</span>'; }
+function predRow(p, k, removable){
+  const r = p.result ? ' r-' + p.result : '';
+  return '<li class="pred' + r + '"><div class="pk"><span>' + KINDS[p.kind] + '</span><span class="mono">' + hm(p.at) + ' · ' + SRC[p.src] + '</span></div>'
+    + '<div class="pt">' + esc(p.text) + '</div>'
+    + (p.actual ? '<div class="pa">实际：' + esc(p.actual) + '</div>' : '')
+    + (p.result ? '<span class="pen ' + p.result + '">' + RES[p.result] + '</span>' : '')
+    + (removable && !p.result ? '<button type="button" class="x" data-act="delPred" data-key="' + k + '" data-id="' + p.id + '" aria-label="删掉这条预测">×</button>' : '')
+    + '</li>';
+}
+function capCardHTML(c, k, opts){
+  opts = opts || {};
+  const emo = (c.emos || []).join(' · ');
+  const kv = [];
+  if (c.fact) kv.push(['发生', c.fact]);
+  if (c.body && c.body.length) kv.push(['身体', c.body.join(' · ')]);
+  if (c.did) kv.push(['我做了', c.did]);
+  if (c.wanted) kv.push(['想做没做', c.wanted]);
+  return '<article class="cap' + (ui.fresh === c.id ? ' fresh' : '') + '">'
+    + '<div class="cap-top"><span class="mono">' + (opts.date ? mdShort(k) + ' ' : '') + hm(c.at) + '</span>'
+    + (emo ? '<span class="emo">' + esc(emo) + ' ' + bars(c.inten || 0) + '</span>' : '')
+    + ((c.tags && c.tags.length) ? '<span class="tagline">' + c.tags.map(g => '<span class="tg">' + esc(g) + '</span>').join('') + '</span>' : '')
+    + '</div>'
+    + (c.quote ? '<div class="quote">' + esc(c.quote) + '</div>' : '')
+    + (kv.length ? '<dl class="kv">' + kv.map(x => '<dt>' + x[0] + '</dt><dd>' + esc(x[1]) + '</dd>').join('') + '</dl>' : '')
+    + (c.care ? '<div class="care">碰到了我在乎的：<b>' + esc(c.care) + '</b></div>' : '')
+    + (opts.actions !== false ? '<div class="row">' + (!c.done ? '<span class="pending">还没理清</span>' : '') + '<button type="button" class="linkbtn" data-act="editCap" data-key="' + k + '" data-id="' + c.id + '">' + (c.done ? '修改' : '接着理清') + '</button></div>' : '')
+    + '</article>';
+}
+function hypLines(h){ return '<div class="hs"><span class="pre">在</span>' + esc(h.sit) + '<span class="pre">时，</span><br><span class="pre">我可能会</span>' + esc(h.rea) + '</div>'; }
+
+/* ---------- views ---------- */
+function vToday(){
+  const t = dayKey(), y = addDays(t, -1), d = S.days[t] || newDay(t), yd = S.days[y], f = firstDay();
+  let h = '<div class="dayhead"><div><div class="date">' + md(t) + '<span>' + wdOf(t) + '</span></div><div class="sub">复盘日以凌晨 4 点为界，凌晨写的算前一天</div></div></div>';
+  h += copyBox();
+  h += '<div class="stack">';
+  if (ready && fuseOn()) h += '<section class="card fuse"><div class="stage">最近三次写完都觉得更沉了</div><p class="muted">这通常说明在反复咀嚼，而不是在看清自己。接下来几天只做最低版，并且用第三人称写。持续一周以上的话，找一个信任的人当面聊聊。</p></section>';
+  if (ready && f && f <= y && !(yd && (yd.evening || yd.skip))) h += yBanner(y);
+  h += statsCard(t);
+  const dow = parse(t).getDay();
+  if (ready && (dow === 0 || dow === 1)){
+    const ws = dow === 0 ? weekStart(t) : addDays(weekStart(t), -7);
+    if (!S.weeks[ws]) h += '<section class="card"><div class="stage">周复盘<span class="right">' + mdShort(ws) + '–' + mdShort(addDays(ws, 6)) + '</span></div><p class="muted">把这周落空的预测排在一起看：有没有同一个方向的错？20 分钟。</p><div class="row"><button type="button" class="btn sm" data-act="goWeek" data-key="' + ws + '">开始周复盘</button></div></section>';
+  }
+  h += predCard(t, d) + capCardToday(t, d) + eveCard(t, d, yd);
+  h += '</div>';
+  return h;
+}
+function yBanner(y){
+  let s = '<section class="card banner"><div class="stage">昨天（' + md(y) + '）没有收尾</div>'
+    + '<p class="muted">规则只有一条：别连着空两天。可以补 2 分钟，也可以直接放过。</p>'
+    + '<div class="row"><button type="button" class="btn sm" data-act="open" data-type="min" data-key="' + y + '">补记昨天 · 2 分钟</button><button type="button" class="btn ghost sm" data-act="skipOpen">放过它</button></div>';
+  if (ui.skipOpen){
+    s += '<div class="inline"><div class="lab">放过的原因（一下就好）</div><div class="chips">' + SKIPR.map(r => '<button type="button" class="chip" data-act="skip" data-key="' + y + '" data-v="' + r + '">' + r + '</button>').join('') + '</div>'
+      + '<p class="fine">原因会出现在周复盘里。「不想面对」本身就是一条线索。</p></div>';
+  }
+  s += '<p class="fine">更早的空白不用补：隔太久写出来的，多半是编的。</p></section>';
+  return s;
+}
+function statsCard(t){
+  const ws = weekStart(t), start = addDays(ws, -28), w = weekData(ws);
+  let g = '<div class="grid5">' + '一二三四五六日'.split('').map(x => '<div class="wd">' + x + '</div>').join('');
+  for (let i = 0; i < 35; i++){ const k = addDays(start, i), st = dayStatus(k, t); g += '<div class="cell ' + st + (k === t ? ' today' : '') + '" title="' + md(k) + '"></div>'; }
+  g += '</div>';
+  const hs = Object.values(S.hyps), lr = lastRevision();
+  const solid = hs.filter(x => x.status === 'solid').length, test = hs.filter(x => x.status === 'test').length;
+  let lrLine;
+  if (lr){ const days = Math.round((parse(t) - parse(lr)) / 864e5); lrLine = '上一次重新认识自己：' + (days === 0 ? '今天' : days + ' 天前') + '，改写了一条假设。'; }
+  else lrLine = '还没有改写过假设。第一次改写，才算真正重新认识了自己一次。';
+  return '<section class="card"><div class="stage">近五周<span class="right">本周 ' + mdShort(ws) + ' 起</span></div>' + g
+    + '<div class="legend"><span><i class="std"></i>标准版</span><span><i class="min"></i>最低版</span><span><i class="part"></i>只有预测或随手记</span><span><i class="skip"></i>放过</span><span><i class="none"></i>空白</span></div>'
+    + '<div class="figs"><span>本周收尾<b>' + w.rec + '</b>/ 7 天</span><span class="redb">本周新信息<b>' + w.newInfo + '</b>条</span><span>清单<b>' + (test + solid) + '</b>条（较可信 ' + solid + '）</span></div>'
+    + '<p class="note">新信息 = 落空的预测 + 意外的反应 + 反例 + 改写。它们都是你对自己的看法需要更新的地方，所以这个数字越大越好。' + lrLine + '</p>' + backupLine() + '</section>';
+}
+function predCard(t, d){
+  const hr = new Date().getHours(), isMorning = hr >= 4 && hr < 12, isNight = hr >= 18 || hr < 4;
+  let s = '<section class="card"><div class="stage"><span class="tag">早</span>预测</div>';
+  if (d.preds.length){
+    s += '<ul class="preds">' + d.preds.map(p => predRow(p, t, !d.evening)).join('') + '</ul>';
+    if (!d.evening) s += '<div class="row"><button type="button" class="btn ghost sm" data-act="open" data-type="morning" data-key="' + t + '">再加一条</button></div>';
+  } else if (!ready){
+    s += '<p class="muted">正在打开记录本…</p>';
+  } else if (isMorning){
+    s += '<p class="muted">1 分钟，写 2–3 条晚上能判对错的预测。写错了正好。</p><div class="row"><button type="button" class="btn" data-act="open" data-type="morning" data-key="' + t + '">写今天的预测</button></div>';
+  } else if (!isNight){
+    s += '<p class="muted">上午过去了。现在补写也有用，但只预测接下来还没发生的事。</p><div class="row"><button type="button" class="btn" data-act="open" data-type="morning" data-key="' + t + '">补写预测</button></div>';
+  } else {
+    s += '<p class="muted">今天没写预测，没关系。晚上复盘时，「对照」会换成「意外回看」。复盘最后可以给明天出一道题，明早就不用再想。</p><div class="row"><button type="button" class="btn ghost sm" data-act="open" data-type="morning" data-key="' + t + '">还是补一条</button></div>';
+  }
+  return s + '</section>';
+}
+function capCardToday(t, d){
+  const cs = (d.caps || []).slice().sort((a, b) => b.at.localeCompare(a.at));
+  let s = '<section class="card"><div class="stage"><span class="tag">日间</span>随手记<span class="right">' + cs.length + ' 条</span></div>';
+  if (cs.length) s += '<ul class="capmini">' + cs.slice(0, 4).map(c => '<li><span class="mono">' + hm(c.at) + '</span><span class="txt">' + esc((c.emos || []).join('·')) + (c.emos && c.emos.length ? ' ｜ ' : '') + esc(c.fact || c.quote || '') + '</span></li>').join('') + '</ul>';
+  else s += '<p class="muted">情绪起伏、反应出乎自己意料、或者卡住的时候，当场记一句。晚上深挖可以直接选它。</p>';
+  return s + '<div class="row"><a class="btn ghost sm" href="#capture">记一笔</a></div></section>';
+}
+function eveCard(t, d, yd){
+  let s = '<section class="card"><div class="stage"><span class="tag">晚</span>复盘</div>';
+  if (d.evening){
+    const e = d.evening, D = e.D || {};
+    s += '<p class="muted">' + (e.mode === 'std' ? '标准版' : '最低版') + ' · ' + hm(e.at) + ' 写完</p>';
+    if (D.line) s += '<div class="hyp">' + D.line + '</div>';
+    s += '<div class="row">' + (dlNs ? '<button type="button" class="btn sm" data-act="wordDay" data-key="' + t + '">保存为 Word</button>' : '') + '<button type="button" class="btn ghost sm" data-act="copy" data-key="' + t + '">复制给 Claude</button><button type="button" class="btn ghost sm" data-act="open" data-type="' + (e.mode === 'std' ? 'evening' : 'min') + '" data-key="' + t + '">修改</button></div>';
+  } else {
+    if (!d.preds.length) s += '<p class="muted">今天没有预测，「对照」会换成「意外回看」。</p>';
+    else s += '<p class="muted">先对答案，再挑一个时刻挖深。一天里看清一件事就够了。</p>';
+    if (yd && !yd.evening && firstDay() && firstDay() < t) s += '<p class="fine">昨天空着。今天收个尾，就不算连着空两天。</p>';
+    s += '<div class="row"><button type="button" class="btn" data-act="open" data-type="evening" data-key="' + t + '">标准版 · 10–15 分钟</button><button type="button" class="btn ghost" data-act="open" data-type="min" data-key="' + t + '">最低版 · 2 分钟</button></div>';
+    s += '<div class="row"><button type="button" class="linkbtn" data-act="copy" data-key="' + t + '">想和 Claude 对话着复盘？复制今天的材料</button></div>';
+  }
+  return s + '</section>';
+}
+function copyBox(){
+  if (!ui.copy) return '';
+  return '<section class="card copybox" style="margin-bottom:12px"><div class="stage">复制没成功，手动全选复制</div><textarea id="copyArea" readonly>' + esc(ui.copy) + '</textarea><div class="row"><button type="button" class="btn ghost sm" data-act="closeCopy">关掉</button></div></section>';
+}
+
+/* ---------- forms ---------- */
+function openForm(type, key, extra){
+  const id = type + ':' + key;
+  let data = drafts[id] ? clone(drafts[id]) : null;
+  if (!data){
+    if (type === 'morning') data = { avoid:'', emotion:'', specific:'', hid:null };
+    if (type === 'evening' || type === 'min'){
+      const d = S.days[key];
+      if (d && d.evening && d.evening.mode === (type === 'evening' ? 'std' : 'min')) data = clone(d.evening.raw || {});
+      else data = { R:{}, A:{}, C:{}, D:{ op:'new' }, E:{}, after:'' };
+      (d ? d.preds : []).forEach(p => { if (!data.R[p.id]) data.R[p.id] = { r:p.result || '', a:p.actual || '' }; });
+    }
+    if (type === 'capture'){
+      if (extra){ data = clone(extra); data.more = true; }
+      else data = { fact:'', emos:[], inten:0, quote:'', body:[], did:'', wanted:'', care:'', tags:[], more:false };
+    }
+    if (type === 'week'){ const w = S.weeks[key]; data = w ? clone(w) : { dir:'', said:['','',''], did:['','',''], was:'', saw:'' }; }
+  }
+  if (type === 'evening' || type === 'min'){ ['R','A','C','E'].forEach(p => { if (!data[p] || typeof data[p] !== 'object') data[p] = {}; }); if (!data.D || typeof data.D !== 'object') data.D = { op:'new' }; if (!data.D.op) data.D.op = 'new'; }
+  form = { type, key, data, dirty:false };
+  render(); window.scrollTo(0, 0);
+}
+function closeForm(keepDraft){ if (form && !keepDraft){ delete drafts[form.type + ':' + form.key]; saveDrafts(); } form = null; }
+function fieldTA(path, label, ph, hint, rows){
+  return '<div class="f"><label for="f-' + path + '">' + label + '</label><textarea id="f-' + path + '" data-f="' + path + '" rows="' + (rows || 2) + '" placeholder="' + esc(ph || '') + '">' + esc(getPath(form.data, path) || '') + '</textarea>' + (hint ? '<div class="hint">' + hint + '</div>' : '') + '</div>';
+}
+function fieldIn(path, ph, live){ return '<input type="text" id="f-' + path + '" data-f="' + path + '"' + (live ? ' data-live="' + live + '"' : '') + ' placeholder="' + esc(ph || '') + '" value="' + esc(getPath(form.data, path) || '') + '">'; }
+function chipsHTML(path, opts, multi, cls){
+  const cur = getPath(form.data, path);
+  return '<div class="chips">' + opts.map(o => { const on = multi ? (cur || []).includes(o) : cur === o; return '<button type="button" class="chip ' + (cls || '') + (on ? ' on' : '') + '" data-act="' + (multi ? 'tog' : 'pick') + '" data-f="' + path + '" data-v="' + esc(o) + '" aria-pressed="' + on + '">' + esc(o) + '</button>'; }).join('') + '</div>';
+}
+function segHTML(path, opts){ const cur = getPath(form.data, path); return '<div class="seg">' + opts.map(o => '<button type="button" class="' + (cur === o[0] ? 'on' : '') + '" data-act="pick" data-f="' + path + '" data-v="' + o[0] + '" aria-pressed="' + (cur === o[0]) + '">' + o[1] + '</button>').join('') + '</div>'; }
+function vagueWarn(text){ const hit = VAGUE.find(w => (text || '').includes(w)); return hit ? '「' + hit + '」这类词晚上判不了对错。换成看得见的动作或时间点。' : ''; }
+function hypWarn(text){ return /我就是|我这个人|我天生|我一直都/.test(text || '') ? '日复盘不下性格结论。写成「在某种情况下我可能会怎样」。' : ''; }
+function formHead(title, lede, tag){ return '<div class="row" style="justify-content:space-between;margin-bottom:6px"><span class="sub mono">' + (tag || '') + '</span><button type="button" class="linkbtn" data-act="cancel">先放下（草稿保留）</button></div><h1 class="h">' + title + '</h1><p class="lede">' + lede + '</p>'; }
+
+function fMorning(){
+  const k = form.key, x = form.data, now = new Date(), t = dayKey(), hr = now.getHours();
+  const late = k === t && !(hr >= 4 && hr < 12);
+  const d = S.days[k] || newDay(k);
+  let h = formHead('对' + (k === t ? '今天' : md(k)) + '的自己下几个预测', '写错了正好。晚上最值钱的就是落空的那一条。', md(k) + ' ' + wdOf(k));
+  if (late) h += '<p class="warn" style="margin:0 0 12px">现在 ' + pad(hr) + ':' + pad(now.getMinutes()) + '，算补写：只预测接下来还没发生的事，上午已经发生的不算。</p>';
+  h += '<div class="card">';
+  if (d.preds.length) h += '<div class="lab">已经写下的</div><ul class="preds">' + d.preds.map(p => predRow(p, k, false)).join('') + '</ul>';
+  h += fieldTA('avoid', '今天我最可能拖着不做的事', '比如：打开作业文档写第一段');
+  h += fieldTA('emotion', '最可能让我情绪起伏的场合或人', '比如：下午的小组讨论');
+  h += '<div class="f"><label for="f-specific">一条具体的预测</label><textarea id="f-specific" data-f="specific" data-live="vague" rows="2" placeholder="我会在 10 点前 ___ / 在 ___ 的时候，我会 ___">' + esc(x.specific) + '</textarea><div class="warn" id="w-specific">' + vagueWarn(x.specific) + '</div>';
+  const hs = openHyps().filter(h2 => h2.status === 'test').slice(0, 6);
+  if (hs.length) h += '<div class="hint">或者从清单里挑一条「待验证」的来测：</div><div class="chips">' + hs.map(h2 => '<button type="button" class="chip' + (x.hid === h2.id ? ' on' : '') + '" data-act="testHyp" data-id="' + h2.id + '">' + esc(hypText(h2)) + '</button>').join('') + '</div>';
+  h += '</div><p class="fine">唯一的要求：晚上能判对错。「今天会很充实」判不了；「组会上我不会主动发言」判得了。</p>';
+  h += '<div class="row"><button type="button" class="btn" data-act="saveMorning">存下预测</button></div></div>';
+  return h;
+}
+function fEvening(){
+  const k = form.key, x = form.data, d = S.days[k] || newDay(k), editing = !!(d.evening && d.evening.mode === 'std');
+  const caps = (d.caps || []).slice().sort((a, b) => a.at.localeCompare(b.at));
+  let h = formHead('晚上复盘 · 标准版', '先写事实，再对答案，最后只挑一个时刻挖深。', md(k) + ' ' + wdOf(k));
+  h += '<div class="card"><div class="sec">';
+  h += '<div class="sec-h"><span class="mono">A</span>事实<span class="t">3 分钟 · 只写发生了什么</span></div>';
+  h += '<div class="f"><div class="lab">今天时间最多的三块</div>' + fieldIn('A.b0', '第一块') + fieldIn('A.b1', '第二块') + fieldIn('A.b2', '第三块') + '</div>';
+  h += fieldTA('A.self', '没人要求、我自己主动做的事', '', '这一条最能暴露你实际在乎什么。');
+  h += '<div class="sec-h"><span class="mono">B</span>' + (d.preds.length ? '对照' : '意外回看') + '<span class="t">2 分钟</span></div>';
+  if (d.preds.length){
+    h += d.preds.map(p => '<div class="f"><div class="pred' + (x.R[p.id] && x.R[p.id].r && x.R[p.id].r !== 'hit' ? ' r-miss' : '') + '"><div class="pk"><span>' + KINDS[p.kind] + '</span><span class="mono">' + SRC[p.src] + '</span></div><div class="pt">' + esc(p.text) + '</div></div>'
+      + '<div class="row">' + segHTML('R.' + p.id + '.r', [['hit','对'],['miss','落空'],['half','一半']]) + '</div>' + fieldIn('R.' + p.id + '.a', '实际怎样') + '</div>').join('');
+  } else {
+    h += fieldTA('surprise', '今天哪一刻，你的反应出乎自己意料？', '', '没有事前预测，这条可能被事后的解释修饰过，周复盘里会标成弱证据。');
+  }
+  h += '<div class="sec-h"><span class="mono">C</span>深挖一个时刻<span class="t">5–8 分钟</span></div>';
+  const opts = [];
+  d.preds.forEach(p => { const r = x.R[p.id] && x.R[p.id].r; if (r === 'miss' || r === 'half') opts.push(['pred:' + p.id, '落空：' + p.text]); });
+  caps.forEach(c => opts.push(['cap:' + c.id, hm(c.at) + ' ' + ((c.emos || []).join('·') || '') + ' ' + (c.fact || c.quote || '')]));
+  MOMENTS.forEach(m => opts.push(['m:' + m, m]));
+  h += '<div class="lab">选哪一刻（优先选落空的那条）</div><div class="chips">' + opts.map(o => '<button type="button" class="chip' + (x.C.src === o[0] ? ' on' : '') + '" data-act="moment" data-v="' + esc(o[0]) + '">' + esc(o[1].length > 26 ? o[1].slice(0, 26) + '…' : o[1]) + '</button>').join('') + '</div>';
+  h += fieldTA('C.fact', '像摄像机一样写：在哪、谁在、说了什么、我做了什么', '');
+  h += fieldTA('C.quote', '那一刻脑子里的原话，逐字', '比如：再找几篇相关的', '', 1);
+  h += fieldTA('C.body', '身体的感觉', '', '', 1);
+  h += fieldTA('C.did', '我做了什么；想做但没做的是什么', '');
+  h += fieldTA('C.care', '这件事碰到了我在乎的什么', '被否定？被打断？被认可？失去掌控？', '问「它碰到了什么」，得到的是关于你的信息；问「我怎么这么脆弱」，只得到一句自责。');
+  h += fieldTA('C.third', '用第三人称、用自己的名字写一句', '___ 在 ___ 的时候 ___', '用名字回看自己，情绪卷入更少，更容易看清。');
+  h += '<div class="sec-h"><span class="mono">D</span>写成一条假设<span class="t">1 分钟</span></div>';
+  if (editing && d.evening.D && d.evening.D.line){
+    h += '<div class="hyp">' + d.evening.D.line + '</div><p class="fine">这条已经记进清单了，要改去「假设清单」里改。</p>';
+  } else {
+    const hs = openHyps();
+    h += segHTML('D.op', [['new','新假设'],['old','给已有的一条记证据'],['none','今天没看出新东西']]);
+    if (x.D.op === 'new'){
+      h += '<div class="pair"><span>在</span>' + fieldIn('D.sit', '什么情况下（比如：计划被临时打乱后）', 'hyp') + '<span>我可能会</span>' + fieldIn('D.rea', '怎样（比如：放弃当天剩下的全部计划）', 'hyp') + '</div><div class="warn" id="w-hyp">' + hypWarn((x.D.sit || '') + (x.D.rea || '')) + '</div>';
+      h += fieldTA('D.ev', '今日证据', '一句话，指向上面的事实', '', 1);
+    } else if (x.D.op === 'old'){
+      if (!hs.length) h += '<p class="fine">清单还是空的，先写一条新假设。</p>';
+      else {
+        h += '<div class="chips">' + hs.map(h2 => '<button type="button" class="chip' + (x.D.hid === h2.id ? ' on' : '') + '" data-act="pick" data-f="D.hid" data-v="' + h2.id + '">' + esc(hypText(h2)) + '</button>').join('') + '</div>';
+        h += '<div class="lab">今天的事对它来说是</div>' + segHTML('D.kind', [['sup','支持'],['con','反例']]);
+        h += fieldTA('D.ev', '证据', '一句话', '', 1);
+      }
+    }
+  }
+  h += '<div class="sec-h"><span class="mono">E</span>明天<span class="t">30 秒 · 可选</span></div>';
+  h += fieldTA('E.watch', '明天留意：在什么情况下，我会不会怎样', '', '', 1);
+  h += fieldTA('E.tmr', '给明天出一道题（一条能判对错的预测）', '明早打开就能看到，不用再想', '', 1);
+  h += '<div class="warn" id="w-tmr">' + vagueWarn(x.E.tmr) + '</div>';
+  h += afterHTML();
+  h += '<div class="row"><button type="button" class="btn" data-act="saveEvening">写完了</button></div>';
+  h += '</div></div>';
+  return h;
+}
+function afterHTML(){
+  return '<div class="f"><div class="lab">写完的感觉（可选）</div>' + segHTML('after', [['light','轻一点'],['same','差不多'],['heavy','更沉了']]) + '<div class="hint">连着三次「更沉了」，首页会提醒你换个写法。</div></div>';
+}
+function fMin(){
+  const k = form.key, x = form.data, t = dayKey(), d = S.days[k] || newDay(k), isLate = k < t;
+  let h = formHead(isLate ? '补记' + md(k) : '晚上复盘 · 最低版', isLate ? '只写印象最深的一刻。记不清的就不写，别为了填满而编。' : '累的日子只做这个。它保留了骨架：落空、在乎、假设。', md(k) + ' ' + wdOf(k));
+  h += '<div class="card">';
+  if (d.preds.length){
+    h += '<div class="lab">预测对了吗（点一下就行）</div>' + d.preds.map(p => '<div class="f"><div class="pt" style="font-size:14px">' + esc(p.text) + '</div>' + segHTML('R.' + p.id + '.r', [['hit','对'],['miss','落空'],['half','一半']]) + '</div>').join('');
+  }
+  h += fieldTA('q1', (isLate ? '那天' : '今天') + '哪一刻的我，和我以为的自己不一样？', '');
+  h += fieldTA('q2', '那一刻，我在乎的是什么？', '');
+  h += '<div class="f"><div class="lab">写成一条假设（可选）</div><div class="pair"><span>在</span>' + fieldIn('D.sit', '什么情况下', 'hyp') + '<span>我可能会</span>' + fieldIn('D.rea', '怎样', 'hyp') + '</div><div class="warn" id="w-hyp">' + hypWarn((x.D.sit || '') + (x.D.rea || '')) + '</div></div>';
+  h += '<p class="fine">一句都写不出来也行，写「今天没看到新东西」。编出来的假设会污染清单。</p>';
+  h += afterHTML();
+  h += '<div class="row"><button type="button" class="btn" data-act="saveMin">写完了</button></div></div>';
+  return h;
+}
+function fCapture(){
+  const x = form.data, editing = form.key !== 'new', t = dayKey();
+  let h = '<h1 class="h">随手记</h1><p class="lede">当场记一句就行，理清可以晚点。顺序是刻意的：先事实，再名字，再身体，最后才问它碰到了什么。</p>';
+  if (editing) h = formHead('接着理清这一条', '补上原话、身体感觉和它碰到了什么。', '');
+  h += '<div class="card">';
+  h += fieldTA('fact', '刚刚发生了什么', '一句话，像摄像机拍到的那样');
+  h += '<div class="f"><div class="lab">是什么情绪</div>' + chipsHTML('emos', EMOS, true) + '<div class="hint">给情绪起个准确的名字，通常就能让它降下来一点。</div></div>';
+  h += '<div class="f"><div class="lab">有多强</div>' + segHTML('inten', [[1,'1'],[2,'2'],[3,'3'],[4,'4'],[5,'5']].map(a => [a[0], a[1]])) + '</div>';
+  if (!x.more){
+    h += '<div class="row"><button type="button" class="btn" data-act="saveCap">先存下</button><button type="button" class="btn ghost" data-act="more">继续理清</button></div>';
+  } else {
+    h += fieldTA('quote', '那一刻脑子里的原话，逐字', '比如：反正也来不及了', '', 1);
+    h += '<div class="f"><div class="lab">身体的感觉</div>' + chipsHTML('body', BODY, true) + '</div>';
+    h += fieldTA('did', '我做了什么', '', '', 1);
+    h += fieldTA('wanted', '想做但没做的', '', '', 1);
+    h += fieldTA('care', '它碰到了我在乎的什么', '被否定？被打断？被认可？失去掌控？', '', 1);
+    h += '<div class="f"><div class="lab">标记（方便晚上和周复盘找到它）</div>' + chipsHTML('tags', TAGS, true) + '</div>';
+    h += '<div class="row"><button type="button" class="btn" data-act="saveCap">' + (editing ? '存好' : '存下') + '</button>' + (editing ? '<button type="button" class="btn ghost" data-act="delCap">删掉这条</button>' : '') + '</div>';
+  }
+  h += '</div>';
+  if (!editing){
+    const d = S.days[t];
+    const today = d ? (d.caps || []).slice().sort((a, b) => b.at.localeCompare(a.at)) : [];
+    h += '<h2 class="h2">今天 · ' + today.length + ' 条</h2>';
+    h += today.length ? '<div class="stack">' + today.map(c => capCardHTML(c, t)).join('') + '</div>' : '<p class="fine">今天还没有记。存下的每一条会在这里排成一张卡片：时间、情绪和强度、原话、身体、在乎的东西。</p>';
+    const pend = [];
+    for (let i = 1; i <= 14; i++){ const k = addDays(t, -i), dd = S.days[k]; if (dd) (dd.caps || []).forEach(c => { if (!c.done) pend.push([k, c]); }); }
+    if (pend.length) h += '<h2 class="h2">还没理清的</h2><div class="stack">' + pend.map(p => capCardHTML(p[1], p[0], { date:true })).join('') + '</div>';
+  }
+  return h;
+}
+function fWeek(){
+  const ws = form.key, we = addDays(ws, 6), w = weekData(ws), x = form.data, t = dayKey();
+  const total = Object.keys(S.days).filter(k => { const s = dayStatus(k, t); return s === 'std' || s === 'min'; }).length;
+  const anyRevised = Object.values(S.hyps).some(h => h.status === 'revised');
+  let h = '<div class="row" style="justify-content:space-between;margin-bottom:6px"><button type="button" class="linkbtn" data-act="weekNav" data-v="-7">‹ 上一周</button><span class="sub mono">' + mdShort(ws) + ' – ' + mdShort(we) + '</span>' + (ws < weekStart(t) ? '<button type="button" class="linkbtn" data-act="weekNav" data-v="7">下一周 ›</button>' : '<span></span>') + '</div>';
+  h += '<h1 class="h">周复盘</h1><p class="lede">一周里最重要的发现，是你在哪个方向上反复猜错自己。单天落空可能是偶然，同一方向错 3 次就是盲点。</p>';
+  h += '<div class="card"><div class="stage">这周的材料<span class="right">自动汇总</span></div>';
+  h += '<div class="grid5">' + '一二三四五六日'.split('').map(c => '<div class="wd">' + c + '</div>').join('') + w.days.map(d => '<div class="cell ' + d.st + (d.k === t ? ' today' : '') + '" title="' + md(d.k) + '"></div>').join('') + '</div>';
+  h += '<div class="figs"><span>收尾<b>' + w.rec + '</b>天</span><span>预测<b>' + w.preds + '</b>条（补写 ' + w.late + '）</span><span class="redb">落空<b>' + w.misses.length + '</b>条</span><span>随手记<b>' + w.capN + '</b>条</span></div>';
+  const sk = Object.entries(w.skips);
+  if (sk.length) h += '<p class="note">放过的原因：' + sk.map(e => esc(e[0]) + ' ×' + e[1]).join('，') + '</p>';
+  h += '</div>';
+  h += '<h2 class="h2">落空的预测，排在一起看</h2>';
+  if (w.misses.length || w.surprises.length){
+    h += '<ul class="preds">' + w.misses.map(p => '<li class="pred r-' + p.result + '"><div class="pk"><span class="mono">' + mdShort(p.k) + '</span><span>' + KINDS[p.kind] + (p.src === 'late' ? ' · 补写' : '') + '</span></div><div class="pt">' + esc(p.text) + '</div>' + (p.actual ? '<div class="pa">实际：' + esc(p.actual) + '</div>' : '') + '<span class="pen">' + RES[p.result] + '</span></li>').join('')
+      + w.surprises.map(s => '<li class="pred r-half"><div class="pk"><span class="mono">' + mdShort(s.k) + '</span><span>意外回看 · 弱证据</span></div><div class="pt">' + esc(s.text) + '</div></li>').join('') + '</ul>';
+  } else h += '<p class="fine">这周没有落空的预测。可能是预测写得太保险了：下周写得更具体、更容易错一点。</p>';
+  const emos = Object.entries(w.emos).sort((a, b) => b[1] - a[1]);
+  if (emos.length) h += '<h2 class="h2">随手记里的情绪</h2><div class="chips">' + emos.map(e => '<span class="chip">' + esc(e[0]) + ' ×' + e[1] + '</span>').join('') + '</div>' + (w.intN ? '<p class="fine" style="margin-top:6px">平均强度 ' + (w.intSum / w.intN).toFixed(1) + ' / 5</p>' : '');
+  h += '<h2 class="h2">清单这周的变化</h2><p class="muted">新增 ' + w.newHyps.length + ' 条 · 支持 +' + w.sup + ' · <span style="color:var(--red)">反例 +' + w.con + '</span> · 改写 ' + w.revised.length + ' 条</p>';
+  if (total >= 14 && !anyRevised) h += '<p class="warn" style="margin-top:6px">已经记了两周，清单里还没有被改写过的假设。说明预测太保险，或者深挖太浅：把预测写得更具体、更有可能错。</p>';
+  if (w.heavy >= 3) h += '<p class="warn" style="margin-top:6px">这周有 ' + w.heavy + ' 次写完觉得更沉了。下周试试全程用第三人称写。</p>';
+  h += '<h2 class="h2">写下来</h2><div class="card">';
+  h += fieldTA('dir', '同一方向的预测错误', '比如：总是高估自己早上的执行力', '把上面的落空排在一起：是不是总在高估或低估自己的某一方面？');
+  h += '<div class="f"><div class="lab">我说我最在乎的三件事</div>' + fieldIn('said.0', '1') + fieldIn('said.1', '2') + fieldIn('said.2', '3') + '</div>';
+  h += '<div class="f"><div class="lab">这周时间实际去的三件事</div>' + fieldIn('did.0', '1') + fieldIn('did.1', '2') + fieldIn('did.2', '3') + '<div class="hint">两边不一致不一定是坏事，也可能说明「说的」那份该改了。</div></div>';
+  h += '<div class="f"><div class="lab">被动摇的旧印象</div><div class="pair"><span>以前我以为自己</span>' + fieldIn('was', '') + '<span>这周看到</span>' + fieldIn('saw', '') + '</div></div>';
+  h += '<p class="fine">写完去「假设清单」：加证据、缩小条件、改状态。</p>';
+  h += '<div class="row"><button type="button" class="btn" data-act="saveWeek">存下周复盘</button>' + (S.weeks[ws] ? '<span class="fine">已存过，可以改了再存</span>' : '') + '</div></div>';
+  return h;
+}
+
+function vHyps(){
+  const hs = Object.values(S.hyps);
+  const groups = [['test','待验证'],['solid','较可信'],['revised','已改写']];
+  let h = '<h1 class="h">自我假设清单</h1><p class="lede">每天的记录会被忘掉，这张清单不会。它是你对自己的当前理解，每条都带着证据。</p>';
+  h += '<div class="row" style="margin-bottom:12px"><button type="button" class="btn sm" data-act="hypNew">手动加一条</button></div>';
+  if (ui.hypNew) h += '<div class="card" style="margin-bottom:12px"><div class="pair"><span>在</span><input type="text" id="hn-sit" placeholder="什么情况下"><span>我可能会</span><input type="text" id="hn-rea" placeholder="怎样"></div><input type="text" id="hn-ev" placeholder="证据（一句话，可选）"><div class="row"><button type="button" class="btn sm" data-act="hypNewSave">加进清单</button><button type="button" class="btn ghost sm" data-act="hypNewCancel">算了</button></div></div>';
+  if (!hs.length){
+    h += '<div class="hyp example"><div class="hmeta"><span class="st test">示例</span></div><div class="hs"><span class="pre">在</span>计划被临时打乱后<span class="pre">时，</span><br><span class="pre">我可能会</span>放弃当天剩下的全部计划</div><div class="hmeta"><span class="tally">支持 ' + tally(1) + '</span><span class="tally con">反例 ' + tally(0) + '</span></div></div>';
+    h += '<p class="fine" style="margin-top:10px">晚上复盘的 D 部分会把你的第一条假设放进来。支持满 3 次、没有反例，就可以升为「较可信」；出现反例，先缩小条件，不要直接删。</p>';
+    return h;
+  }
+  groups.forEach(g => {
+    const list = hs.filter(x => x.status === g[0]).sort((a, b) => (b.updated || '').localeCompare(a.updated || ''));
+    if (!list.length) return;
+    h += '<h2 class="h2">' + g[1] + ' · ' + list.length + '</h2><div class="stack">' + list.map(hypCard).join('') + '</div>';
+  });
+  return h;
+}
+function hypCard(x){
+  const sup = evCount(x, 'sup'), con = evCount(x, 'con'), o = ui.hypOpen && ui.hypOpen.id === x.id ? ui.hypOpen.act : null;
+  const stLabel = { test:'待验证', solid:'较可信', revised:'已改写' }[x.status];
+  let s = '<article class="hyp ' + x.status + '"><div class="hmeta"><span class="st ' + x.status + '">' + stLabel + '</span><span>首次 ' + md(x.created) + '</span>' + (x.parent && S.hyps[x.parent] ? '<span>由旧版改写</span>' : '') + '</div>';
+  s += hypLines(x);
+  s += '<div class="hmeta"><span class="tally">支持 ' + tally(sup) + '</span><span class="tally con">反例 ' + tally(con) + '</span></div>';
+  const ev = (x.ev || []).slice(-4).reverse();
+  if (ev.length) s += '<ul class="evs">' + ev.map(e => '<li class="' + (e.kind === 'con' ? 'c' : '') + '"><span class="mono">' + mdShort(e.date) + '</span> ' + (e.kind === 'con' ? '反例' : '支持') + (e.note ? '：' + esc(e.note) : '') + '</li>').join('') + '</ul>';
+  if (x.status === 'revised'){
+    const c = x.child && S.hyps[x.child];
+    if (c) s += '<p class="fine">' + md(x.revisedOn) + ' 改写为：' + esc(hypText(c)) + '</p>';
+    s += '<div class="row"><button type="button" class="linkbtn" data-act="hypAct" data-id="' + x.id + '" data-v="del">删除</button></div>';
+  } else {
+    if (x.status === 'test' && sup >= 3 && con === 0) s += '<p class="suggest">支持 ' + sup + ' 次、没有反例，可以升为「较可信」。</p>';
+    if (con > 0) s += '<p class="suggest r">有反例了。先缩小条件，把「在什么情况下」写得更精确。</p>';
+    s += '<div class="row"><button type="button" class="btn ghost sm" data-act="hypAct" data-id="' + x.id + '" data-v="sup">+ 支持</button><button type="button" class="btn ghost sm" data-act="hypAct" data-id="' + x.id + '" data-v="con">+ 反例</button><button type="button" class="btn ghost sm" data-act="hypAct" data-id="' + x.id + '" data-v="rev">缩小条件 / 改写</button>'
+      + (x.status === 'test' ? '<button type="button" class="btn ghost sm" data-act="hypStatus" data-id="' + x.id + '" data-v="solid">升为较可信</button>' : '<button type="button" class="btn ghost sm" data-act="hypStatus" data-id="' + x.id + '" data-v="test">退回待验证</button>')
+      + '<button type="button" class="linkbtn" data-act="hypAct" data-id="' + x.id + '" data-v="del">删除</button></div>';
+  }
+  if (o === 'sup' || o === 'con') s += '<div class="inline"><input type="text" id="hx-note" placeholder="' + (o === 'sup' ? '支持它的事实' : '和它对不上的事实') + '（一句话）"><div class="row"><button type="button" class="btn sm' + (o === 'con' ? ' red' : '') + '" data-act="hypEv" data-id="' + x.id + '" data-v="' + o + '">记下' + (o === 'con' ? '反例' : '支持') + '</button><button type="button" class="btn ghost sm" data-act="hypClose">算了</button></div></div>';
+  if (o === 'rev') s += '<div class="inline"><div class="lab">改写后的版本（旧版会划掉保留）</div><div class="pair"><span>在</span><input type="text" id="hx-sit" value="' + esc(x.sit) + '"><span>我可能会</span><input type="text" id="hx-rea" value="' + esc(x.rea) + '"></div><p class="fine">比如「计划被打乱后会放弃」遇到反例，可能改成「计划被打乱、而且当时已经很累时，会放弃」。条件越精确，你就越了解自己。</p><div class="row"><button type="button" class="btn sm" data-act="hypRevise" data-id="' + x.id + '">改写</button><button type="button" class="btn ghost sm" data-act="hypClose">算了</button></div></div>';
+  if (o === 'del') s += '<div class="inline"><p class="muted">删掉后找不回来。确定删除这条？</p><div class="row"><button type="button" class="btn sm red" data-act="hypDel" data-id="' + x.id + '">删除</button><button type="button" class="btn ghost sm" data-act="hypClose">算了</button></div></div>';
+  return s + '</article>';
+}
+function vLog(){
+  const t = dayKey();
+  const keys = Object.keys(S.days).filter(k => k <= t && dayStatus(k, t) !== 'none').sort().reverse();
+  let h = copyBox() + '<h1 class="h">记录</h1><p class="lede">每一天的预测、随手记和复盘。点开一天，可以复制给 Claude 接着聊。</p>';
+  if (!keys.length) h += '<p class="fine">还没有记录。从「今天」写下第一条预测，或者点下面的「随手记」记一笔。</p>';
+  h += '<div class="stack">';
+  keys.forEach(k => {
+    const d = S.days[k], st = dayStatus(k, t), miss = (d.preds || []).filter(p => p.result === 'miss' || p.result === 'half').length;
+    const sum = [];
+    if (d.preds && d.preds.length) sum.push('预测 ' + d.preds.length + (miss ? '（落空 ' + miss + '）' : ''));
+    if (d.caps && d.caps.length) sum.push('随手记 ' + d.caps.length);
+    if (d.evening && d.evening.D && d.evening.D.text) sum.push(d.evening.D.text);
+    if (d.skip) sum.push('放过：' + d.skip.reason);
+    h += '<div><button type="button" class="logrow" data-act="logOpen" data-key="' + k + '" aria-expanded="' + (ui.logOpen === k) + '"><span class="cell ' + st + '"></span><span class="d">' + mdShort(k) + ' ' + wdOf(k) + '</span><span class="s">' + esc(sum.join(' · ')) + '</span></button>';
+    if (ui.logOpen === k) h += dayDetail(k);
+    h += '</div>';
+  });
+  h += '</div>';
+  h += '<h2 class="h2">数据</h2><div class="card">';
+  h += '<p class="muted">记录只存在这部手机的这个应用里，不联网，也不上传到任何地方。删掉桌面图标、清理浏览器数据或者换手机，记录会一起消失，所以每周导出一次备份。</p>';
+  h += '<p class="fine">要把某一天存成 Word，点开那一天，点「保存为 Word」。从网页版搬过来：在网页版「记录」页点「导出全部（JSON）」，再在这里点「导入备份」。</p>';
+  h += '<div class="row"><button type="button" class="btn ghost sm" data-act="export">导出备份（JSON）</button><button type="button" class="btn ghost sm" data-act="importPick">导入备份</button><button type="button" class="btn ghost sm" data-act="copyAll">复制全部为文字</button></div><input type="file" id="importFile" accept=".json,application/json" hidden></div>';
+  return h;
+}
+function dayDetail(k){
+  const d = S.days[k], e = d.evening;
+  let s = '<div class="detail">';
+  if (d.preds && d.preds.length) s += '<ul class="preds">' + d.preds.map(p => predRow(p, k, false)).join('') + '</ul>';
+  (d.caps || []).slice().sort((a, b) => a.at.localeCompare(b.at)).forEach(c => { s += capCardHTML(c, k); });
+  if (e){
+    const r = e.raw || {};
+    const kv = [];
+    if (e.mode === 'std'){
+      const A = r.A || {}; const blocks = [A.b0, A.b1, A.b2].filter(Boolean).join(' / ');
+      if (blocks) kv.push(['三块时间', blocks]); if (A.self) kv.push(['主动做的', A.self]);
+      if (r.surprise) kv.push(['意外', r.surprise]);
+      const C = r.C || {}; if (C.fact) kv.push(['那一刻', C.fact]); if (C.quote) kv.push(['原话', C.quote]); if (C.care) kv.push(['在乎的', C.care]); if (C.third) kv.push(['第三人称', C.third]);
+      const E = r.E || {}; if (E.watch) kv.push(['明天留意', E.watch]);
+    } else { if (r.q1) kv.push(['不一样的', r.q1]); if (r.q2) kv.push(['在乎的', r.q2]); }
+    if (kv.length) s += '<dl class="kv">' + kv.map(x => '<dt>' + x[0] + '</dt><dd>' + esc(x[1]) + '</dd>').join('') + '</dl>';
+    if (e.D && e.D.line) s += '<div class="hyp">' + e.D.line + '</div>';
+  }
+  s += '<div class="row">' + (dlNs ? '<button type="button" class="btn sm" data-act="wordDay" data-key="' + k + '">保存为 Word</button>' : '') + '<button type="button" class="btn ghost sm" data-act="copy" data-key="' + k + '">复制给 Claude</button></div></div>';
+  return s;
+}
+
+/* ---------- render ---------- */
+function render(){
+  syncLabel();
+  document.querySelectorAll('.tabs a').forEach(a => { const on = a.dataset.r === route; a.classList.toggle('on', on); if (on) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
+  if (!form && route === 'capture') form = { type:'capture', key:'new', data:drafts['capture:new'] ? clone(drafts['capture:new']) : { fact:'', emos:[], inten:0, quote:'', body:[], did:'', wanted:'', care:'', tags:[], more:false }, dirty:false };
+  if (!form && route === 'week'){ const k = ui.weekKey || weekStart(dayKey()); const w = S.weeks[k]; form = { type:'week', key:k, data:drafts['week:' + k] ? clone(drafts['week:' + k]) : (w ? clone(w) : { dir:'', said:['','',''], did:['','',''], was:'', saw:'' }), dirty:false }; }
+  let html;
+  if (form){ html = ({ morning:fMorning, evening:fEvening, min:fMin, capture:fCapture, week:fWeek })[form.type](); }
+  else html = ({ today:vToday, log:vLog, hyps:vHyps })[route] ? ({ today:vToday, log:vLog, hyps:vHyps })[route]() : vToday();
+  $('#view').innerHTML = html;
+  const ca = $('#copyArea'); if (ca){ ca.focus(); ca.select(); }
+}
+
+/* ---------- copy text ---------- */
+function dayText(k){
+  const d = S.days[k]; if (!d) return '';
+  const L = ['【复盘日 ' + k + ' ' + wdOf(k) + '】'];
+  if (d.preds && d.preds.length){ L.push('预测：'); d.preds.forEach((p, i) => L.push((i + 1) + '. [' + KINDS[p.kind] + '｜' + SRC[p.src] + ' ' + hm(p.at) + '] ' + p.text + (p.result ? ' → ' + RES[p.result] : '') + (p.actual ? '；实际：' + p.actual : ''))); }
+  else L.push('预测：今天没写。');
+  if (d.caps && d.caps.length){ L.push('随手记：'); d.caps.slice().sort((a, b) => a.at.localeCompare(b.at)).forEach(c => L.push('- ' + hm(c.at) + ' [' + ((c.emos || []).join('/') || '未标情绪') + (c.inten ? ' ' + c.inten + '/5' : '') + '] ' + (c.fact || '') + (c.quote ? '；原话：「' + c.quote + '」' : '') + (c.body && c.body.length ? '；身体：' + c.body.join('、') : '') + (c.did ? '；做了：' + c.did : '') + (c.wanted ? '；想做没做：' + c.wanted : '') + (c.care ? '；碰到在乎的：' + c.care : '') + (c.tags && c.tags.length ? '；标记：' + c.tags.join('、') : ''))); }
+  const e = d.evening;
+  if (e && e.raw){
+    const r = e.raw;
+    if (e.mode === 'std'){
+      const A = r.A || {}; const b = [A.b0, A.b1, A.b2].filter(Boolean);
+      if (b.length) L.push('时间最多的三块：' + b.join(' / '));
+      if (A.self) L.push('主动做的事：' + A.self);
+      if (r.surprise) L.push('意外回看：' + r.surprise);
+      const C = r.C || {}; if (C.fact || C.quote) L.push('已写的深挖：' + [C.fact, C.quote && '原话「' + C.quote + '」', C.body && '身体：' + C.body, C.did, C.care && '在乎：' + C.care].filter(Boolean).join('；'));
+    } else { if (r.q1) L.push('不一样的一刻：' + r.q1); if (r.q2) L.push('在乎的：' + r.q2); }
+    if (e.D && e.D.text) L.push('今天的假设：' + e.D.text);
+  }
+  return L.join('\n');
+}
+function hypListText(){
+  const hs = openHyps();
+  if (!hs.length) return '当前假设清单：还是空的。';
+  return '当前假设清单：\n' + hs.map(h => '- [' + (h.status === 'solid' ? '较可信' : '待验证') + '｜支持 ' + evCount(h, 'sup') + '｜反例 ' + evCount(h, 'con') + '] ' + hypText(h)).join('\n');
+}
+const OPENER = '请按 B、C、D 的顺序问我：先对照预测，再挑一个时刻深挖，最后写成一条假设。只问事实，不安慰，不给建议，每次只问一个问题。我开始解释原因或评价自己时，把我拉回「当时发生了什么」。最后帮我把发现写成「在___时，我可能会___」，并指出它和清单里哪一条有关，是支持还是反例。';
+function copyText(txt){
+  const ok = () => toast('已复制，粘贴给 Claude 就行');
+  const fail = () => { ui.copy = txt; render(); window.scrollTo(0, 0); };
+  try { const p = navigator.clipboard && navigator.clipboard.writeText(txt); if (p) p.then(ok, fail); else fail(); } catch (e) { fail(); }
+}
+
+/* ---------- word (.docx) export ---------- */
+const XE = s => String(s == null ? '' : s).replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+function wRun(text, o){
+  o = o || {};
+  const rpr = (o.b ? '<w:b/>' : '') + (o.color ? '<w:color w:val="' + o.color + '"/>' : '');
+  return String(text == null ? '' : text).split('\n').map((t, i) => '<w:r>' + (rpr ? '<w:rPr>' + rpr + '</w:rPr>' : '') + (i ? '<w:br/>' : '') + '<w:t xml:space="preserve">' + XE(t) + '</w:t></w:r>').join('');
+}
+const wP = (runs, style) => '<w:p>' + (style ? '<w:pPr><w:pStyle w:val="' + style + '"/></w:pPr>' : '') + runs + '</w:p>';
+const wH1 = t => wP(wRun(t), 'Heading1'), wH2 = t => wP(wRun(t), 'Heading2'), wTxt = (t, st) => wP(wRun(t), st);
+const wKV = (k, v) => (v && String(v).trim()) ? wP(wRun(k + '：', { b:true, color:'4D596B' }) + wRun(String(v).trim())) : '';
+function momentLabel(k, src){
+  if (!src) return '';
+  const d = S.days[k] || newDay(k);
+  if (src.startsWith('pred:')){ const p = d.preds.find(x => x.id === src.slice(5)); return p ? '落空的预测：' + p.text : ''; }
+  if (src.startsWith('cap:')){ const c = d.caps.find(x => x.id === src.slice(4)); return c ? '随手记 ' + hm(c.at) + ' ' + (c.fact || c.quote || '') : ''; }
+  return src.startsWith('m:') ? src.slice(2) : '';
+}
+function dayDocXml(k){
+  const d = S.days[k] || newDay(k), e = d.evening, B = [];
+  B.push(wTxt('自我观察本', 'Small'));
+  B.push(wTxt(k.slice(0, 4) + '年' + md(k) + ' ' + wdOf(k), 'Title'));
+  B.push(wTxt(e ? (e.mode === 'std' ? '晚上复盘：标准版' : (e.late ? '第二天补记（最低版）' : '晚上复盘：最低版')) : d.skip ? '这一天放过了，原因：' + d.skip.reason : '这一天还没有复盘', 'Small'));
+  B.push(wH1('早上的预测'));
+  if (d.preds.length) d.preds.forEach((p, i) => {
+    B.push(wP(wRun((i + 1) + '. ', { b:true }) + wRun(p.text) + (p.result ? wRun('　' + RES[p.result], { b:true, color:p.result === 'hit' ? '2C7150' : 'B5362B' }) : '')));
+    B.push(wTxt(KINDS[p.kind] + ' · ' + SRC[p.src] + ' ' + hm(p.at) + (p.actual ? ' · 实际：' + p.actual : ''), 'Small'));
+  });
+  else B.push(wTxt('这一天没写预测。', 'Small'));
+  B.push(wH1('随手记'));
+  const caps = (d.caps || []).slice().sort((a, b) => a.at.localeCompare(b.at));
+  if (caps.length) caps.forEach(c => {
+    B.push(wH2(hm(c.at) + ((c.emos && c.emos.length) ? '　' + c.emos.join(' · ') : '') + (c.inten ? '　强度 ' + c.inten + '/5' : '')));
+    if (c.quote) B.push(wTxt('「' + c.quote + '」', 'Quote'));
+    B.push(wKV('发生', c.fact), wKV('身体', (c.body || []).join('、')), wKV('我做了', c.did), wKV('想做没做', c.wanted), wKV('碰到了我在乎的', c.care), wKV('标记', (c.tags || []).join('、')));
+  });
+  else B.push(wTxt('这一天没有随手记。', 'Small'));
+  if (e && e.raw){
+    const r = e.raw;
+    B.push(wH1(e.mode === 'std' ? '晚上复盘' : '最低版三句'));
+    if (e.mode === 'std'){
+      const A0 = r.A || {}, C = r.C || {}, E = r.E || {};
+      B.push(wH2('A 事实'), wKV('时间最多的三块', [A0.b0, A0.b1, A0.b2].filter(Boolean).join(' / ')), wKV('没人要求、自己主动做的事', A0.self));
+      if (r.surprise) B.push(wH2('B 意外回看'), wTxt(r.surprise));
+      if (C.fact || C.quote || C.body || C.did || C.care || C.third){
+        B.push(wH2('C 深挖一个时刻'), wKV('选的时刻', momentLabel(k, C.src)), wKV('那一刻', C.fact), wKV('脑子里的原话', C.quote), wKV('身体的感觉', C.body), wKV('做了什么，想做没做的', C.did), wKV('碰到了我在乎的', C.care), wKV('第三人称', C.third));
+      }
+      if (e.D && e.D.text) B.push(wH2('D 写成一条假设'), wTxt(e.D.text));
+      if (E.watch || E.tmr) B.push(wH2('E 明天'), wKV('留意', E.watch), wKV('给明天出的题', E.tmr));
+    } else {
+      B.push(wKV('哪一刻的我，和以为的自己不一样', r.q1), wKV('那一刻在乎的', r.q2));
+      if (e.D && e.D.text) B.push(wKV('假设', e.D.text));
+    }
+    B.push(wKV('写完的感觉', { light:'轻一点', same:'差不多', heavy:'更沉了' }[e.after]));
+  }
+  B.push(wH1('当前的自我假设清单'));
+  const hs = openHyps();
+  if (hs.length) hs.forEach(h => { B.push(wTxt(hypText(h)), wTxt((h.status === 'solid' ? '较可信' : '待验证') + ' · 支持 ' + evCount(h, 'sup') + ' 次 · 反例 ' + evCount(h, 'con') + ' 次', 'Small')); });
+  else B.push(wTxt('清单还是空的。', 'Small'));
+  B.push(wTxt('导出于 ' + ymd(new Date()) + ' ' + hm(new Date().toISOString()), 'Small'));
+  return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>' + B.filter(Boolean).join('')
+    + '<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1440" w:right="1304" w:bottom="1440" w:left="1304" w:header="708" w:footer="708" w:gutter="0"/></w:sectPr></w:body></w:document>';
+}
+const DOCX_STYLES = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">'
+  + '<w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="Calibri" w:hAnsi="Calibri" w:eastAsia="Microsoft YaHei" w:cs="Calibri"/><w:sz w:val="22"/><w:szCs w:val="22"/><w:lang w:val="en-US" w:eastAsia="zh-CN"/></w:rPr></w:rPrDefault><w:pPrDefault><w:pPr><w:spacing w:after="100" w:line="312" w:lineRule="auto"/></w:pPr></w:pPrDefault></w:docDefaults>'
+  + '<w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/><w:qFormat/></w:style>'
+  + '<w:style w:type="paragraph" w:styleId="Title"><w:name w:val="Title"/><w:basedOn w:val="Normal"/><w:next w:val="Normal"/><w:qFormat/><w:pPr><w:spacing w:after="120"/></w:pPr><w:rPr><w:b/><w:color w:val="1D2C45"/><w:sz w:val="40"/><w:szCs w:val="40"/></w:rPr></w:style>'
+  + '<w:style w:type="paragraph" w:styleId="Heading1"><w:name w:val="heading 1"/><w:basedOn w:val="Normal"/><w:next w:val="Normal"/><w:qFormat/><w:pPr><w:keepNext/><w:spacing w:before="320" w:after="120"/><w:outlineLvl w:val="0"/></w:pPr><w:rPr><w:b/><w:color w:val="23477A"/><w:sz w:val="28"/><w:szCs w:val="28"/></w:rPr></w:style>'
+  + '<w:style w:type="paragraph" w:styleId="Heading2"><w:name w:val="heading 2"/><w:basedOn w:val="Normal"/><w:next w:val="Normal"/><w:qFormat/><w:pPr><w:keepNext/><w:spacing w:before="200" w:after="80"/><w:outlineLvl w:val="1"/></w:pPr><w:rPr><w:b/><w:color w:val="1D2C45"/><w:sz w:val="23"/><w:szCs w:val="23"/></w:rPr></w:style>'
+  + '<w:style w:type="paragraph" w:customStyle="1" w:styleId="Quote"><w:name w:val="Quote Line"/><w:basedOn w:val="Normal"/><w:qFormat/><w:pPr><w:ind w:left="360"/></w:pPr><w:rPr><w:b/><w:color w:val="23477A"/><w:sz w:val="24"/><w:szCs w:val="24"/></w:rPr></w:style>'
+  + '<w:style w:type="paragraph" w:customStyle="1" w:styleId="Small"><w:name w:val="Small Note"/><w:basedOn w:val="Normal"/><w:qFormat/><w:rPr><w:color w:val="7A8494"/><w:sz w:val="19"/><w:szCs w:val="19"/></w:rPr></w:style>'
+  + '</w:styles>';
+const CRC_T = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++){ let c = n; for (let j = 0; j < 8; j++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1); t[n] = c >>> 0; } return t; })();
+function crc32(u){ let c = 0xFFFFFFFF; for (let i = 0; i < u.length; i++) c = CRC_T[(c ^ u[i]) & 0xFF] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; }
+function zipStore(files, type){
+  const enc = new TextEncoder(), parts = [], central = [], now = new Date();
+  const dt = ((now.getHours() << 11) | (now.getMinutes() << 5) | (now.getSeconds() >> 1)) & 0xFFFF;
+  const dd = (((now.getFullYear() - 1980) << 9) | ((now.getMonth() + 1) << 5) | now.getDate()) & 0xFFFF;
+  let off = 0;
+  files.forEach(f => {
+    const nm = enc.encode(f.name), data = enc.encode(f.text), crc = crc32(data), sz = data.length;
+    const lh = new DataView(new ArrayBuffer(30));
+    lh.setUint32(0, 0x04034b50, true); lh.setUint16(4, 20, true); lh.setUint16(6, 0x0800, true); lh.setUint16(8, 0, true);
+    lh.setUint16(10, dt, true); lh.setUint16(12, dd, true); lh.setUint32(14, crc, true); lh.setUint32(18, sz, true); lh.setUint32(22, sz, true);
+    lh.setUint16(26, nm.length, true); lh.setUint16(28, 0, true);
+    parts.push(new Uint8Array(lh.buffer), nm, data);
+    const ch = new DataView(new ArrayBuffer(46));
+    ch.setUint32(0, 0x02014b50, true); ch.setUint16(4, 20, true); ch.setUint16(6, 20, true); ch.setUint16(8, 0x0800, true); ch.setUint16(10, 0, true);
+    ch.setUint16(12, dt, true); ch.setUint16(14, dd, true); ch.setUint32(16, crc, true); ch.setUint32(20, sz, true); ch.setUint32(24, sz, true);
+    ch.setUint16(28, nm.length, true); ch.setUint32(42, off, true);
+    central.push(new Uint8Array(ch.buffer), nm);
+    off += 30 + nm.length + sz;
+  });
+  const cdSize = central.reduce((a, c) => a + c.length, 0), end = new DataView(new ArrayBuffer(22));
+  end.setUint32(0, 0x06054b50, true); end.setUint16(8, files.length, true); end.setUint16(10, files.length, true); end.setUint32(12, cdSize, true); end.setUint32(16, off, true);
+  return new Blob(parts.concat(central, [new Uint8Array(end.buffer)]), { type });
+}
+function buildDocx(docXml){
+  const REL = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/', PKG = 'http://schemas.openxmlformats.org/package/2006/relationships';
+  return zipStore([
+    { name:'[Content_Types].xml', text:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/></Types>' },
+    { name:'_rels/.rels', text:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="' + PKG + '"><Relationship Id="rId1" Type="' + REL + 'officeDocument" Target="word/document.xml"/></Relationships>' },
+    { name:'word/_rels/document.xml.rels', text:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="' + PKG + '"><Relationship Id="rId1" Type="' + REL + 'styles" Target="styles.xml"/></Relationships>' },
+    { name:'word/document.xml', text:docXml },
+    { name:'word/styles.xml', text:DOCX_STYLES }
+  ], 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+}
+
+/* ---------- actions ---------- */
+function needReady(){ if (!ready){ toast('还在打开记录本，稍等几秒再存。'); return false; } return true; }
+function predSrc(k){ const t = dayKey(); if (k > t) return 'eve'; const h = new Date().getHours(); return (k === t && h >= 4 && h < 12) ? 'morning' : 'late'; }
+const A = {
+  open(el){ const extra = null; if (el.dataset.type === 'evening' || el.dataset.type === 'min' || el.dataset.type === 'morning') openForm(el.dataset.type, el.dataset.key, extra); },
+  cancel(){ closeForm(true); render(); },
+  pick(el){ if (!form) return; let v = el.dataset.v; if (/^\d+$/.test(v) && el.dataset.f === 'inten') v = +v; const cur = getPath(form.data, el.dataset.f); setPath(form.data, el.dataset.f, cur === v ? (el.dataset.f === 'D.op' ? cur : '') : v); form.dirty = true; drafts[form.type + ':' + form.key] = form.data; draftLater(); render(); },
+  tog(el){ if (!form) return; const arr = (getPath(form.data, el.dataset.f) || []).slice(), v = el.dataset.v, i = arr.indexOf(v); if (i >= 0) arr.splice(i, 1); else arr.push(v); setPath(form.data, el.dataset.f, arr); form.dirty = true; drafts[form.type + ':' + form.key] = form.data; draftLater(); render(); },
+  more(){ form.data.more = true; render(); const q = $('#f-quote'); if (q) q.focus(); },
+  moment(el){
+    const v = el.dataset.v, x = form.data; x.C = x.C || {};
+    x.C.src = x.C.src === v ? '' : v;
+    if (v.startsWith('cap:') && x.C.src === v){
+      const d = S.days[form.key], c = d && (d.caps || []).find(c2 => c2.id === v.slice(4));
+      if (c){ if (!x.C.fact) x.C.fact = c.fact || ''; if (!x.C.quote) x.C.quote = c.quote || ''; if (!x.C.body) x.C.body = (c.body || []).join('、'); if (!x.C.did) x.C.did = [c.did, c.wanted && '想做没做：' + c.wanted].filter(Boolean).join('；'); if (!x.C.care) x.C.care = c.care || ''; }
+    }
+    if (v.startsWith('pred:') && x.C.src === v){ const p = (S.days[form.key].preds || []).find(p2 => p2.id === v.slice(5)); if (p && !x.C.fact) x.C.fact = (x.R[p.id] && x.R[p.id].a) ? '预测「' + p.text + '」，实际：' + x.R[p.id].a : ''; }
+    form.dirty = true; drafts[form.type + ':' + form.key] = x; draftLater(); render();
+  },
+  testHyp(el){ const h = S.hyps[el.dataset.id]; if (!h) return; const x = form.data; if (x.hid === h.id){ x.hid = null; } else { x.hid = h.id; x.specific = '在' + h.sit + '时，我会' + h.rea; } form.dirty = true; drafts[form.type + ':' + form.key] = x; draftLater(); render(); },
+  async saveMorning(){
+    if (!needReady()) return;
+    const k = form.key, x = form.data, d = getDay(k), now = new Date().toISOString(), src = predSrc(k);
+    [['avoid', x.avoid], ['emotion', x.emotion], ['specific', x.specific]].forEach(p => { const t = (p[1] || '').trim(); if (t) d.preds.push({ id:newId(), kind:p[0], text:t, hid:p[0] === 'specific' ? (x.hid || null) : null, at:now, src, result:'', actual:'' }); });
+    if (!d.preds.length){ toast('至少写一条。'); return; }
+    closeForm(); render();
+    try { await put('days', k, d); toast('存好了。晚上见。'); } catch (e) {}
+  },
+  delPred(el){ if (!needReady()) return; const d = getDay(el.dataset.key); d.preds = d.preds.filter(p => p.id !== el.dataset.id); put('days', el.dataset.key, d).catch(() => {}); render(); },
+  async saveEvening(){
+    if (!needReady()) return;
+    const k = form.key, x = clone(form.data), d = getDay(k), now = new Date().toISOString(), prev = d.evening && d.evening.mode === 'std' ? d.evening : null;
+    applyResults(d, x.R);
+    const ev = { mode:'std', at:prev ? prev.at : now, edited:prev ? now : null, after:x.after || '', surprise:(x.surprise || '').trim(), raw:x, D:prev ? prev.D : null, E:prev ? prev.E : null };
+    const writes = [];
+    if (!prev || !prev.D || prev.D.op === 'none'){ ev.D = applyD(k, x.D, writes); }
+    ev.E = applyE(k, x.E, prev && prev.E, writes);
+    d.evening = ev; delete d.skip; d.skip = null;
+    closeForm(); render();
+    try { await put('days', k, d); for (const w of writes) await w(); toast(hypToast(ev.D) || '写完了。'); } catch (e) {}
+  },
+  async saveMin(){
+    if (!needReady()) return;
+    const k = form.key, x = clone(form.data), d = getDay(k), now = new Date().toISOString(), prev = d.evening && d.evening.mode === 'min' ? d.evening : null;
+    applyResults(d, x.R);
+    const ev = { mode:'min', at:prev ? prev.at : now, late:k < dayKey(), after:x.after || '', raw:x, D:prev ? prev.D : null };
+    const writes = [];
+    if ((!prev || !prev.D || prev.D.op === 'none') && ((x.D.sit || '').trim() || (x.D.rea || '').trim())) ev.D = applyD(k, { op:'new', sit:x.D.sit, rea:x.D.rea, ev:x.q1 || '' }, writes);
+    d.evening = ev; d.skip = null;
+    closeForm(); ui.skipOpen = false; render();
+    try { await put('days', k, d); for (const w of writes) await w(); toast(hypToast(ev.D) || '收好尾了。'); } catch (e) {}
+  },
+  skipOpen(){ ui.skipOpen = !ui.skipOpen; render(); },
+  async skip(el){ if (!needReady()) return; const d = getDay(el.dataset.key); d.skip = { reason:el.dataset.v, at:new Date().toISOString() }; ui.skipOpen = false; render(); try { await put('days', el.dataset.key, d); toast('放过了。今天别再空着就好。'); } catch (e) {} },
+  async saveCap(){
+    if (!needReady()) return;
+    const x = clone(form.data);
+    if (!(x.fact || '').trim() && !(x.quote || '').trim() && !(x.emos || []).length){ toast('至少写一句发生了什么，或者点一个情绪。'); return; }
+    const editing = form.key !== 'new';
+    const k = editing ? form.key.split('|')[0] : dayKey(), id = editing ? form.key.split('|')[1] : newId();
+    const d = getDay(k), old = d.caps.find(c => c.id === id);
+    const c = { id, at:old ? old.at : new Date().toISOString(), fact:(x.fact || '').trim(), emos:x.emos || [], inten:x.inten || 0, quote:(x.quote || '').trim(), body:x.body || [], did:(x.did || '').trim(), wanted:(x.wanted || '').trim(), care:(x.care || '').trim(), tags:x.tags || [] };
+    c.done = !!(c.quote || c.care);
+    d.caps = old ? d.caps.map(c2 => c2.id === id ? c : c2) : d.caps.concat([c]);
+    delete drafts[form.type + ':' + form.key]; saveDrafts();
+    form = null; ui.fresh = id; route = 'capture'; if (location.hash !== '#capture') history.replaceState(null, '', '#capture');
+    render(); window.scrollTo(0, 0);
+    try { await put('days', k, d); toast(c.done ? '记下了，也理清了。' : '记下了。晚上或者有空时再理清。'); } catch (e) {}
+    setTimeout(() => { ui.fresh = null; }, 4000);
+  },
+  editCap(el){ const k = el.dataset.key, d = S.days[k], c = d && d.caps.find(c2 => c2.id === el.dataset.id); if (!c) return; form = null; route = 'capture'; if (location.hash !== '#capture') history.replaceState(null, '', '#capture'); const id = 'capture:' + k + '|' + c.id; form = { type:'capture', key:k + '|' + c.id, data:drafts[id] ? clone(drafts[id]) : Object.assign(clone(c), { more:true }), dirty:false }; render(); window.scrollTo(0, 0); },
+  async delCap(){ if (!needReady()) return; const p = form.key.split('|'), d = getDay(p[0]); d.caps = d.caps.filter(c => c.id !== p[1]); delete drafts['capture:' + form.key]; saveDrafts(); form = null; render(); try { await put('days', p[0], d); toast('删掉了。'); } catch (e) {} },
+  async saveWeek(){ if (!needReady()) return; const k = form.key, data = clone(form.data); data.at = new Date().toISOString(); delete drafts['week:' + k]; saveDrafts(); form.dirty = false; try { await put('weeks', k, data); toast('周复盘存好了。去清单里更新一下假设。'); } catch (e) {} render(); },
+  weekNav(el){ const k = addDays(form.key, +el.dataset.v); ui.weekKey = k; form = null; render(); },
+  goWeek(el){ ui.weekKey = el.dataset.key; form = null; if (location.hash === '#week'){ route = 'week'; render(); } else location.hash = '#week'; },
+  hypNew(){ ui.hypNew = !ui.hypNew; render(); const i = $('#hn-sit'); if (i) i.focus(); },
+  hypNewCancel(){ ui.hypNew = false; render(); },
+  async hypNewSave(){ if (!needReady()) return; const sit = $('#hn-sit').value.trim(), rea = $('#hn-rea').value.trim(), note = $('#hn-ev').value.trim(); if (!sit || !rea){ toast('情境和反应都要写。'); return; } const h = { id:newId(), sit, rea, created:dayKey(), updated:new Date().toISOString(), status:'test', ev:note ? [{ date:dayKey(), kind:'sup', note }] : [], parent:null, child:null }; ui.hypNew = false; render(); try { await put('hyps', h.id, h); render(); } catch (e) {} },
+  hypAct(el){ ui.hypOpen = { id:el.dataset.id, act:el.dataset.v }; render(); const i = $('#hx-note') || $('#hx-sit'); if (i) i.focus(); },
+  hypClose(){ ui.hypOpen = null; render(); },
+  async hypEv(el){ if (!needReady()) return; const h = clone(S.hyps[el.dataset.id]); if (!h) return; const note = ($('#hx-note').value || '').trim(); h.ev = (h.ev || []).concat([{ date:dayKey(), kind:el.dataset.v, note }]); h.updated = new Date().toISOString(); ui.hypOpen = null; render(); try { await put('hyps', h.id, h); render(); if (el.dataset.v === 'con') toast('反例记下了。它是新信息：试试缩小这条的条件。'); } catch (e) {} },
+  async hypStatus(el){ if (!needReady()) return; const h = clone(S.hyps[el.dataset.id]); if (!h) return; h.status = el.dataset.v; h.updated = new Date().toISOString(); render(); try { await put('hyps', h.id, h); render(); } catch (e) {} },
+  async hypRevise(el){
+    if (!needReady()) return;
+    const old = clone(S.hyps[el.dataset.id]); if (!old) return;
+    const sit = $('#hx-sit').value.trim(), rea = $('#hx-rea').value.trim();
+    if (!sit || !rea){ toast('情境和反应都要写。'); return; }
+    if (sit === old.sit && rea === old.rea){ toast('还没改动。'); return; }
+    const now = new Date().toISOString(), t = dayKey();
+    const n = { id:newId(), sit, rea, created:t, updated:now, status:'test', ev:[], parent:old.id, child:null };
+    old.status = 'revised'; old.revisedOn = t; old.child = n.id; old.updated = now;
+    ui.hypOpen = null; render();
+    try { await put('hyps', n.id, n); await put('hyps', old.id, old); render(); toast('改写了。这就是一次重新认识。'); } catch (e) {}
+  },
+  async hypDel(el){ if (!needReady()) return; const id = el.dataset.id; ui.hypOpen = null; render(); try { await remove('hyps', id); render(); } catch (e) {} },
+  logOpen(el){ ui.logOpen = ui.logOpen === el.dataset.key ? null : el.dataset.key; render(); },
+  copy(el){ const k = el.dataset.key; copyText(dayText(k) + '\n\n' + hypListText() + '\n\n' + OPENER); },
+  copyAll(){ const ks = Object.keys(S.days).filter(k => k <= dayKey()).sort(); copyText(ks.map(dayText).filter(Boolean).join('\n\n') + '\n\n' + hypListText()); },
+  closeCopy(){ ui.copy = null; render(); },
+  importPick(){ const i = $('#importFile'); if (i){ i.value = ''; i.click(); } },
+  async wordDay(el){
+    if (!dlNs){ toast('这里不能保存文件，可以先用「复制给 Claude」把文字留下来。'); return; }
+    const k = el.dataset.key;
+    let blob;
+    try { blob = buildDocx(dayDocXml(k)); } catch (e){ toast('生成 Word 时出错了，先用「复制给 Claude」把文字留下来。'); return; }
+    try { await dlNs.save({ filename:'复盘-' + k + '.docx', data:blob }); toast('Word 保存好了。'); }
+    catch (e){
+      if (e && e.code === 'declined') return;
+      if (e && e.code === 'rate_limited') toast('上一个保存窗口还开着，处理完再点一次。');
+      else toast('没保存成功，可以先用「复制给 Claude」把文字留下来。');
+    }
+  },
+  async export(){
+    if (!dlNs){ toast('这里不能导出文件，用「复制全部为文字」。'); return; }
+    try { await dlNs.save({ filename:'自我观察本-' + dayKey() + '.json', data:JSON.stringify({ exportedAt:new Date().toISOString(), days:S.days, hyps:S.hyps, weeks:S.weeks }, null, 2) }); try { localStorage.setItem('zwgcb-lastbackup', dayKey()); } catch (e2) {} toast('备份导出好了。'); render(); }
+    catch (e){ if (!e || e.code !== 'declined') toast('导出没成功，可以先用「复制全部为文字」。'); }
+  }
+};
+function applyResults(d, R){ d.preds = d.preds.map(p => { const r = R && R[p.id]; return r ? Object.assign({}, p, { result:r.r || '', actual:(r.a || '').trim() }) : p; }); }
+function applyD(k, D, writes){
+  if (!D || D.op === 'none') return { op:'none' };
+  const now = new Date().toISOString();
+  if (D.op === 'new'){
+    const sit = (D.sit || '').trim(), rea = (D.rea || '').trim();
+    if (!sit && !rea) return { op:'none' };
+    const h = { id:newId(), sit:sit || '（情境没写）', rea:rea || '（反应没写）', created:k, updated:now, status:'test', ev:[{ date:k, kind:'sup', note:(D.ev || '').trim() }], parent:null, child:null };
+    writes.push(() => put('hyps', h.id, h));
+    return { op:'new', hid:h.id, text:hypText(h), line:'<div class="hmeta"><span class="st test">新假设</span></div>' + hypLines(h) };
+  }
+  if (D.op === 'old' && D.hid && S.hyps[D.hid]){
+    const h = clone(S.hyps[D.hid]), kind = D.kind === 'con' ? 'con' : 'sup';
+    h.ev = (h.ev || []).concat([{ date:k, kind, note:(D.ev || '').trim() }]); h.updated = now;
+    writes.push(() => put('hyps', h.id, h));
+    return { op:'old', hid:h.id, kind, text:hypText(h) + '（' + (kind === 'con' ? '反例' : '支持') + '）', line:'<div class="hmeta"><span class="st ' + (kind === 'con' ? 'revised' : 'test') + '">' + (kind === 'con' ? '记了一次反例' : '记了一次支持') + '</span></div>' + hypLines(h) };
+  }
+  return { op:'none' };
+}
+function applyE(k, E, prevE, writes){
+  E = E || {};
+  const out = { watch:(E.watch || '').trim(), tmr:(E.tmr || '').trim(), predId:prevE ? prevE.predId : null };
+  const nk = addDays(k, 1);
+  if (out.tmr || out.predId){
+    const nd = getDay(nk);
+    if (out.predId && nd.preds.some(p => p.id === out.predId)){
+      if (out.tmr) nd.preds = nd.preds.map(p => p.id === out.predId ? Object.assign({}, p, { text:out.tmr }) : p);
+      else { nd.preds = nd.preds.filter(p => p.id !== out.predId); out.predId = null; }
+    } else if (out.tmr){
+      out.predId = newId();
+      nd.preds.push({ id:out.predId, kind:'specific', text:out.tmr, hid:null, at:new Date().toISOString(), src:'eve', result:'', actual:'' });
+    }
+    writes.push(() => put('days', nk, nd));
+  }
+  return out;
+}
+function hypToast(D){
+  if (!D || D.op === 'none') return '';
+  if (D.op === 'new') return '写完了。新假设进了清单。';
+  const h = S.hyps[D.hid]; if (!h) return '写完了。';
+  const sup = evCount(h, 'sup'), con = evCount(h, 'con');
+  if (D.kind === 'con') return '记了一次反例。去清单里缩小它的条件。';
+  if (h.status === 'test' && sup >= 3 && con === 0) return '这条已经支持 ' + sup + ' 次，可以在清单里升为「较可信」。';
+  return '写完了。';
+}
+
+/* ---------- events ---------- */
+document.addEventListener('click', e => {
+  const tab = e.target.closest('.tabs a');
+  if (tab && tab.getAttribute('href') === (location.hash || '#today')){ e.preventDefault(); onHash(); return; }
+  const el = e.target.closest('[data-act]'); if (!el) return;
+  const f = A[el.dataset.act]; if (f){ e.preventDefault(); f(el, e); }
+});
+document.addEventListener('input', e => {
+  const el = e.target; if (!form || !el.dataset || !el.dataset.f) return;
+  setPath(form.data, el.dataset.f, el.value); form.dirty = true;
+  drafts[form.type + ':' + form.key] = form.data; draftLater();
+  if (el.dataset.f === 'specific'){ const w = $('#w-specific'); if (w) w.textContent = vagueWarn(el.value); }
+  if (el.dataset.f === 'E.tmr'){ const w = $('#w-tmr'); if (w) w.textContent = vagueWarn(el.value); }
+  if (el.dataset.live === 'hyp'){ const w = $('#w-hyp'); if (w) w.textContent = hypWarn((form.data.D.sit || '') + (form.data.D.rea || '')); }
+});
+function onHash(){
+  const r = (location.hash || '#today').slice(1);
+  route = ['today','log','capture','hyps','week'].includes(r) ? r : 'today';
+  if (form && form.dirty){ drafts[form.type + ':' + form.key] = form.data; saveDrafts(); }
+  form = null; ui.hypOpen = null; ui.hypNew = false; ui.copy = null;
+  render(); window.scrollTo(0, 0);
+}
+window.addEventListener('hashchange', onHash);
+document.addEventListener('change', e => { if (e.target && e.target.id === 'importFile' && e.target.files && e.target.files[0]) importFile(e.target.files[0]); });
+const r0 = (location.hash || '#today').slice(1); route = ['today','log','capture','hyps','week'].includes(r0) ? r0 : 'today';
+init();
+})();
+</script>
+<script>
+if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+  window.addEventListener('load', () => { navigator.serviceWorker.register('./sw.js').catch(() => {}); });
+}
+</script>
+</body>
+</html>
