@@ -170,6 +170,47 @@ textarea:focus,input[type=text]:focus,input[type=date]:focus{ outline:none; bord
 .capmini .linkbtn{ min-width:0; flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; text-align:left; }
 .capmini .pending{ flex:none; padding-top:2px; }
 .cool{ border-color:var(--blue); background:var(--blue-soft); }
+.hno{ font-family:var(--f-mono); font-size:12px; font-weight:600; color:var(--blue); border:1px solid var(--blue); border-radius:4px; padding:0 5px; line-height:1.6; flex:none; white-space:nowrap; }
+.pins{ list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:12px; }
+.pins li{ display:flex; gap:10px; align-items:flex-start; min-width:0; }
+.pin-b,.pv-b{ flex:1; min-width:0; display:flex; flex-direction:column; gap:3px; }
+.pin-t{ font-size:15px; line-height:1.55; overflow-wrap:anywhere; }
+.hmeta b{ font-weight:500; color:var(--ink); }
+.hmeta .c, .hmeta .c b{ color:var(--red); }
+.old{ text-decoration:line-through; text-decoration-color:var(--red); color:var(--ink-3); overflow-wrap:anywhere; }
+.arc{ background:var(--card); border:1px solid var(--line); border-radius:10px; padding:14px 16px; display:flex; flex-direction:column; gap:10px; min-width:0; }
+.arc-head{ font-family:var(--f-display); font-size:18px; font-weight:700; line-height:1.5; text-wrap:balance; overflow-wrap:anywhere; }
+.arc-pts{ margin:0; padding-left:1.2em; display:flex; flex-direction:column; gap:4px; font-size:14px; color:var(--ink-2); }
+.arc-pts li{ overflow-wrap:anywhere; }
+.arc-sec{ font-weight:700; font-size:14px; border-top:1px solid var(--line); padding-top:10px; margin-top:2px; }
+.arc-h{ display:flex; flex-direction:column; gap:6px; }
+.arc-moment{ margin:0; font-size:14px; }
+.arc-mini{ margin:0; font-weight:600; overflow-wrap:anywhere; }
+.tl{ margin:0; padding-left:1.5em; display:flex; flex-direction:column; gap:6px; font-size:14px; }
+.tl li, .gaps li{ overflow-wrap:anywhere; }
+.gaps{ margin:0; padding-left:1.2em; font-size:13.5px; color:var(--ink-2); }
+.kv.nx{ grid-template-columns:1fr; gap:2px; }
+.kv.nx dd{ margin-bottom:6px; }
+.qs{ list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:8px; font-size:14px; }
+.qs li{ display:flex; gap:8px; align-items:flex-start; min-width:0; }
+.qs li > span{ min-width:0; overflow-wrap:anywhere; }
+.qs li.done > span{ text-decoration:line-through; color:var(--ink-3); }
+.qbtn{ flex:none; width:24px; height:24px; border-radius:5px; border:1px solid var(--line); background:var(--card); font-size:12px; line-height:1; padding:0; color:var(--ink-3); }
+.qs li.done .qbtn{ background:var(--green-soft); border-color:var(--green); color:var(--green); }
+details.cv, details.hist, details.drafts{ font-size:13.5px; color:var(--ink-2); }
+details summary{ cursor:pointer; }
+details.cv{ border:1px dashed var(--line); border-radius:8px; padding:8px 12px; }
+details.cv ul, details.drafts ul, details.hist ol{ margin:8px 0 0; padding-left:1.2em; display:flex; flex-direction:column; gap:6px; }
+.strg{ font-size:11px; border-radius:3px; padding:0 4px; margin:0 5px; }
+.strg.strong{ background:var(--blue-soft); color:var(--blue); }
+.strg.weak{ color:var(--ink-3); border:1px solid var(--line); }
+.errbox{ border:1px solid var(--red); background:var(--red-soft); border-radius:8px; padding:10px 12px; font-size:14px; display:flex; flex-direction:column; gap:4px; }
+.errbox p{ margin:0; overflow-wrap:anywhere; }
+.errbox b{ color:var(--red); }
+.pv{ gap:10px; }
+.pv-row{ display:flex; gap:8px; align-items:flex-start; font-size:14px; }
+.mono-in{ font-family:var(--f-mono); }
+.pen.half{ color:var(--ink-2); }
 .evt-title{ font-weight:700; font-size:16px; line-height:1.45; overflow-wrap:anywhere; }
 .evt .kv{ grid-template-columns:5.2em 1fr; }
 
@@ -252,6 +293,8 @@ const TAGS = ['预测落空','不像自己','拖延','冲突','纠结','高光']
 const SKIPR = ['太累','忘了','不想面对','没时间','其他'];
 const VAGUE = ['充实','好好','努力','认真','尽量','高效','顺利','不错','加油','开心','积极','争取','适当','多一点','少一点','状态好'];
 const MOMENTS = ['情绪最强的一刻','最不像自己的一刻','最有劲的一刻','别的时刻'];
+const FORMAT = 'review-archive/v1';
+const OFFLINE_APP = true;
 const LS_KEY = 'zwgcb-data-v1', LS_DRAFT = 'zwgcb-drafts-v1';
 
 /* ---------- utils ---------- */
@@ -273,7 +316,10 @@ const newDay = k => ({ date:k, preds:[], caps:[], evening:null, skip:null });
 const getDay = k => clone(S.days[k]) || newDay(k);
 const sitOf = h => String(h.sit || '').trim().replace(/(的时候|时候|时)$/, '');
 const reaOf = h => String(h.rea || '').trim().replace(/^(我可能会|可能会)/, '');
-const hypText = h => '在' + sitOf(h) + '时，我可能会' + reaOf(h);
+const composeHyp = (sit, rea) => '在' + sitOf({ sit }) + '时，我可能会' + reaOf({ rea });
+const hypText = h => (h && h.text && String(h.text).trim()) || composeHyp(h && h.sit, h && h.rea);
+const validDate = d => typeof d === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(d) && ymd(parse(d)) === d;
+const trunc = (s, n) => { s = String(s || ''); return s.length > n ? s.slice(0, n) + '…' : s; };
 function setPath(o, path, v){ const ps = path.split('.'); let c = o; for (let i = 0; i < ps.length - 1; i++){ if (c[ps[i]] == null || typeof c[ps[i]] !== 'object') c[ps[i]] = {}; c = c[ps[i]]; } c[ps[ps.length - 1]] = v; }
 function getPath(o, path){ return path.split('.').reduce((c, p) => c == null ? undefined : c[p], o); }
 let toastT = null;
@@ -287,13 +333,13 @@ function errMsg(e){
 }
 
 /* ---------- state ---------- */
-let S = { days:{}, hyps:{}, weeks:{}, events:{} };
-const COLS = ['days','hyps','weeks','events'];
+let S = { days:{}, hyps:{}, weeks:{}, events:{}, archives:{}, meta:{} };
+const COLS = ['days','hyps','weeks','events','archives','meta'];
 let mode = 'init';           // init | cloud | local
 let ready = false, slow = false, migrated = false;
 let route = 'today';
 let form = null;             // {type, key, data, dirty}
-let ui = { skipOpen:false, logOpen:null, hypOpen:null, hypNew:false, copy:null, fresh:null, weekKey:null };
+let ui = { skipOpen:false, logOpen:null, hypOpen:null, hypNew:false, copy:null, fresh:null, weekKey:null, arcDel:null };
 let drafts = {};
 try { drafts = JSON.parse(localStorage.getItem(LS_DRAFT) || '{}') || {}; } catch (e) { drafts = {}; }
 let dlNs = null;
@@ -301,7 +347,7 @@ let dlNs = null;
 /* ---------- storage ---------- */
 let base = null;
 const queues = {};
-function lsWrite(){ try { localStorage.setItem(LS_KEY, JSON.stringify({ days:S.days, hyps:S.hyps, weeks:S.weeks, events:S.events, savedAt:Date.now() })); return true; } catch (e) { return false; } }
+function lsWrite(){ try { const o = { savedAt:Date.now() }; COLS.forEach(c => { o[c] = S[c]; }); localStorage.setItem(LS_KEY, JSON.stringify(o)); return true; } catch (e) { return false; } }
 function lsRead(){ try { return JSON.parse(localStorage.getItem(LS_KEY) || 'null'); } catch (e) { return null; } }
 function put(col, id, data){
   S[col] = Object.assign({}, S[col]); S[col][id] = data;
@@ -332,8 +378,8 @@ function useLocal(){
   if (mode === 'cloud') return;
   mode = 'local';
   const l = lsRead();
-  if (l){ S = { days:l.days || {}, hyps:l.hyps || {}, weeks:l.weeks || {}, events:l.events || {} }; }
-  ready = true; refresh();
+  if (l){ const n = {}; COLS.forEach(c => { n[c] = (l[c] && typeof l[c] === 'object') ? l[c] : {}; }); S = n; }
+  ready = true; refresh(); migrateHyps();
 }
 function startCloud(db, uid){
   mode = 'cloud';
@@ -342,7 +388,7 @@ function startCloud(db, uid){
   const slowT = setTimeout(() => { if (!COLS.every(c => definite[c])){ slow = true; syncLabel(); } }, 10000);
   const done = () => {
     if (COLS.every(c => loaded[c]) && !ready){ ready = true; }
-    if (COLS.every(c => definite[c])){ clearTimeout(slowT); slow = false; migrate(); }
+    if (COLS.every(c => definite[c])){ clearTimeout(slowT); slow = false; migrate().then(() => migrateHyps()); }
     refresh();
   };
   const sub = (col, q) => q.onSnapshot(snap => {
@@ -353,6 +399,8 @@ function startCloud(db, uid){
   sub('hyps', base.collection('hyps'));
   sub('weeks', base.collection('weeks'));
   sub('events', base.collection('events'));
+  sub('archives', base.collection('archives'));
+  sub('meta', base.collection('meta'));
 }
 async function migrate(){
   if (migrated) return; migrated = true;
@@ -374,7 +422,7 @@ function syncLabel(){
   const el = $('#sync');
   let t = '连接中', w = false;
   if (mode === 'cloud') { t = !ready ? '载入中' : slow ? '连接慢，可能不是最新' : '已同步 · 仅自己可见'; w = slow; }
-  else if (mode === 'local') { t = '离线可用 · 存在这部手机'; w = false; }
+  else if (mode === 'local') { t = OFFLINE_APP ? '离线可用 · 存在这部手机' : '只存在这台设备'; w = !OFFLINE_APP; }
   el.textContent = t; el.classList.toggle('warn', w);
 }
 function saveFile(filename, data){
@@ -398,30 +446,6 @@ function saveFile(filename, data){
   }
   return Promise.resolve(download());
 }
-function importFile(f){
-  const r = new FileReader();
-  r.onload = () => {
-    let o = null; try { o = JSON.parse(r.result); } catch (e) {}
-    if (!o || typeof o !== 'object' || !o.days || typeof o.days !== 'object'){ toast('这个文件里没有自我观察本的记录。确认是从「导出备份」得到的 JSON。'); return; }
-    let n = 0, skipped = 0;
-    COLS.forEach(col => {
-      const src = (o[col] && typeof o[col] === 'object') ? o[col] : {};
-      Object.keys(src).forEach(id => { if (!S[col][id]){ S[col][id] = src[id]; n++; } else skipped++; });
-    });
-    if (!lsWrite()){ toast('没导入成功：这个浏览器不允许存储。'); return; }
-    toast('导入了 ' + n + ' 条' + (skipped ? '，跳过 ' + skipped + ' 条这里已经有的' : '') + '。');
-    render();
-  };
-  r.onerror = () => toast('这个文件读不出来。');
-  r.readAsText(f);
-}
-function backupLine(){
-  if (Object.keys(S.days).length < 3) return '';
-  let lb = null; try { lb = localStorage.getItem('zwgcb-lastbackup'); } catch (e) {}
-  if (!lb) return '<p class="warn" style="margin:0">记录只存在这部手机里，还没导出过备份。去「记录」页导出一份。</p>';
-  const n = Math.round((parse(dayKey()) - parse(lb)) / 864e5);
-  return n >= 7 ? '<p class="warn" style="margin:0">上次导出备份是 ' + n + ' 天前，去「记录」页再导一份。</p>' : '';
-}
 async function init(){
   dlNs = { save:({ filename, data }) => saveFile(filename, data) };
   useLocal();
@@ -431,7 +455,7 @@ async function init(){
 /* ---------- derived ---------- */
 function dayStatus(k, t){
   if (k > t) return 'future';
-  const d = S.days[k], evs = eventsOn(k).length; if (!d) return evs ? 'part' : 'none';
+  const d = S.days[k], evs = eventsOn(k).length + archivesOn(k).length; if (!d) return evs ? 'part' : 'none';
   if (d.evening) return d.evening.mode === 'std' ? 'std' : 'min';
   if (d.skip) return 'skip';
   if ((d.preds && d.preds.length) || (d.caps && d.caps.length) || evs) return 'part';
@@ -460,14 +484,15 @@ function weekData(ws){
   Object.values(S.hyps).forEach(h => {
     if (h.created >= ws && h.created <= we) r.newHyps.push(h);
     (h.ev || []).forEach(e => { if (e.date >= ws && e.date <= we){ if (e.kind === 'sup') r.sup++; else r.con++; } });
-    if (h.status === 'revised' && h.revisedOn >= ws && h.revisedOn <= we) r.revised.push(h);
+    (h.history || []).forEach(v => { if (v.to >= ws && v.to <= we) r.revised.push(h); });
   });
   r.evs = Object.values(S.events).filter(e => e.date >= ws && e.date <= we).sort((a, b) => a.date.localeCompare(b.date));
+  r.arcs = Object.values(S.archives || {}).filter(a => a.date >= ws && a.date <= we).sort((a, b) => a.date.localeCompare(b.date));
   r.evs.forEach(e => { if (e.gap) r.surprises.push({ k:e.date, text:(e.title ? e.title + '：' : '') + e.gap, label:'单件复盘 · 事后回想的预期' }); });
   r.newInfo = r.misses.length + r.surprises.length + (r.tags['不像自己'] || 0) + r.con + r.revised.length;
   return r;
 }
-function lastRevision(){ let l = null; Object.values(S.hyps).forEach(h => { if (h.status === 'revised' && h.revisedOn && (!l || h.revisedOn > l)) l = h.revisedOn; }); return l; }
+function lastRevision(){ let l = null; Object.values(S.hyps).forEach(h => { if (h.revisedOn && (!l || h.revisedOn > l)) l = h.revisedOn; }); return l; }
 function fuseOn(){
   const t = dayKey();
   const ev = Object.values(S.days).filter(d => d.evening && d.evening.after && d.date >= addDays(t, -6)).sort((a, b) => b.date.localeCompare(a.date)).slice(0, 3);
@@ -476,7 +501,8 @@ function fuseOn(){
 const openHyps = () => Object.values(S.hyps).filter(h => h.status !== 'revised').sort((a, b) => (b.updated || '').localeCompare(a.updated || ''));
 const eventsOn = k => Object.values(S.events || {}).filter(e => e.date === k).sort((a, b) => (a.created || '').localeCompare(b.created || ''));
 const eventForCap = (k, id) => Object.values(S.events || {}).find(e => e.capRef === k + '|' + id);
-const allDayKeys = () => Array.from(new Set(Object.keys(S.days).concat(Object.values(S.events || {}).map(e => e.date))));
+const archivesOn = k => Object.values(S.archives || {}).filter(r => r.date === k).sort((a, b) => String(a.imported || '').localeCompare(String(b.imported || '')));
+const allDayKeys = () => Array.from(new Set(Object.keys(S.days).concat(Object.values(S.events || {}).map(e => e.date), Object.values(S.archives || {}).map(r => r.date))));
 function capByRef(ref){
   if (!ref) return null;
   const p = ref.split('|'), d = S.days[p[0]], c = d && (d.caps || []).find(x => x.id === p[1]);
@@ -494,6 +520,226 @@ function prefillFromCap(data, k, id){
   if (!(data.body || []).length) data.body = (c.body || []).slice();
   if (!data.care) data.care = c.care || '';
 }
+
+/* ---------- hypotheses: fixed numbers, history, evidence strength ---------- */
+const hypNo = h => (h && h.no) ? 'H' + h.no : 'H?';
+function maxNo(hs){ let m = 0; Object.values(hs || {}).forEach(h => { if (h && h.no > m) m = h.no; }); return m; }
+const curSeq = () => (S.meta && S.meta.counters && S.meta.counters.hypSeq) || 0;
+const nextNo = () => Math.max(curSeq(), maxNo(S.hyps)) + 1;
+function claimNo(){ const n = nextNo(); put('meta', 'counters', { hypSeq:n }).catch(() => {}); return n; }
+function makeHyp(o){
+  return { id:newId(), no:o.no || claimNo(), text:o.text || composeHyp(o.sit, o.rea), sit:o.sit || null, rea:o.rea || null, created:o.date || dayKey(), updated:new Date().toISOString(), status:'test', ev:o.ev || [], history:[], revisedOn:null, origin:o.origin || 'app', verBy:null };
+}
+function pushHistory(h, date){
+  h.history = (h.history || []).concat([{ text:hypText(h), sit:h.sit || null, rea:h.rea || null, ev:h.ev || [], from:h.revisedOn || h.created, to:date, by:h.verBy || null, prevRevisedOn:h.revisedOn || null }]);
+}
+function evStats(ev){ const r = { sup:0, con:0, supW:0, conW:0 }; (ev || []).forEach(e => { if (e.kind === 'con'){ r.con++; if (e.str === 'weak') r.conW++; } else { r.sup++; if (e.str === 'weak') r.supW++; } }); return r; }
+const evLi = e => '<li class="' + (e.kind === 'con' ? 'c' : '') + '"><span class="mono">' + (e.date ? mdShort(e.date) : '') + '</span> ' + (e.kind === 'con' ? '反例' : '支持') + '<span class="strg ' + (e.str === 'weak' ? 'weak' : 'strong') + '">' + (e.str === 'weak' ? '弱' : '强') + '</span>' + (e.note ? esc(e.note) : '') + '</li>';
+const strSeg = () => '<div class="f"><div class="lab">证据强度</div>' + segHTML('D.str', [['strong','强 · 当时记下或预测过'],['weak','弱 · 事后回想']]) + '</div>';
+let hypsMigrated = false;
+async function migrateHyps(){
+  if (hypsMigrated || !ready) return;
+  hypsMigrated = true;
+  const hs = clone(S.hyps) || {}, puts = {}, dels = new Set();
+  // fold the old "revised → new copy" chains into one numbered hypothesis with history
+  Object.values(hs).forEach(h => {
+    if (h.status === 'revised' || !h.parent || !hs[h.parent]) return;
+    const hist = []; let p = hs[h.parent], guard = 0;
+    while (p && guard++ < 50){ hist.unshift({ text:hypText(p), sit:p.sit || null, rea:p.rea || null, ev:p.ev || [], from:p.created, to:p.revisedOn || h.created, by:null, prevRevisedOn:null }); dels.add(p.id); p = p.parent ? hs[p.parent] : null; }
+    h.history = hist.concat(Array.isArray(h.history) ? h.history : []); h.revisedOn = h.revisedOn || h.created; h.parent = null; puts[h.id] = h;
+  });
+  Object.values(hs).forEach(h => { if (h.status === 'revised' && !dels.has(h.id)){ h.status = 'test'; h.child = null; puts[h.id] = h; } });
+  dels.forEach(id => { delete hs[id]; delete puts[id]; });
+  let n = Math.max(curSeq(), maxNo(hs));
+  const seen = new Set();
+  Object.values(hs).sort((a, b) => String(a.created || '').localeCompare(String(b.created || '')) || String(a.id).localeCompare(String(b.id))).forEach(h => {
+    if (!h.text){ h.text = composeHyp(h.sit, h.rea); puts[h.id] = h; }
+    if (!Array.isArray(h.history)){ h.history = []; puts[h.id] = h; }
+    if (!h.no || seen.has(h.no)){ h.no = ++n; puts[h.id] = h; }
+    seen.add(h.no);
+  });
+  const ids = Object.keys(puts);
+  if (!ids.length && !dels.size && n <= curSeq()) return;
+  try {
+    await Promise.all(ids.map(id => put('hyps', id, puts[id])).concat(Array.from(dels).map(id => remove('hyps', id))));
+    if (n > curSeq()) await put('meta', 'counters', { hypSeq:n });
+  } catch (e) { hypsMigrated = false; }
+  refresh();
+}
+function capEvidenceOps(k, c, old){
+  const src = 'cap:' + k + '|' + c.id, ids = new Set([old && old.hyp, c.hyp].filter(Boolean)), ops = [];
+  ids.forEach(hid => {
+    if (!S.hyps[hid]) return;
+    const h = clone(S.hyps[hid]), before = JSON.stringify(h.ev || []);
+    h.ev = (h.ev || []).filter(e => e.src !== src);
+    if (c.hyp === hid) h.ev.push({ date:k, kind:c.hypKind === 'con' ? 'con' : 'sup', note:c.fact || c.quote || '随手记', str:'strong', src });
+    if (JSON.stringify(h.ev) !== before){ h.updated = new Date().toISOString(); ops.push(() => put('hyps', hid, h)); }
+  });
+  return ops;
+}
+function backupLine(){
+  if (!OFFLINE_APP || Object.keys(S.days).length < 3) return '';
+  let lb = null; try { lb = localStorage.getItem('zwgcb-lastbackup'); } catch (e) {}
+  if (!lb) return '<p class="warn" style="margin:0">记录只存在这部手机里，还没做过全部数据导出。去「记录」页导出一份。</p>';
+  const n = Math.round((parse(dayKey()) - parse(lb)) / 864e5);
+  return n >= 7 ? '<p class="warn" style="margin:0">上次全部数据导出是 ' + n + ' 天前，去「记录」页再导一份。</p>' : '';
+}
+
+/* ---------- review-archive/v1: extract, validate, plan, revert ---------- */
+function matchBrace(s, i){
+  let depth = 0, inStr = false, bs = false;
+  for (let j = i; j < s.length; j++){
+    const ch = s[j];
+    if (inStr){ if (bs) bs = false; else if (ch === '\\') bs = true; else if (ch === '"') inStr = false; continue; }
+    if (ch === '"') inStr = true; else if (ch === '{') depth++; else if (ch === '}'){ depth--; if (depth === 0) return j; }
+  }
+  return -1;
+}
+function jsonErrText(err, src){
+  const msg = String((err && err.message) || ''), m1 = /position (\d+)/.exec(msg), m2 = /line (\d+) column (\d+)/.exec(msg);
+  let where = '', snip = '';
+  if (m1){ const pos = +m1[1], before = src.slice(0, pos); where = '第 ' + before.split('\n').length + ' 行第 ' + (pos - before.lastIndexOf('\n')) + ' 个字符附近'; snip = '：…' + src.slice(Math.max(0, pos - 12), pos + 12).replace(/\s+/g, ' ') + '…'; }
+  else if (m2) where = '第 ' + m2[1] + ' 行第 ' + m2[2] + ' 个字符附近';
+  const hints = [], lineOf = i => 'JSON 的第 ' + src.slice(0, i).split('\n').length + ' 行';
+  const q = src.search(/[“”]/), tc = src.search(/,\s*[}\]]/);
+  if (q !== -1) hints.push(lineOf(q) + '有中文引号“”，JSON 的引号必须是英文的 "');
+  if (tc !== -1) hints.push(lineOf(tc) + '有一项后面多了逗号');
+  return 'JSON 写法有错' + (where ? '，在' + where : '') + snip + '。' + (hints.length ? '可能的原因：' + hints.join('；') + '。' : '可能复制时少了一部分，或者内容被改动过。');
+}
+function extractArchive(text){
+  const s = String(text || '').replace(/^﻿/, '');
+  if (!s.trim()) return { error:'还没粘贴内容。' };
+  const at = s.search(/"format"\s*:/);
+  if (at === -1){
+    if (s.indexOf('{') === -1) return { error:'粘贴的内容里没有找到 JSON。存档是一段以 { 开头、以 } 结尾的内容。' };
+    return { error:'找到了花括号，但里面没有 "format" 字段，不像是 ' + FORMAT + ' 存档。确认复制的是 Claude 最后给的那段存档。' };
+  }
+  let open = -1, close = -1;
+  for (let i = s.lastIndexOf('{', at); i !== -1; i = i > 0 ? s.lastIndexOf('{', i - 1) : -1){ const c = matchBrace(s, i); if (c === -1 || c > at){ open = i; close = c; break; } }
+  if (open === -1) return { error:'找到了 "format"，但它前面没有 {，复制时可能少了开头。' };
+  if (close === -1){
+    const rest = s.slice(open).trimEnd();
+    try { JSON.parse(rest); } catch (e){
+      const msg = String(e.message || ''), m = /position (\d+)/.exec(msg);
+      const atEnd = /end of JSON|Unterminated|end of data|Unexpected end/i.test(msg) || (m && +m[1] >= rest.length - 1);
+      if (!atEnd) return { error:jsonErrText(e, rest) };
+    }
+    return { error:'JSON 不完整：开头的 { 找不到对应的 }，可能复制时少了结尾。' + (/[“”]/.test(rest) ? '另外，里面有中文引号“”，JSON 的引号必须是英文的 "。' : '') };
+  }
+  const src = s.slice(open, close + 1);
+  try { return { obj:JSON.parse(src) }; } catch (e){ return { error:jsonErrText(e, src) }; }
+}
+function validateArchive(a){
+  const E = [], isStr = v => typeof v === 'string', isArr = Array.isArray, strList = v => isArr(v) && v.every(isStr), isObj = v => v && typeof v === 'object' && !isArr(v);
+  if (!isObj(a)) return ['最外层应该是一个 { } 对象。'];
+  if (a.format !== FORMAT) E.push(a.format ? 'format 是「' + a.format + '」，这里只认 ' + FORMAT + '。' : '缺少 format 字段，应该写 "format": "' + FORMAT + '"。');
+  if (!validDate(a.date)) E.push('date 应该是 YYYY-MM-DD 格式的日期，比如 "2026-11-02"' + (a.date ? '，现在是「' + a.date + '」' : '，现在缺失') + '。');
+  else if (a.date > addDays(dayKey(), 1)) E.push('date 是 ' + a.date + '，比今天还晚，确认日期没写错。');
+  ['time', 'chat_link', 'if_then', 'tomorrow_prediction'].forEach(k => { if (a[k] != null && !isStr(a[k])) E.push(k + ' 应该是一段文字。'); });
+  if (!isObj(a.summary)) E.push('缺少 summary（总结），里面应该有 headline 和 points。');
+  else {
+    if (!isStr(a.summary.headline) || !a.summary.headline.trim()) E.push('summary.headline（一句话总结）是空的。');
+    if (a.summary.points != null && !strList(a.summary.points)) E.push('summary.points 应该是一组文字，比如 ["要点 1", "要点 2"]。');
+  }
+  if (a.predictions != null){
+    if (!isArr(a.predictions)) E.push('predictions 应该是一个列表。');
+    else a.predictions.forEach((p, i) => { if (!isObj(p) || !isStr(p.text)) E.push('predictions 第 ' + (i + 1) + ' 条缺少 text。'); });
+  }
+  if (a.deep_dive != null){
+    if (!isObj(a.deep_dive)) E.push('deep_dive 应该是一个 { } 对象。');
+    else ['timeline', 'gaps'].forEach(k => { const v = a.deep_dive[k]; if (v != null && !strList(v)) E.push('deep_dive.' + k + ' 应该是一组文字。'); });
+  }
+  ['open_questions', 'claude_view'].forEach(k => { if (a[k] != null && !strList(a[k])) E.push(k + ' 应该是一组文字。'); });
+  if (a.hypotheses != null){
+    if (!isArr(a.hypotheses)) E.push('hypotheses 应该是一个列表。');
+    else a.hypotheses.forEach((x, i) => {
+      const L = '第 ' + (i + 1) + ' 条假设' + (isObj(x) && isStr(x.id) && x.id ? '（' + x.id + '）' : '');
+      if (!isObj(x)){ E.push(L + '不是一个 { } 对象。'); return; }
+      const okId = isStr(x.id) && /^\s*H\d+\s*$/i.test(x.id);
+      if (!['new', 'update', 'evidence'].includes(x.op)) E.push(L + '：op 是「' + (x.op == null ? '空' : x.op) + '」，只能是 new、update 或 evidence。');
+      if (x.id != null && x.id !== '' && !okId) E.push(L + '：id 应该是 H 加数字，比如 H1。');
+      if ((x.op === 'update' || x.op === 'evidence') && !okId) E.push(L + '：' + x.op + ' 必须写明要动的编号，比如 "id": "H1"。');
+      if ((x.op === 'new' || x.op === 'update') && !(isStr(x.text) && x.text.trim())) E.push(L + '：' + x.op + ' 需要 text（假设原文）。');
+      ['support', 'counter'].forEach(k => {
+        const v = x[k]; if (v == null) return;
+        if (!isArr(v)){ E.push(L + '：' + k + ' 应该是一个列表。'); return; }
+        v.forEach((e, j) => {
+          const P = L + '的' + (k === 'support' ? '支持' : '反例') + '证据第 ' + (j + 1) + ' 条';
+          if (!isObj(e) || !isStr(e.text) || !e.text.trim()){ E.push(P + '缺少 text。'); return; }
+          if (e.date != null && e.date !== '' && !validDate(e.date)) E.push(P + '：date「' + e.date + '」不是 YYYY-MM-DD。');
+          if (e.strength != null && e.strength !== '' && !/^(强|弱|strong|weak)/i.test(String(e.strength).trim())) E.push(P + '：strength 是「' + e.strength + '」，只能是「强」或「弱」。');
+        });
+      });
+      if (x.drafts != null && !strList(x.drafts)) E.push(L + '：drafts 应该是一组文字。');
+    });
+  }
+  return E;
+}
+const parseHNo = id => { const m = /^\s*H(\d+)\s*$/i.exec(String(id || '')); return m ? +m[1] : null; };
+const sameText = (a, b) => { const nz = s => String(s || '').replace(/[\s，。,.、；;：:！!？?「」“”"']/g, ''); return nz(a) === nz(b); };
+function normEv(list, kind, date, tag){
+  return (Array.isArray(list) ? list : []).filter(e => e && String(e.text || '').trim()).map(e => ({ date:validDate(e.date) ? e.date : date, kind, note:String(e.text).trim(), str:/^(弱|weak)/i.test(String(e.strength || '').trim()) ? 'weak' : 'strong', src:tag }));
+}
+function hypDiff(hs){
+  const putIds = [], delIds = [];
+  Object.keys(hs).forEach(id => { if (JSON.stringify(hs[id]) !== JSON.stringify(S.hyps[id])) putIds.push(id); });
+  Object.keys(S.hyps).forEach(id => { if (!hs[id]) delIds.push(id); });
+  return { putIds, delIds };
+}
+// Undo everything one archive did to the hypotheses (and the prediction it added to the next day).
+function revertInto(rec, hs, days){
+  const tag = 'arc:' + rec.id, notes = [];
+  let evN = 0;
+  Object.keys(hs).forEach(id => {
+    const h = hs[id];
+    if (h.verBy === tag && (h.history || []).length){
+      const last = h.history[h.history.length - 1];
+      h.history = h.history.slice(0, -1); h.text = last.text; h.sit = last.sit || null; h.rea = last.rea || null; h.ev = last.ev || []; h.verBy = last.by || null; h.revisedOn = last.prevRevisedOn || null;
+      notes.push('撤回旧存档对 ' + hypNo(h) + ' 的改写');
+    }
+    const n0 = (h.ev || []).length; h.ev = (h.ev || []).filter(e => e.src !== tag); evN += n0 - h.ev.length;
+    if (h.origin === tag && !h.ev.length && !(h.history || []).length){ delete hs[id]; notes.push('删除旧存档新建的 ' + hypNo(h) + '（这份里有同编号的会重新建）'); }
+  });
+  if (evN) notes.push('撤回旧存档加的 ' + evN + ' 条证据');
+  if (rec.tmrPredId){
+    const nk = addDays(rec.date, 1), d = days[nk] || (S.days[nk] ? clone(S.days[nk]) : null);
+    if (d && (d.preds || []).some(p => p.id === rec.tmrPredId)){ d.preds = d.preds.filter(p => p.id !== rec.tmrPredId); days[nk] = d; notes.push('撤回旧存档加到 ' + md(nk) + ' 的预测'); }
+  }
+  return notes;
+}
+// Work out, on a copy, what importing archive `a` would do. Nothing is written here.
+function planArchive(a, ow){
+  const hs = clone(S.hyps) || {}, days = {}, recId = newId(), tag = 'arc:' + recId, now = new Date().toISOString();
+  const items = [], errors = [], notes = ow ? revertInto(ow, hs, days) : [];
+  let seq = Math.max(curSeq(), maxNo(S.hyps));
+  const byNo = n => Object.values(hs).find(h => h.no === n);
+  (a.hypotheses || []).forEach((x, i) => {
+    const label = '第 ' + (i + 1) + ' 条假设' + (x.id ? '（' + x.id + '）' : '');
+    const n = parseHNo(x.id), cur = n ? byNo(n) : null, text = String(x.text || '').trim(), drafts = (x.drafts || []).filter(s => String(s).trim());
+    const ev = normEv(x.support, 'sup', a.date, tag).concat(normEv(x.counter, 'con', a.date, tag));
+    if (x.op === 'new'){
+      if (cur && sameText(hypText(cur), text)){ cur.ev = (cur.ev || []).concat(ev); cur.updated = now; items.push({ kind:'evidence', no:cur.no, text:hypText(cur), ev, drafts, note:hypNo(cur) + ' 已经是同一句话，只加证据' }); return; }
+      const no = (n && !cur) ? n : ++seq; if (no > seq) seq = no;
+      const h = { id:newId(), no, text, sit:null, rea:null, created:a.date, updated:now, status:'test', ev, history:[], revisedOn:null, origin:tag, verBy:null };
+      hs[h.id] = h;
+      items.push({ kind:'new', no, text, ev, drafts, note:cur ? 'H' + n + ' 已经是「' + trunc(hypText(cur), 18) + '」，这条改存为 H' + no : (!n ? '没写编号，存为 H' + no : '') });
+    } else if (x.op === 'update'){
+      if (!cur){ errors.push(label + '：要改写的 ' + (x.id || '编号') + ' 在清单里不存在。让 Claude 把 op 改成 new，或者核对编号。'); return; }
+      const old = hypText(cur);
+      if (sameText(old, text)){ cur.ev = (cur.ev || []).concat(ev); cur.updated = now; items.push({ kind:'evidence', no:cur.no, text:old, ev, drafts, note:'文字没变，按加证据处理' }); return; }
+      pushHistory(cur, a.date);
+      cur.text = text; cur.sit = null; cur.rea = null; cur.ev = ev; cur.revisedOn = a.date; cur.verBy = tag; cur.status = 'test'; cur.updated = now;
+      items.push({ kind:'update', no:cur.no, text, oldText:old, ev, drafts });
+    } else if (x.op === 'evidence'){
+      if (!cur){ errors.push(label + '：要加证据的 ' + (x.id || '编号') + ' 在清单里不存在。核对一下编号。'); return; }
+      cur.ev = (cur.ev || []).concat(ev); cur.updated = now;
+      items.push({ kind:'evidence', no:cur.no, text:hypText(cur), ev, drafts, note:ev.length ? '' : '没有带证据' });
+    }
+  });
+  const diff = hypDiff(hs);
+  return { recId, hs, days, items, errors, notes, seq, putIds:diff.putIds, delIds:diff.delIds };
+}
+function resKind(r){ const s = String(r || ''); if (/没中|不中|未中|落空|没对|错/.test(s)) return 'miss'; if (/暂时|一半|部分|待定|还没/.test(s)) return 'half'; if (/中|对|是|准/.test(s)) return 'hit'; return ''; }
 
 /* ---------- small renderers ---------- */
 function tally(n){
@@ -526,6 +772,7 @@ function capCardHTML(c, k, opts){
     + '<div class="cap-top"><span class="mono">' + (opts.date ? mdShort(k) + ' ' : '') + hm(c.at) + '</span>'
     + (emo ? '<span class="emo">' + esc(emo) + ' ' + bars(c.inten || 0) + '</span>' : '')
     + ((c.tags && c.tags.length) ? '<span class="tagline">' + c.tags.map(g => '<span class="tg">' + esc(g) + '</span>').join('') + '</span>' : '')
+    + (c.hyp && S.hyps[c.hyp] ? '<span class="tg">' + hypNo(S.hyps[c.hyp]) + ' · ' + (c.hypKind === 'con' ? '反例' : '支持') + '</span>' : '')
     + '</div>'
     + (c.quote ? '<div class="quote">' + esc(c.quote) + '</div>' : '')
     + (kv.length ? '<dl class="kv">' + kv.map(x => '<dt>' + x[0] + '</dt><dd>' + esc(x[1]) + '</dd>').join('') + '</dl>' : '')
@@ -533,7 +780,65 @@ function capCardHTML(c, k, opts){
     + (opts.actions !== false ? '<div class="row">' + (!c.done ? '<span class="pending">还没理清</span>' : '') + '<button type="button" class="linkbtn" data-act="editCap" data-key="' + k + '" data-id="' + c.id + '">' + (c.done ? '修改' : '接着理清') + '</button>' + evLink(k, c) + '</div>' : '')
     + '</article>';
 }
-function hypLines(h){ return '<div class="hs"><span class="pre">在</span>' + esc(sitOf(h)) + '<span class="pre">时，</span><br><span class="pre">我可能会</span>' + esc(reaOf(h)) + '</div>'; }
+function hypLines(h){
+  if (h.sit && h.rea && hypText(h) === composeHyp(h.sit, h.rea)) return '<div class="hs"><span class="pre">在</span>' + esc(sitOf(h)) + '<span class="pre">时，</span><br><span class="pre">我可能会</span>' + esc(reaOf(h)) + '</div>';
+  return '<div class="hs">' + esc(hypText(h)) + '</div>';
+}
+function pinCard(t){
+  const list = Object.values(S.hyps).filter(h => h.status === 'test').sort((a, b) => String(b.updated || '').localeCompare(String(a.updated || '')));
+  let s = '<section class="card"><div class="stage">在测的假设' + (list.length > 3 ? '<span class="right">共 ' + list.length + ' 条，显示最近 3 条</span>' : '') + '</div>';
+  if (!list.length) s += '<p class="muted">还没有在测的假设。晚上复盘写下一条，或者导入一次对话复盘，它就会出现在这里。</p>';
+  else s += '<ul class="pins">' + list.slice(0, 3).map(h => {
+    let lr = '还没改写过';
+    if (h.revisedOn){ const n = Math.round((parse(t) - parse(h.revisedOn)) / 864e5); lr = n <= 0 ? '今天改写过' : '上次改写 ' + n + ' 天前'; }
+    return '<li><span class="hno">' + hypNo(h) + '</span><div class="pin-b"><div class="pin-t">' + esc(hypText(h)) + '</div><div class="hmeta"><span>支持 <b class="mono">' + evCount(h, 'sup') + '</b></span><span class="c">反例 <b class="mono">' + evCount(h, 'con') + '</b></span><span>' + lr + '</span></div></div></li>';
+  }).join('') + '</ul>';
+  return s + '<div class="row"><a class="linkbtn" href="#hyps">打开假设清单</a></div></section>';
+}
+function arcCardToday(t){
+  const list = archivesOn(t);
+  let s = '<section class="card"><div class="stage"><span class="tag">对话</span>对话复盘</div>';
+  if (list.length) s += list.map(r => '<p class="arc-mini">' + esc((r.data && r.data.summary && r.data.summary.headline) || '') + '</p>').join('') + '<div class="row"><button type="button" class="linkbtn" data-act="openDay" data-key="' + t + '">看今天的完整记录</button></div>';
+  else s += '<p class="muted">和 Claude 聊完复盘，把它最后给的那段存档粘贴进来，结论就回到这个本子里。</p>';
+  return s + '<div class="row"><button type="button" class="btn ghost sm" data-act="impOpen">导入对话复盘</button><button type="button" class="btn ghost sm" data-act="copy" data-key="' + t + '">复制今天的材料给 Claude</button></div></section>';
+}
+function appliedHTML(it){
+  const lab = { new:'新增', update:'改写', evidence:'加证据' }[it.kind] || '';
+  return '<div class="arc-h"><div class="hmeta"><span class="hno">H' + it.no + '</span><span class="st ' + (it.kind === 'update' ? 'revised' : 'test') + '">' + lab + '</span>' + (it.note ? '<span>' + esc(it.note) + '</span>' : '') + '</div>'
+    + (it.kind === 'update' ? '<div class="old">' + esc(it.oldText) + '</div>' : '')
+    + '<div class="hs">' + esc(it.text) + '</div>'
+    + ((it.ev || []).length ? '<ul class="evs">' + it.ev.map(evLi).join('') + '</ul>' : '')
+    + ((it.drafts || []).length ? '<details class="drafts"><summary>考虑过的其他说法 · ' + it.drafts.length + '</summary><ul>' + it.drafts.map(d => '<li>' + esc(d) + '</li>').join('') + '</ul></details>' : '')
+    + '</div>';
+}
+// Day record order: summary → hypothesis changes → predictions → deep dive → next → Claude's view (folded) → link.
+function archiveHTML(rec){
+  const a = rec.data || {}, s0 = a.summary || {}, dd = a.deep_dive || {}, rq = rec.resolvedQ || [];
+  const points = (s0.points || []).filter(Boolean), preds = a.predictions || [], tl = dd.timeline || [], gaps = dd.gaps || [], oq = a.open_questions || [], cv = a.claude_view || [];
+  let s = '<section class="arc"><div class="cap-top"><span class="tg">对话复盘</span>' + (a.time ? '<span class="mono">' + esc(a.time) + '</span>' : '') + '</div>';
+  s += '<div class="arc-head">' + esc(s0.headline) + '</div>';
+  if (points.length) s += '<ul class="arc-pts">' + points.map(x => '<li>' + esc(x) + '</li>').join('') + '</ul>';
+  if ((rec.applied || []).length) s += '<div class="arc-sec">假设变化</div>' + rec.applied.map(appliedHTML).join('');
+  if (preds.length) s += '<div class="arc-sec">预测对照</div><ul class="preds">' + preds.map(p => { const r = resKind(p.result); return '<li class="pred' + (r === 'miss' ? ' r-miss' : '') + '"><div class="pt">' + esc(p.text) + '</div>' + (p.actual ? '<div class="pa">实际：' + esc(p.actual) + '</div>' : '') + (p.result ? '<span class="pen ' + r + '">' + esc(p.result) + '</span>' : '') + '</li>'; }).join('') + '</ul>';
+  if (dd.moment || dd.note_time || tl.length || gaps.length){
+    s += '<div class="arc-sec">深挖经过</div>';
+    if (dd.moment || dd.note_time) s += '<p class="arc-moment">' + (dd.note_time ? '<span class="mono">' + esc(dd.note_time) + '</span> ' : '') + esc(dd.moment || '') + '</p>';
+    if (tl.length) s += '<ol class="tl">' + tl.map(x => '<li>' + esc(x) + '</li>').join('') + '</ol>';
+    if (gaps.length) s += '<div class="lab">记不清的地方</div><ul class="gaps">' + gaps.map(x => '<li>' + esc(x) + '</li>').join('') + '</ul>';
+  }
+  if (a.if_then || a.tomorrow_prediction || oq.length){
+    s += '<div class="arc-sec">接下来</div>';
+    const kv = [];
+    if (a.if_then) kv.push(['如果……我就……', esc(a.if_then)]);
+    if (a.tomorrow_prediction) kv.push(['明天的预测', esc(a.tomorrow_prediction) + (rec.tmrPredId ? ' <span class="fine">已加到 ' + md(addDays(rec.date, 1)) + '</span>' : '')]);
+    if (kv.length) s += '<dl class="kv nx">' + kv.map(x => '<dt>' + x[0] + '</dt><dd>' + x[1] + '</dd>').join('') + '</dl>';
+    if (oq.length) s += '<div class="lab">待解问题</div><ul class="qs">' + oq.map((q, i) => { const d0 = rq.includes(i); return '<li class="' + (d0 ? 'done' : '') + '"><button type="button" class="qbtn" data-act="qToggle" data-id="' + rec.id + '" data-v="' + i + '" aria-pressed="' + d0 + '" aria-label="' + (d0 ? '标为没解决' : '标为已解决') + '">✓</button><span>' + esc(q) + '</span></li>'; }).join('') + '</ul>';
+  }
+  if (cv.length) s += '<details class="cv"><summary>Claude 的看法 <span class="tg">不计入证据</span></summary><ul>' + cv.map(x => '<li>' + esc(x) + '</li>').join('') + '</ul></details>';
+  if (/^https?:\/\//i.test(a.chat_link || '')) s += '<p class="fine" style="margin:0"><a href="' + esc(a.chat_link) + '" target="_blank" rel="noopener noreferrer">打开原对话</a></p>';
+  s += '<div class="row">' + (ui.arcDel === rec.id ? '<span class="warn">删除会撤回这份存档加的证据、假设和改写。</span><button type="button" class="btn sm red" data-act="arcDel" data-id="' + rec.id + '">确定删除</button><button type="button" class="btn ghost sm" data-act="arcDelNo">算了</button>' : '<button type="button" class="linkbtn" data-act="arcDelAsk" data-id="' + rec.id + '">删除这份存档</button>') + '</div>';
+  return s + '</section>';
+}
 
 /* ---------- views ---------- */
 function vToday(){
@@ -541,6 +846,7 @@ function vToday(){
   let h = '<div class="dayhead"><div><div class="date">' + md(t) + '<span>' + wdOf(t) + '</span></div><div class="sub">复盘日以凌晨 4 点为界，凌晨写的算前一天</div></div></div>';
   h += copyBox();
   h += '<div class="stack">';
+  h += pinCard(t);
   if (ready && fuseOn()) h += '<section class="card fuse"><div class="stage">最近三次写完都觉得更沉了</div><p class="muted">这通常说明在反复咀嚼，而不是在看清自己。接下来几天只做最低版，并且用第三人称写。持续一周以上的话，找一个信任的人当面聊聊。</p></section>';
   if (ready && f && f <= y && !(yd && (yd.evening || yd.skip))) h += yBanner(y);
   h += statsCard(t);
@@ -549,7 +855,7 @@ function vToday(){
     const ws = dow === 0 ? weekStart(t) : addDays(weekStart(t), -7);
     if (!S.weeks[ws]) h += '<section class="card"><div class="stage">周复盘<span class="right">' + mdShort(ws) + '–' + mdShort(addDays(ws, 6)) + '</span></div><p class="muted">把这周落空的预测排在一起看：有没有同一个方向的错？20 分钟。</p><div class="row"><button type="button" class="btn sm" data-act="goWeek" data-key="' + ws + '">开始周复盘</button></div></section>';
   }
-  h += predCard(t, d) + capCardToday(t, d) + eventCardToday(t) + eveCard(t, d, yd);
+  h += predCard(t, d) + capCardToday(t, d) + eventCardToday(t) + eveCard(t, d, yd) + arcCardToday(t);
   h += '</div>';
   return h;
 }
@@ -675,6 +981,7 @@ function openForm(type, key, extra){
       else data = { fact:'', emos:[], inten:0, quote:'', body:[], did:'', wanted:'', care:'', tags:[], more:false };
     }
     if (type === 'week'){ const w = S.weeks[key]; data = w ? clone(w) : { dir:'', said:['','',''], did:['','',''], was:'', saw:'' }; }
+    if (type === 'import') data = { text:'', a:null, err:null, mode:null, tmr:true };
     if (type === 'event'){
       if (S.events[key]) data = clone(S.events[key]);
       else {
@@ -684,6 +991,8 @@ function openForm(type, key, extra){
     }
   }
   if (type === 'event'){ if (!data.D || typeof data.D !== 'object') data.D = { op:'new' }; if (!data.D.op) data.D.op = 'new'; data._del = false; }
+  if ((type === 'evening' || type === 'min' || type === 'event') && data.D && !data.D.str) data.D.str = 'strong';
+  if (type === 'import'){ data.a = null; data.err = null; data.mode = null; data.tmr = true; }
   if (type === 'evening' || type === 'min'){ ['R','A','C','E'].forEach(p => { if (!data[p] || typeof data[p] !== 'object') data[p] = {}; }); if (!data.D || typeof data.D !== 'object') data.D = { op:'new' }; if (!data.D.op) data.D.op = 'new'; }
   form = { type, key, data, dirty:false };
   render(); window.scrollTo(0, 0);
@@ -714,7 +1023,7 @@ function fMorning(){
   h += fieldTA('emotion', '最可能让我情绪起伏的场合或人', '比如：下午的小组讨论');
   h += '<div class="f"><label for="f-specific">一条具体的预测</label><textarea id="f-specific" data-f="specific" data-live="vague" rows="2" placeholder="我会在 10 点前 ___ / 在 ___ 的时候，我会 ___">' + esc(x.specific) + '</textarea><div class="warn" id="w-specific">' + vagueWarn(x.specific) + '</div>';
   const hs = openHyps().filter(h2 => h2.status === 'test').slice(0, 6);
-  if (hs.length) h += '<div class="hint">或者从清单里挑一条「待验证」的来测：</div><div class="chips">' + hs.map(h2 => '<button type="button" class="chip' + (x.hid === h2.id ? ' on' : '') + '" data-act="testHyp" data-id="' + h2.id + '">' + esc(hypText(h2)) + '</button>').join('') + '</div>';
+  if (hs.length) h += '<div class="hint">或者从清单里挑一条「待验证」的来测：</div><div class="chips">' + hs.map(h2 => '<button type="button" class="chip' + (x.hid === h2.id ? ' on' : '') + '" data-act="testHyp" data-id="' + h2.id + '">' + hypNo(h2) + ' · ' + esc(hypText(h2)) + '</button>').join('') + '</div>';
   h += '</div><p class="fine">唯一的要求：晚上能判对错。「今天会很充实」判不了；「组会上我不会主动发言」判得了。</p>';
   h += '<div class="row"><button type="button" class="btn" data-act="saveMorning">存下预测</button></div></div>';
   return h;
@@ -756,13 +1065,13 @@ function fEvening(){
     h += segHTML('D.op', [['new','新假设'],['old','给已有的一条记证据'],['none','今天没看出新东西']]);
     if (x.D.op === 'new'){
       h += '<div class="pair"><span>在</span>' + fieldIn('D.sit', '什么情况下（比如：计划被临时打乱后）', 'hyp') + '<span>我可能会</span>' + fieldIn('D.rea', '怎样（比如：放弃当天剩下的全部计划）', 'hyp') + '</div><div class="warn" id="w-hyp">' + hypWarn((x.D.sit || '') + (x.D.rea || '')) + '</div>';
-      h += fieldTA('D.ev', '今日证据', '一句话，指向上面的事实', '', 1);
+      h += fieldTA('D.ev', '今日证据', '一句话，指向上面的事实', '', 1) + strSeg();
     } else if (x.D.op === 'old'){
       if (!hs.length) h += '<p class="fine">清单还是空的，先写一条新假设。</p>';
       else {
-        h += '<div class="chips">' + hs.map(h2 => '<button type="button" class="chip' + (x.D.hid === h2.id ? ' on' : '') + '" data-act="pick" data-f="D.hid" data-v="' + h2.id + '">' + esc(hypText(h2)) + '</button>').join('') + '</div>';
+        h += '<div class="chips">' + hs.map(h2 => '<button type="button" class="chip' + (x.D.hid === h2.id ? ' on' : '') + '" data-act="pick" data-f="D.hid" data-v="' + h2.id + '">' + hypNo(h2) + ' · ' + esc(hypText(h2)) + '</button>').join('') + '</div>';
         h += '<div class="lab">今天的事对它来说是</div>' + segHTML('D.kind', [['sup','支持'],['con','反例']]);
-        h += fieldTA('D.ev', '证据', '一句话', '', 1);
+        h += fieldTA('D.ev', '证据', '一句话', '', 1) + strSeg();
       }
     }
   }
@@ -801,6 +1110,11 @@ function fCapture(){
   h += fieldTA('fact', '刚刚发生了什么', '一句话，像摄像机拍到的那样');
   h += '<div class="f"><div class="lab">是什么情绪</div>' + chipsHTML('emos', EMOS, true) + '<div class="hint">给情绪起个准确的名字，通常就能让它降下来一点。</div></div>';
   h += '<div class="f"><div class="lab">有多强</div>' + segHTML('inten', [[1,'1'],[2,'2'],[3,'3'],[4,'4'],[5,'5']].map(a => [a[0], a[1]])) + '</div>';
+  const chs = openHyps().slice().sort((a, b) => (a.no || 0) - (b.no || 0));
+  if (x.hyp && !S.hyps[x.hyp]) x.hyp = null;
+  if (x.hyp && !x.hypKind) x.hypKind = 'sup';
+  if (chs.length) h += '<div class="f"><div class="lab">关联一条假设（可选）</div><div class="chips">' + chs.map(h2 => '<button type="button" class="chip' + (x.hyp === h2.id ? ' on' : '') + '" data-act="pick" data-f="hyp" data-v="' + h2.id + '">' + hypNo(h2) + ' · ' + esc(trunc(hypText(h2), 20)) + '</button>').join('') + '</div>'
+    + (x.hyp ? '<div class="lab">这件事对它来说是</div>' + segHTML('hypKind', [['sup','支持'],['con','反例']]) + '<div class="hint">存下时会给它记一条强证据，日期是这条随手记的那天。</div>' : '') + '</div>';
   if (!x.more){
     h += '<div class="row"><button type="button" class="btn" data-act="saveCap">先存下</button><button type="button" class="btn ghost" data-act="more">继续理清</button></div>';
   } else {
@@ -827,7 +1141,7 @@ function fCapture(){
 function fWeek(){
   const ws = form.key, we = addDays(ws, 6), w = weekData(ws), x = form.data, t = dayKey();
   const total = Object.keys(S.days).filter(k => { const s = dayStatus(k, t); return s === 'std' || s === 'min'; }).length;
-  const anyRevised = Object.values(S.hyps).some(h => h.status === 'revised');
+  const anyRevised = Object.values(S.hyps).some(h => (h.history || []).length);
   let h = '<div class="row" style="justify-content:space-between;margin-bottom:6px"><button type="button" class="linkbtn" data-act="weekNav" data-v="-7">‹ 上一周</button><span class="sub mono">' + mdShort(ws) + ' – ' + mdShort(we) + '</span>' + (ws < weekStart(t) ? '<button type="button" class="linkbtn" data-act="weekNav" data-v="7">下一周 ›</button>' : '<span></span>') + '</div>';
   h += '<h1 class="h">周复盘</h1><p class="lede">一周里最重要的发现，是你在哪个方向上反复猜错自己。单天落空可能是偶然，同一方向错 3 次就是盲点。</p>';
   h += '<div class="card"><div class="stage">这周的材料<span class="right">自动汇总</span></div>';
@@ -844,6 +1158,18 @@ function fWeek(){
   const emos = Object.entries(w.emos).sort((a, b) => b[1] - a[1]);
   if (emos.length) h += '<h2 class="h2">随手记里的情绪</h2><div class="chips">' + emos.map(e => '<span class="chip">' + esc(e[0]) + ' ×' + e[1] + '</span>').join('') + '</div>' + (w.intN ? '<p class="fine" style="margin-top:6px">平均强度 ' + (w.intSum / w.intN).toFixed(1) + ' / 5</p>' : '');
   if (w.evs.length) h += '<h2 class="h2">这周单独复盘的事 · ' + w.evs.length + '</h2><div class="stack">' + w.evs.map(eventCardHTML).join('') + '</div>';
+  if (w.arcs.length){
+    const news = [], ups = [], qs = [];
+    w.arcs.forEach(r => {
+      (r.applied || []).forEach(it => { if (it.kind === 'new') news.push([r, it]); else if (it.kind === 'update') ups.push([r, it]); });
+      ((r.data && r.data.open_questions) || []).forEach((q, i) => { if (!(r.resolvedQ || []).includes(i)) qs.push([r, q, i]); });
+    });
+    h += '<h2 class="h2">这周的对话存档 · ' + w.arcs.length + ' 份</h2><div class="card">';
+    h += '<div class="lab">新增的假设</div>' + (news.length ? '<ul class="qs">' + news.map(([r, it]) => '<li><span class="hno">H' + it.no + '</span><span>' + esc(it.text) + ' <span class="fine">' + mdShort(r.date) + '</span></span></li>').join('') + '</ul>' : '<p class="fine">没有</p>');
+    h += '<div class="lab">改写的假设</div>' + (ups.length ? '<ul class="qs">' + ups.map(([r, it]) => '<li><span class="hno">H' + it.no + '</span><span><span class="old">' + esc(it.oldText) + '</span><br>' + esc(it.text) + ' <span class="fine">' + mdShort(r.date) + '</span></span></li>').join('') + '</ul>' : '<p class="fine">没有</p>');
+    h += '<div class="lab">还没解决的问题</div>' + (qs.length ? '<ul class="qs">' + qs.map(([r, q, i]) => '<li><button type="button" class="qbtn" data-act="qToggle" data-id="' + r.id + '" data-v="' + i + '" aria-pressed="false" aria-label="标为已解决">✓</button><span>' + esc(q) + ' <span class="fine">' + mdShort(r.date) + '</span></span></li>').join('') + '</ul>' : '<p class="fine">这周的存档里没有待解的问题，或者都已经标为解决。</p>');
+    h += '</div>';
+  }
   h += '<h2 class="h2">清单这周的变化</h2><p class="muted">新增 ' + w.newHyps.length + ' 条 · 支持 +' + w.sup + ' · <span style="color:var(--red)">反例 +' + w.con + '</span> · 改写 ' + w.revised.length + ' 条</p>';
   if (total >= 14 && !anyRevised) h += '<p class="warn" style="margin-top:6px">已经记了两周，清单里还没有被改写过的假设。说明预测太保险，或者深挖太浅：把预测写得更具体、更有可能错。</p>';
   if (w.heavy >= 3) h += '<p class="warn" style="margin-top:6px">这周有 ' + w.heavy + ' 次写完觉得更沉了。下周试试全程用第三人称写。</p>';
@@ -863,10 +1189,10 @@ function dPartHTML(x, existing){
   let h = segHTML('D.op', [['new','新假设'],['old','给已有的一条记证据'],['none','没看出新东西']]);
   if (x.D.op === 'new'){
     h += '<div class="pair"><span>在</span>' + fieldIn('D.sit', '什么情况下', 'hyp') + '<span>我可能会</span>' + fieldIn('D.rea', '怎样', 'hyp') + '</div><div class="warn" id="w-hyp">' + hypWarn((x.D.sit || '') + (x.D.rea || '')) + '</div>';
-    h += fieldTA('D.ev', '证据', '一句话，指向上面的慢放', '', 1);
+    h += fieldTA('D.ev', '证据', '一句话，指向上面的慢放', '', 1) + strSeg();
   } else if (x.D.op === 'old'){
     if (!hs.length) h += '<p class="fine">清单还是空的，先写一条新假设。</p>';
-    else h += '<div class="chips">' + hs.map(h2 => '<button type="button" class="chip' + (x.D.hid === h2.id ? ' on' : '') + '" data-act="pick" data-f="D.hid" data-v="' + h2.id + '">' + esc(hypText(h2)) + '</button>').join('') + '</div><div class="lab">这件事对它来说是</div>' + segHTML('D.kind', [['sup','支持'],['con','反例']]) + fieldTA('D.ev', '证据', '一句话', '', 1);
+    else h += '<div class="chips">' + hs.map(h2 => '<button type="button" class="chip' + (x.D.hid === h2.id ? ' on' : '') + '" data-act="pick" data-f="D.hid" data-v="' + h2.id + '">' + hypNo(h2) + ' · ' + esc(hypText(h2)) + '</button>').join('') + '</div><div class="lab">这件事对它来说是</div>' + segHTML('D.kind', [['sup','支持'],['con','反例']]) + fieldTA('D.ev', '证据', '一句话', '', 1) + strSeg();
   }
   return h;
 }
@@ -910,9 +1236,74 @@ function fEvent(){
   return h;
 }
 
+function previewItem(it){
+  const st = evStats(it.ev), lab = { new:'新增', update:'改写', evidence:'加证据' }[it.kind];
+  return '<div class="pv-row"><span class="hno">H' + it.no + '</span><div class="pv-b"><div><b>' + lab + '</b>' + (it.note ? ' <span class="fine">' + esc(it.note) + '</span>' : '') + '</div>'
+    + (it.kind === 'update' ? '<div class="old">' + esc(it.oldText) + '</div>' : '')
+    + '<div>' + esc(it.text) + '</div>'
+    + '<div class="fine">支持 +' + st.sup + (st.sup ? '（强 ' + (st.sup - st.supW) + ' · 弱 ' + st.supW + '）' : '') + ' · 反例 +' + st.con + (st.con ? '（强 ' + (st.con - st.conW) + ' · 弱 ' + st.conW + '）' : '') + '</div></div></div>';
+}
+function fImport(){
+  const x = form.data;
+  let h = formHead('导入对话复盘', '把 Claude 在对话最后给的那段存档整段粘贴进来。前后带着别的文字、或者包在 ``` 里都没关系。写入之前会先给你看预览。', '');
+  if (!x.a){
+    h += '<div class="card"><div class="f"><label for="f-text">粘贴存档</label><textarea id="f-text" data-f="text" rows="9" class="mono-in" placeholder="{ &quot;format&quot;: &quot;review-archive/v1&quot;, … }">' + esc(x.text || '') + '</textarea></div>';
+    if (x.err && x.err.length) h += '<div class="errbox"><b>没法导入，什么都没写入。</b>' + x.err.slice(0, 8).map(e => '<p>' + esc(e) + '</p>').join('') + (x.err.length > 8 ? '<p>还有 ' + (x.err.length - 8) + ' 处类似问题。</p>' : '') + '</div>';
+    h += '<div class="row"><button type="button" class="btn" data-act="impParse">检查并预览</button></div></div>';
+    h += '<p class="fine" style="margin-top:12px">还没有存档？在「今天」或「记录」页点「复制给 Claude」，复盘结束时 Claude 会按格式给出这段 JSON。</p>';
+    return h;
+  }
+  const a = x.a, t = dayKey(), same = archivesOn(a.date), ow = (x.mode && x.mode !== 'add') ? S.archives[x.mode] : null;
+  const p = planArchive(a, ow), s0 = a.summary || {}, dd = a.deep_dive || {};
+  const rel = a.date === t ? '（今天）' : a.date === addDays(t, -1) ? '（昨天）' : '';
+  h += '<div class="card pv">';
+  h += '<div class="stage">归到哪一天</div><p style="margin:0"><b>' + a.date.slice(0, 4) + '年' + md(a.date) + ' ' + wdOf(a.date) + '</b>' + rel + (a.time ? ' · <span class="mono">' + esc(a.time) + '</span>' : '') + '</p>';
+  if (same.length){
+    h += '<div class="lab">这一天已经有 ' + same.length + ' 份对话存档，这份怎么放？</div><div class="chips">' + same.map(r => '<button type="button" class="chip' + (x.mode === r.id ? ' on' : '') + '" data-act="impMode" data-v="' + r.id + '">覆盖「' + esc(trunc((r.data && r.data.summary && r.data.summary.headline) || '', 14)) + '」</button>').join('') + '<button type="button" class="chip' + (x.mode === 'add' ? ' on' : '') + '" data-act="impMode" data-v="add">另存一条</button></div>';
+    h += x.mode ? (ow ? '<p class="fine">覆盖：删掉旧存档，撤回它加的证据、新建的假设和改写，再写入这份。</p>' : '<p class="fine">另存一条：两份都保留。同样的证据存两次，也会算两次。</p>') : '<p class="warn" style="margin:0">先选「覆盖」还是「另存一条」。</p>';
+  }
+  h += '<div class="stage">一句话总结</div><p style="margin:0">' + esc(s0.headline) + '</p>';
+  h += '<div class="stage">假设清单会怎么变</div>';
+  if (!p.items.length && !p.errors.length) h += '<p class="fine">这份存档没有动假设清单。</p>';
+  h += p.items.map(previewItem).join('');
+  if (p.notes.length) h += '<ul class="arc-pts">' + p.notes.map(n => '<li>' + esc(n) + '</li>').join('') + '</ul>';
+  if (p.errors.length) h += '<div class="errbox"><b>没法导入，什么都没写入。</b>' + p.errors.map(e => '<p>' + esc(e) + '</p>').join('') + '</div>';
+  const cnt = ['预测对照 ' + (a.predictions || []).length + ' 条', '深挖经过 ' + (dd.timeline || []).length + ' 步' + ((dd.gaps || []).length ? '，记不清 ' + dd.gaps.length + ' 处' : '')];
+  if (a.if_then) cnt.push('一条「如果……我就……」');
+  cnt.push('待解问题 ' + (a.open_questions || []).length + ' 个');
+  cnt.push('Claude 的看法 ' + (a.claude_view || []).length + ' 条，不计入证据');
+  cnt.push(/^https?:\/\//i.test(a.chat_link || '') ? '有原对话链接' : '没有原对话链接');
+  h += '<div class="stage">其他内容</div><ul class="arc-pts">' + cnt.map(c => '<li>' + esc(c) + '</li>').join('') + '</ul>';
+  const tp = String(a.tomorrow_prediction || '').trim();
+  if (tp) h += '<div class="f"><div class="lab">明天的预测：' + esc(tp) + '</div><div class="chips"><button type="button" class="chip' + (x.tmr ? ' on' : '') + '" data-act="impTmr" aria-pressed="' + !!x.tmr + '">' + (x.tmr ? '✓ ' : '') + '同时加到 ' + md(addDays(a.date, 1)) + ' 的预测里</button></div></div>';
+  const blocked = p.errors.length || (same.length && !x.mode);
+  h += '<div class="row"><button type="button" class="btn" data-act="impCommit"' + (blocked ? ' disabled' : '') + '>确认写入</button><button type="button" class="btn ghost" data-act="impBack">重新粘贴</button></div></div>';
+  return h;
+}
+function importFile(f){
+  const r = new FileReader();
+  r.onload = async () => {
+    let o = null; try { o = JSON.parse(r.result); } catch (e) {}
+    if (o && o.format === FORMAT){ toast('这是一份对话复盘存档，请用「导入对话复盘」，把内容粘贴进去。'); return; }
+    if (!o || typeof o !== 'object' || !o.days || typeof o.days !== 'object'){ toast('这个文件里没有自我观察本的数据。确认是用「全部数据导出」得到的 JSON。'); return; }
+    if (!needReady()) return;
+    let n = 0, skipped = 0; const ops = [];
+    COLS.forEach(col => {
+      const src = (o[col] && typeof o[col] === 'object') ? o[col] : {};
+      Object.keys(src).forEach(id => { if (S[col] && S[col][id]) skipped++; else { ops.push(put(col, id, src[id])); n++; } });
+    });
+    try { await Promise.all(ops); } catch (e) { return; }
+    hypsMigrated = false; await migrateHyps();
+    toast('导入了 ' + n + ' 条' + (skipped ? '，跳过 ' + skipped + ' 条这里已经有的' : '') + '。');
+    render();
+  };
+  r.onerror = () => toast('这个文件读不出来。');
+  r.readAsText(f);
+}
+
 function vHyps(){
   const hs = Object.values(S.hyps);
-  const groups = [['test','待验证'],['solid','较可信'],['revised','已改写']];
+  const groups = [['test','待验证'],['solid','较可信']];
   let h = '<h1 class="h">自我假设清单</h1><p class="lede">每天的记录会被忘掉，这张清单不会。它是你对自己的当前理解，每条都带着证据。</p>';
   h += '<div class="row" style="margin-bottom:12px"><button type="button" class="btn sm" data-act="hypNew">手动加一条</button></div>';
   if (ui.hypNew) h += '<div class="card" style="margin-bottom:12px"><div class="pair"><span>在</span><input type="text" id="hn-sit" placeholder="什么情况下"><span>我可能会</span><input type="text" id="hn-rea" placeholder="怎样"></div><input type="text" id="hn-ev" placeholder="证据（一句话，可选）"><div class="row"><button type="button" class="btn sm" data-act="hypNewSave">加进清单</button><button type="button" class="btn ghost sm" data-act="hypNewCancel">算了</button></div></div>';
@@ -922,33 +1313,33 @@ function vHyps(){
     return h;
   }
   groups.forEach(g => {
-    const list = hs.filter(x => x.status === g[0]).sort((a, b) => (b.updated || '').localeCompare(a.updated || ''));
+    const list = hs.filter(x => (x.status === 'solid' ? 'solid' : 'test') === g[0]).sort((a, b) => (a.no || 0) - (b.no || 0));
     if (!list.length) return;
     h += '<h2 class="h2">' + g[1] + ' · ' + list.length + '</h2><div class="stack">' + list.map(hypCard).join('') + '</div>';
   });
   return h;
 }
 function hypCard(x){
-  const sup = evCount(x, 'sup'), con = evCount(x, 'con'), o = ui.hypOpen && ui.hypOpen.id === x.id ? ui.hypOpen.act : null;
-  const stLabel = { test:'待验证', solid:'较可信', revised:'已改写' }[x.status];
-  let s = '<article class="hyp ' + x.status + '"><div class="hmeta"><span class="st ' + x.status + '">' + stLabel + '</span><span>首次 ' + md(x.created) + '</span>' + (x.parent && S.hyps[x.parent] ? '<span>由旧版改写</span>' : '') + '</div>';
+  const sup = evCount(x, 'sup'), con = evCount(x, 'con'), st0 = evStats(x.ev), o = ui.hypOpen && ui.hypOpen.id === x.id ? ui.hypOpen.act : null;
+  const status = x.status === 'solid' ? 'solid' : 'test', hist = x.history || [];
+  let s = '<article class="hyp ' + status + '"><div class="hmeta"><span class="hno">' + hypNo(x) + '</span><span class="st ' + status + '">' + (status === 'solid' ? '较可信' : '待验证') + '</span><span>首次 ' + md(x.created) + '</span>' + (x.revisedOn ? '<span>' + md(x.revisedOn) + ' 改写</span>' : '') + '</div>';
   s += hypLines(x);
-  s += '<div class="hmeta"><span class="tally">支持 ' + tally(sup) + '</span><span class="tally con">反例 ' + tally(con) + '</span></div>';
+  s += '<div class="hmeta"><span class="tally">支持 ' + tally(sup) + '</span><span class="tally con">反例 ' + tally(con) + '</span>' + ((st0.supW + st0.conW) ? '<span>其中弱证据 ' + (st0.supW + st0.conW) + '</span>' : '') + '</div>';
   const ev = (x.ev || []).slice(-4).reverse();
-  if (ev.length) s += '<ul class="evs">' + ev.map(e => '<li class="' + (e.kind === 'con' ? 'c' : '') + '"><span class="mono">' + mdShort(e.date) + '</span> ' + (e.kind === 'con' ? '反例' : '支持') + (e.note ? '：' + esc(e.note) : '') + '</li>').join('') + '</ul>';
-  if (x.status === 'revised'){
-    const c = x.child && S.hyps[x.child];
-    if (c) s += '<p class="fine">' + md(x.revisedOn) + ' 改写为：' + esc(hypText(c)) + '</p>';
-    s += '<div class="row"><button type="button" class="linkbtn" data-act="hypAct" data-id="' + x.id + '" data-v="del">删除</button></div>';
-  } else {
+  if (ev.length) s += '<ul class="evs">' + ev.map(evLi).join('') + '</ul>';
+  if (hist.length) s += '<details class="hist"><summary>改写过 ' + hist.length + ' 次，看旧版本</summary><ol>' + hist.slice().reverse().map(v => { const vs = evStats(v.ev); return '<li><span class="old">' + esc(v.text) + '</span><br><span class="fine">' + (v.from ? md(v.from) : '') + ' – ' + md(v.to) + ' · 支持 ' + vs.sup + ' · 反例 ' + vs.con + '</span></li>'; }).join('') + '</ol></details>';
+  {
     if (x.status === 'test' && sup >= 3 && con === 0) s += '<p class="suggest">支持 ' + sup + ' 次、没有反例，可以升为「较可信」。</p>';
     if (con > 0) s += '<p class="suggest r">有反例了。先缩小条件，把「在什么情况下」写得更精确。</p>';
     s += '<div class="row"><button type="button" class="btn ghost sm" data-act="hypAct" data-id="' + x.id + '" data-v="sup">+ 支持</button><button type="button" class="btn ghost sm" data-act="hypAct" data-id="' + x.id + '" data-v="con">+ 反例</button><button type="button" class="btn ghost sm" data-act="hypAct" data-id="' + x.id + '" data-v="rev">缩小条件 / 改写</button>'
       + (x.status === 'test' ? '<button type="button" class="btn ghost sm" data-act="hypStatus" data-id="' + x.id + '" data-v="solid">升为较可信</button>' : '<button type="button" class="btn ghost sm" data-act="hypStatus" data-id="' + x.id + '" data-v="test">退回待验证</button>')
       + '<button type="button" class="linkbtn" data-act="hypAct" data-id="' + x.id + '" data-v="del">删除</button></div>';
   }
-  if (o === 'sup' || o === 'con') s += '<div class="inline"><input type="text" id="hx-note" placeholder="' + (o === 'sup' ? '支持它的事实' : '和它对不上的事实') + '（一句话）"><div class="row"><button type="button" class="btn sm' + (o === 'con' ? ' red' : '') + '" data-act="hypEv" data-id="' + x.id + '" data-v="' + o + '">记下' + (o === 'con' ? '反例' : '支持') + '</button><button type="button" class="btn ghost sm" data-act="hypClose">算了</button></div></div>';
-  if (o === 'rev') s += '<div class="inline"><div class="lab">改写后的版本（旧版会划掉保留）</div><div class="pair"><span>在</span><input type="text" id="hx-sit" value="' + esc(x.sit) + '"><span>我可能会</span><input type="text" id="hx-rea" value="' + esc(x.rea) + '"></div><p class="fine">比如「计划被打乱后会放弃」遇到反例，可能改成「计划被打乱、而且当时已经很累时，会放弃」。条件越精确，你就越了解自己。</p><div class="row"><button type="button" class="btn sm" data-act="hypRevise" data-id="' + x.id + '">改写</button><button type="button" class="btn ghost sm" data-act="hypClose">算了</button></div></div>';
+  if (o === 'sup' || o === 'con'){
+    const str = (ui.hypOpen && ui.hypOpen.str) || 'strong';
+    s += '<div class="inline"><input type="text" id="hx-note" placeholder="' + (o === 'sup' ? '支持它的事实' : '和它对不上的事实') + '（一句话）"><div class="seg">' + [['strong','强 · 当时记下或预测过'],['weak','弱 · 事后回想']].map(p => '<button type="button" class="' + (str === p[0] ? 'on' : '') + '" data-act="hypStr" data-v="' + p[0] + '" aria-pressed="' + (str === p[0]) + '">' + p[1] + '</button>').join('') + '</div><div class="row"><button type="button" class="btn sm' + (o === 'con' ? ' red' : '') + '" data-act="hypEv" data-id="' + x.id + '" data-v="' + o + '">记下' + (o === 'con' ? '反例' : '支持') + '</button><button type="button" class="btn ghost sm" data-act="hypClose">算了</button></div></div>';
+  }
+  if (o === 'rev') s += '<div class="inline"><div class="lab">改写后的版本（编号不变，旧版存进历史）</div><textarea id="hx-text" rows="3">' + esc(hypText(x)) + '</textarea><p class="fine">比如「计划被打乱后会放弃」遇到反例，可能改成「计划被打乱、而且当时已经很累时，会放弃」。条件越精确，你就越了解自己。改写后支持数和反例数从零算起。</p><div class="row"><button type="button" class="btn sm" data-act="hypRevise" data-id="' + x.id + '">改写</button><button type="button" class="btn ghost sm" data-act="hypClose">算了</button></div></div>';
   if (o === 'del') s += '<div class="inline"><p class="muted">删掉后找不回来。确定删除这条？</p><div class="row"><button type="button" class="btn sm red" data-act="hypDel" data-id="' + x.id + '">删除</button><button type="button" class="btn ghost sm" data-act="hypClose">算了</button></div></div>';
   return s + '</article>';
 }
@@ -956,11 +1347,13 @@ function vLog(){
   const t = dayKey();
   const keys = allDayKeys().filter(k => k <= t && dayStatus(k, t) !== 'none').sort().reverse();
   let h = copyBox() + '<h1 class="h">记录</h1><p class="lede">每一天的预测、随手记和复盘。点开一天，可以复制给 Claude 接着聊。</p>';
+  h += '<div class="row" style="margin-bottom:12px"><button type="button" class="btn sm" data-act="impOpen">导入对话复盘</button></div>';
   if (!keys.length) h += '<p class="fine">还没有记录。从「今天」写下第一条预测，或者点下面的「随手记」记一笔。</p>';
   h += '<div class="stack">';
   keys.forEach(k => {
     const d = S.days[k] || newDay(k), st = dayStatus(k, t), miss = (d.preds || []).filter(p => p.result === 'miss' || p.result === 'half').length;
-    const sum = [];
+    const sum = [], arcs = archivesOn(k);
+    if (arcs.length) sum.push((arcs[0].data && arcs[0].data.summary && arcs[0].data.summary.headline) || '对话存档');
     if (d.preds && d.preds.length) sum.push('预测 ' + d.preds.length + (miss ? '（落空 ' + miss + '）' : ''));
     if (d.caps && d.caps.length) sum.push('随手记 ' + d.caps.length);
     const ne = eventsOn(k).length; if (ne) sum.push('单件复盘 ' + ne);
@@ -972,14 +1365,16 @@ function vLog(){
   });
   h += '</div>';
   h += '<h2 class="h2">数据</h2><div class="card">';
-  h += '<p class="muted">记录只存在这部手机的这个应用里，不联网，也不上传到任何地方。删掉桌面图标、清理浏览器数据或者换手机，记录会一起消失，所以每周导出一次备份。</p>';
-  h += '<p class="fine">要把某一天存成 Word，点开那一天，点「保存为 Word」。从网页版搬过来：在网页版「记录」页点「导出全部（JSON）」，再在这里点「导入备份」。</p>';
-  h += '<div class="row"><button type="button" class="btn ghost sm" data-act="export">导出备份（JSON）</button><button type="button" class="btn ghost sm" data-act="importPick">导入备份</button><button type="button" class="btn ghost sm" data-act="copyAll">复制全部为文字</button></div><input type="file" id="importFile" accept=".json,application/json" hidden></div>';
+  if (OFFLINE_APP) h += '<p class="muted">记录只存在这部手机的这个应用里，不联网，也不上传到任何地方。删掉桌面图标、清理浏览器数据或者换手机，记录会一起消失，所以每周做一次全部数据导出。</p>';
+  else if (mode === 'cloud') h += '<p class="muted">记录存在这个页面里只属于你的私人空间：别人即使拿到链接，也读不到你的内容。换设备打开同一个链接，记录还在。</p>';
+  else h += '<p class="muted">现在只存在这台设备的浏览器里。清理浏览器数据会把它们一起清掉，记得定期导出。</p>';
+  h += '<p class="fine">全部数据导出是一个 JSON 文件，用来备份，也可以在网页版和离线版之间搬家：在一边导出，在另一边导入。导入时这里已有的记录会跳过，不会被覆盖。要把某一天存成 Word，点开那一天，点「保存为 Word」。</p>';
+  h += '<div class="row">' + (dlNs ? '<button type="button" class="btn ghost sm" data-act="export">全部数据导出</button>' : '') + '<button type="button" class="btn ghost sm" data-act="importPick">全部数据导入</button><button type="button" class="btn ghost sm" data-act="copyAll">复制全部为文字</button></div><input type="file" id="importFile" accept=".json,application/json" hidden></div>';
   return h;
 }
 function dayDetail(k){
   const d = S.days[k] || newDay(k), e = d.evening;
-  let s = '<div class="detail">';
+  let s = '<div class="detail">' + archivesOn(k).map(archiveHTML).join('');
   if (d.preds && d.preds.length) s += '<ul class="preds">' + d.preds.map(p => predRow(p, k, false)).join('') + '</ul>';
   (d.caps || []).slice().sort((a, b) => a.at.localeCompare(b.at)).forEach(c => { s += capCardHTML(c, k); });
   if (e){
@@ -1007,7 +1402,7 @@ function render(){
   if (!form && route === 'capture') form = { type:'capture', key:'new', data:drafts['capture:new'] ? clone(drafts['capture:new']) : { fact:'', emos:[], inten:0, quote:'', body:[], did:'', wanted:'', care:'', tags:[], more:false }, dirty:false };
   if (!form && route === 'week'){ const k = ui.weekKey || weekStart(dayKey()); const w = S.weeks[k]; form = { type:'week', key:k, data:drafts['week:' + k] ? clone(drafts['week:' + k]) : (w ? clone(w) : { dir:'', said:['','',''], did:['','',''], was:'', saw:'' }), dirty:false }; }
   let html;
-  if (form){ html = ({ morning:fMorning, evening:fEvening, min:fMin, capture:fCapture, week:fWeek, event:fEvent })[form.type](); }
+  if (form){ html = ({ morning:fMorning, evening:fEvening, min:fMin, capture:fCapture, week:fWeek, event:fEvent, import:fImport })[form.type](); }
   else html = ({ today:vToday, log:vLog, hyps:vHyps })[route] ? ({ today:vToday, log:vLog, hyps:vHyps })[route]() : vToday();
   $('#view').innerHTML = html;
   const ca = $('#copyArea'); if (ca){ ca.focus(); ca.select(); }
@@ -1038,11 +1433,51 @@ function dayText(k){
   return L.join('\n');
 }
 function hypListText(){
-  const hs = openHyps();
-  if (!hs.length) return '当前假设清单：还是空的。';
-  return '当前假设清单：\n' + hs.map(h => '- [' + (h.status === 'solid' ? '较可信' : '待验证') + '｜支持 ' + evCount(h, 'sup') + '｜反例 ' + evCount(h, 'con') + '] ' + hypText(h)).join('\n');
+  const hs = openHyps().slice().sort((a, b) => (a.no || 0) - (b.no || 0));
+  const head = '当前假设清单（编号固定。改写或加证据用原编号；新增的假设用下一个编号 H' + nextNo() + '，再新增就依次往后排）：';
+  if (!hs.length) return head + '\n还是空的。';
+  return head + '\n' + hs.map(h => { const st = evStats(h.ev); return '- ' + hypNo(h) + ' [' + (h.status === 'solid' ? '较可信' : '待验证') + '｜支持 ' + st.sup + (st.supW ? '（弱 ' + st.supW + '）' : '') + '｜反例 ' + st.con + (st.conW ? '（弱 ' + st.conW + '）' : '') + ((h.history || []).length ? '｜改写过 ' + h.history.length + ' 次' : '') + '] ' + hypText(h); }).join('\n');
 }
 const OPENER = '请按 B、C、D 的顺序问我：先对照预测，再挑一个时刻深挖，最后写成一条假设。只问事实，不安慰，不给建议，每次只问一个问题。我开始解释原因或评价自己时，把我拉回「当时发生了什么」。最后帮我把发现写成「在___时，我可能会___」，并指出它和清单里哪一条有关，是支持还是反例。';
+const ARCHIVE_SPEC = `review-archive/v1 格式说明（字段名照抄，值换成这次复盘的内容）：
+{
+  "format": "review-archive/v1",
+  "date": "复盘的是哪一天，YYYY-MM-DD",
+  "time": "对话起止时间，比如 19:11-19:37，不知道就留空",
+  "chat_link": "这次对话的链接，没有就留空字符串",
+  "summary": {
+    "headline": "一句话总结",
+    "points": ["要点 1", "要点 2"]
+  },
+  "predictions": [
+    {"text": "预测原文", "actual": "实际情况", "result": "中 / 没中 / 暂时中"}
+  ],
+  "deep_dive": {
+    "note_time": "深挖的那一刻，比如 18:02",
+    "moment": "那一刻是什么事",
+    "timeline": ["按时间顺序的事实，一条一句"],
+    "gaps": ["记不清或缺失的地方"]
+  },
+  "hypotheses": [
+    {
+      "op": "new（新增）/ update（改写已有的一条）/ evidence（只给已有的一条加证据）",
+      "id": "H 编号。update 和 evidence 用清单里的原编号；new 用清单给出的下一个编号",
+      "text": "在___时，我可能会___（new 和 update 必填；evidence 可以不写）",
+      "support": [{"date": "YYYY-MM-DD，不确定就留空", "text": "支持它的事实", "strength": "强 或 弱（事后回忆的算弱）"}],
+      "counter": [{"date": "", "text": "和它对不上的事实", "strength": "强 或 弱"}],
+      "drafts": ["考虑过但没采用的其他说法"]
+    }
+  ],
+  "if_then": "如果___，我就___",
+  "tomorrow_prediction": "给明天的一条能判对错的预测",
+  "open_questions": ["还没解决的问题"],
+  "claude_view": ["你自己的推测和看法"]
+}
+规则：
+- support 和 counter 只放我亲口说过的事实，不放你的推测。你的推测和看法写进 claude_view，这部分永远不会计入证据。
+- 某个字段没有内容，就给空字符串 "" 或空列表 []，不要删掉字段。
+- 整段必须是合法 JSON：用英文双引号，最后一项后面不加逗号。`;
+const ARCHIVE_TAIL = '复盘结束时，按 review-archive/v1 格式输出一段 JSON 存档，放在代码块里。\n\n' + ARCHIVE_SPEC;
 function copyText(txt){
   const ok = () => toast('已复制，粘贴给 Claude 就行');
   const fail = () => { ui.copy = txt; render(); window.scrollTo(0, 0); };
@@ -1071,6 +1506,7 @@ function dayDocXml(k){
   B.push(wTxt('自我观察本', 'Small'));
   B.push(wTxt(k.slice(0, 4) + '年' + md(k) + ' ' + wdOf(k), 'Title'));
   B.push(wTxt(e ? (e.mode === 'std' ? '晚上复盘：标准版' : (e.late ? '第二天补记（最低版）' : '晚上复盘：最低版')) : d.skip ? '这一天放过了，原因：' + d.skip.reason : '这一天还没有复盘', 'Small'));
+  archivesOn(k).forEach(r => { B.push.apply(B, archiveBlocks(r)); });
   B.push(wH1('早上的预测'));
   if (d.preds.length) d.preds.forEach((p, i) => {
     B.push(wP(wRun((i + 1) + '. ', { b:true }) + wRun(p.text) + (p.result ? wRun('　' + RES[p.result], { b:true, color:p.result === 'hit' ? '2C7150' : 'B5362B' }) : '')));
@@ -1107,13 +1543,49 @@ function dayDocXml(k){
   if (evs.length){ B.push(wH1('单件复盘')); evs.forEach(ev => { B.push.apply(B, eventBlocks(ev, true)); }); }
   B.push(wH1('当前的自我假设清单'));
   const hs = openHyps();
-  if (hs.length) hs.forEach(h => { B.push(wTxt(hypText(h)), wTxt((h.status === 'solid' ? '较可信' : '待验证') + ' · 支持 ' + evCount(h, 'sup') + ' 次 · 反例 ' + evCount(h, 'con') + ' 次', 'Small')); });
+  if (hs.length) hs.slice().sort((a, b) => (a.no || 0) - (b.no || 0)).forEach(h => { B.push(wTxt(hypNo(h) + '　' + hypText(h)), wTxt((h.status === 'solid' ? '较可信' : '待验证') + ' · 支持 ' + evCount(h, 'sup') + ' 次 · 反例 ' + evCount(h, 'con') + ' 次', 'Small')); });
   else B.push(wTxt('清单还是空的。', 'Small'));
   B.push(wTxt('导出于 ' + ymd(new Date()) + ' ' + hm(new Date().toISOString()), 'Small'));
   return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>' + B.filter(Boolean).join('')
     + '<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1440" w:right="1304" w:bottom="1440" w:left="1304" w:header="708" w:footer="708" w:gutter="0"/></w:sectPr></w:body></w:document>';
 }
 const AFTERS = { light:'轻一点', same:'差不多', heavy:'更沉了' };
+function archiveBlocks(rec){
+  const a = rec.data || {}, s0 = a.summary || {}, dd = a.deep_dive || {}, B = [], rq = rec.resolvedQ || [];
+  const lab = { new:'新增', update:'改写', evidence:'加证据' };
+  B.push(wH1('对话复盘' + (a.time ? '　' + a.time : '')));
+  B.push(wP(wRun(s0.headline || '', { b:true })));
+  (s0.points || []).forEach(p => B.push(wTxt('· ' + p)));
+  if ((rec.applied || []).length){
+    B.push(wH2('假设变化'));
+    rec.applied.forEach(it => {
+      B.push(wP(wRun('H' + it.no + ' ' + (lab[it.kind] || '') + '　', { b:true, color:'23477A' }) + wRun(it.text)));
+      if (it.kind === 'update') B.push(wTxt('原来：' + it.oldText, 'Small'));
+      (it.ev || []).forEach(e => B.push(wTxt((e.kind === 'con' ? '反例' : '支持') + '（' + (e.str === 'weak' ? '弱' : '强') + '）' + (e.date ? ' ' + e.date : '') + '：' + e.note, 'Small')));
+    });
+  }
+  const preds = a.predictions || [];
+  if (preds.length){
+    B.push(wH2('预测对照'));
+    preds.forEach((p, i) => { const r = resKind(p.result); B.push(wP(wRun((i + 1) + '. ', { b:true }) + wRun(p.text) + (p.result ? wRun('　' + p.result, { b:true, color:r === 'hit' ? '2C7150' : r === 'miss' ? 'B5362B' : '4D596B' }) : '')), p.actual ? wTxt('实际：' + p.actual, 'Small') : ''); });
+  }
+  const tl = dd.timeline || [], gaps = dd.gaps || [];
+  if (dd.moment || tl.length || gaps.length){
+    B.push(wH2('深挖经过'));
+    if (dd.moment || dd.note_time) B.push(wKV(dd.note_time || '那一刻', dd.moment || ''));
+    tl.forEach((x, i) => B.push(wTxt((i + 1) + '. ' + x)));
+    if (gaps.length){ B.push(wTxt('记不清的地方：', 'Small')); gaps.forEach(g => B.push(wTxt('· ' + g, 'Small'))); }
+  }
+  const oq = a.open_questions || [];
+  if (a.if_then || a.tomorrow_prediction || oq.length){
+    B.push(wH2('接下来'), wKV('如果……我就……', a.if_then), wKV('明天的预测', a.tomorrow_prediction));
+    if (oq.length){ B.push(wTxt('待解问题：', 'Small')); oq.forEach((q, i) => B.push(wTxt('· ' + q + (rq.includes(i) ? '（已解决）' : '')))); }
+  }
+  const cv = a.claude_view || [];
+  if (cv.length){ B.push(wH2('Claude 的看法（不计入证据）')); cv.forEach(c => B.push(wTxt('· ' + c, 'Small'))); }
+  if (/^https?:\/\//i.test(a.chat_link || '')) B.push(wKV('原对话', a.chat_link));
+  return B;
+}
 function eventBlocks(ev, nested){
   const B = [], group = (title, items) => { const body = items.filter(Boolean); if (!body.length) return; if (!nested) B.push(wH2(title)); B.push.apply(B, body); };
   if (nested) B.push(wH2(ev.title || '单件复盘'));
@@ -1132,7 +1604,7 @@ function docWrap(B){
 function eventDocXml(ev){
   const B = [wTxt('自我观察本 · 单件复盘', 'Small'), wTxt(ev.title || '单件复盘', 'Title'), wTxt(ev.date.slice(0, 4) + '年' + md(ev.date) + ' ' + wdOf(ev.date) + ' 的事' + (ev.created ? ' · 复盘于 ' + md(ymd(new Date(ev.created))) + ' ' + hm(ev.created) : ''), 'Small')].concat(eventBlocks(ev, false));
   const h = ev.Dres && ev.Dres.hid && S.hyps[ev.Dres.hid];
-  if (h) B.push(wH2('相关的假设'), wTxt(hypText(h)), wTxt((h.status === 'solid' ? '较可信' : h.status === 'revised' ? '已改写' : '待验证') + ' · 支持 ' + evCount(h, 'sup') + ' 次 · 反例 ' + evCount(h, 'con') + ' 次', 'Small'));
+  if (h) B.push(wH2('相关的假设'), wTxt(hypNo(h) + '　' + hypText(h)), wTxt((h.status === 'solid' ? '较可信' : h.status === 'revised' ? '已改写' : '待验证') + ' · 支持 ' + evCount(h, 'sup') + ' 次 · 反例 ' + evCount(h, 'con') + ' 次', 'Small'));
   B.push(wTxt('导出于 ' + ymd(new Date()) + ' ' + hm(new Date().toISOString()), 'Small'));
   return docWrap(B);
 }
@@ -1200,7 +1672,7 @@ function predSrc(k){ const t = dayKey(); if (k > t) return 'eve'; const h = new 
 const A = {
   open(el){ const extra = null; if (el.dataset.type === 'evening' || el.dataset.type === 'min' || el.dataset.type === 'morning') openForm(el.dataset.type, el.dataset.key, extra); },
   cancel(){ closeForm(true); render(); },
-  pick(el){ if (!form) return; let v = el.dataset.v; if (/^\d+$/.test(v) && el.dataset.f === 'inten') v = +v; const cur = getPath(form.data, el.dataset.f); setPath(form.data, el.dataset.f, cur === v ? (el.dataset.f === 'D.op' ? cur : '') : v); form.dirty = true; drafts[form.type + ':' + form.key] = form.data; draftLater(); render(); },
+  pick(el){ if (!form) return; let v = el.dataset.v; if (/^\d+$/.test(v) && el.dataset.f === 'inten') v = +v; const cur = getPath(form.data, el.dataset.f); setPath(form.data, el.dataset.f, cur === v ? (['D.op', 'D.str', 'hypKind'].includes(el.dataset.f) ? cur : '') : v); form.dirty = true; drafts[form.type + ':' + form.key] = form.data; draftLater(); render(); },
   tog(el){ if (!form) return; const arr = (getPath(form.data, el.dataset.f) || []).slice(), v = el.dataset.v, i = arr.indexOf(v); if (i >= 0) arr.splice(i, 1); else arr.push(v); setPath(form.data, el.dataset.f, arr); form.dirty = true; drafts[form.type + ':' + form.key] = form.data; draftLater(); render(); },
   more(){ form.data.more = true; render(); const q = $('#f-quote'); if (q) q.focus(); },
   moment(el){
@@ -1213,7 +1685,7 @@ const A = {
     if (v.startsWith('pred:') && x.C.src === v){ const p = (S.days[form.key].preds || []).find(p2 => p2.id === v.slice(5)); if (p && !x.C.fact) x.C.fact = (x.R[p.id] && x.R[p.id].a) ? '预测「' + p.text + '」，实际：' + x.R[p.id].a : ''; }
     form.dirty = true; drafts[form.type + ':' + form.key] = x; draftLater(); render();
   },
-  testHyp(el){ const h = S.hyps[el.dataset.id]; if (!h) return; const x = form.data; if (x.hid === h.id){ x.hid = null; } else { x.hid = h.id; x.specific = '在' + h.sit + '时，我会' + h.rea; } form.dirty = true; drafts[form.type + ':' + form.key] = x; draftLater(); render(); },
+  testHyp(el){ const h = S.hyps[el.dataset.id]; if (!h) return; const x = form.data; if (x.hid === h.id){ x.hid = null; } else { x.hid = h.id; x.specific = hypText(h).replace('我可能会', '我会'); } form.dirty = true; drafts[form.type + ':' + form.key] = x; draftLater(); render(); },
   async saveMorning(){
     if (!needReady()) return;
     const k = form.key, x = form.data, d = getDay(k), now = new Date().toISOString(), src = predSrc(k);
@@ -1255,45 +1727,46 @@ const A = {
     const editing = form.key !== 'new';
     const k = editing ? form.key.split('|')[0] : dayKey(), id = editing ? form.key.split('|')[1] : newId();
     const d = getDay(k), old = d.caps.find(c => c.id === id);
-    const c = { id, at:old ? old.at : new Date().toISOString(), fact:(x.fact || '').trim(), emos:x.emos || [], inten:x.inten || 0, quote:(x.quote || '').trim(), body:x.body || [], did:(x.did || '').trim(), wanted:(x.wanted || '').trim(), care:(x.care || '').trim(), tags:x.tags || [] };
+    const c = { id, at:old ? old.at : new Date().toISOString(), fact:(x.fact || '').trim(), emos:x.emos || [], inten:x.inten || 0, quote:(x.quote || '').trim(), body:x.body || [], did:(x.did || '').trim(), wanted:(x.wanted || '').trim(), care:(x.care || '').trim(), tags:x.tags || [], hyp:(x.hyp && S.hyps[x.hyp]) ? x.hyp : null, hypKind:x.hypKind === 'con' ? 'con' : 'sup' };
     c.done = !!(c.quote || c.care);
     d.caps = old ? d.caps.map(c2 => c2.id === id ? c : c2) : d.caps.concat([c]);
+    const evOps = capEvidenceOps(k, c, old);
     delete drafts[form.type + ':' + form.key]; saveDrafts();
     form = null; ui.fresh = id; route = 'capture'; if (location.hash !== '#capture') history.replaceState(null, '', '#capture');
     render(); window.scrollTo(0, 0);
-    try { await put('days', k, d); toast(c.done ? '记下了，也理清了。' : '记下了。晚上或者有空时再理清。'); } catch (e) {}
+    try { await put('days', k, d); await Promise.all(evOps.map(f => f())); toast((c.hyp ? '记下了，也给 ' + hypNo(S.hyps[c.hyp]) + ' 记了一条' + (c.hypKind === 'con' ? '反例' : '支持') + '。' : '') || (c.done ? '记下了，也理清了。' : '记下了。晚上或者有空时再理清。')); } catch (e) {}
     setTimeout(() => { ui.fresh = null; }, 4000);
   },
   editCap(el){ const k = el.dataset.key, d = S.days[k], c = d && d.caps.find(c2 => c2.id === el.dataset.id); if (!c) return; form = null; route = 'capture'; if (location.hash !== '#capture') history.replaceState(null, '', '#capture'); const id = 'capture:' + k + '|' + c.id; form = { type:'capture', key:k + '|' + c.id, data:drafts[id] ? clone(drafts[id]) : Object.assign(clone(c), { more:true }), dirty:false }; render(); window.scrollTo(0, 0); },
-  async delCap(){ if (!needReady()) return; const p = form.key.split('|'), d = getDay(p[0]); d.caps = d.caps.filter(c => c.id !== p[1]); delete drafts['capture:' + form.key]; saveDrafts(); form = null; render(); try { await put('days', p[0], d); toast('删掉了。'); } catch (e) {} },
+  async delCap(){ if (!needReady()) return; const p = form.key.split('|'), d = getDay(p[0]), oldC = d.caps.find(c => c.id === p[1]), evOps = capEvidenceOps(p[0], { id:p[1], hyp:null }, oldC); d.caps = d.caps.filter(c => c.id !== p[1]); delete drafts['capture:' + form.key]; saveDrafts(); form = null; render(); try { await put('days', p[0], d); await Promise.all(evOps.map(f => f())); toast('删掉了。'); } catch (e) {} },
   async saveWeek(){ if (!needReady()) return; const k = form.key, data = clone(form.data); data.at = new Date().toISOString(); delete drafts['week:' + k]; saveDrafts(); form.dirty = false; try { await put('weeks', k, data); toast('周复盘存好了。去清单里更新一下假设。'); } catch (e) {} render(); },
   weekNav(el){ const k = addDays(form.key, +el.dataset.v); ui.weekKey = k; form = null; render(); },
   goWeek(el){ ui.weekKey = el.dataset.key; form = null; if (location.hash === '#week'){ route = 'week'; render(); } else location.hash = '#week'; },
   hypNew(){ ui.hypNew = !ui.hypNew; render(); const i = $('#hn-sit'); if (i) i.focus(); },
   hypNewCancel(){ ui.hypNew = false; render(); },
-  async hypNewSave(){ if (!needReady()) return; const sit = $('#hn-sit').value.trim(), rea = $('#hn-rea').value.trim(), note = $('#hn-ev').value.trim(); if (!sit || !rea){ toast('情境和反应都要写。'); return; } const h = { id:newId(), sit, rea, created:dayKey(), updated:new Date().toISOString(), status:'test', ev:note ? [{ date:dayKey(), kind:'sup', note }] : [], parent:null, child:null }; ui.hypNew = false; render(); try { await put('hyps', h.id, h); render(); } catch (e) {} },
-  hypAct(el){ ui.hypOpen = { id:el.dataset.id, act:el.dataset.v }; render(); const i = $('#hx-note') || $('#hx-sit'); if (i) i.focus(); },
+  async hypNewSave(){ if (!needReady()) return; const sit = $('#hn-sit').value.trim(), rea = $('#hn-rea').value.trim(), note = $('#hn-ev').value.trim(); if (!sit || !rea){ toast('情境和反应都要写。'); return; } const h = makeHyp({ sit, rea, ev:note ? [{ date:dayKey(), kind:'sup', note, str:'strong' }] : [] }); ui.hypNew = false; render(); try { await put('hyps', h.id, h); render(); toast('加进清单了，编号 ' + hypNo(h) + '。'); } catch (e) {} },
+  hypAct(el){ ui.hypOpen = { id:el.dataset.id, act:el.dataset.v, str:'strong' }; render(); const i = $('#hx-note') || $('#hx-text'); if (i) i.focus(); },
+  hypStr(el){ const i = $('#hx-note'); if (ui.hypOpen){ ui.hypOpen.note = i ? i.value : ''; ui.hypOpen.str = el.dataset.v; } render(); const j = $('#hx-note'); if (j){ j.value = (ui.hypOpen && ui.hypOpen.note) || ''; j.focus(); } },
   hypClose(){ ui.hypOpen = null; render(); },
-  async hypEv(el){ if (!needReady()) return; const h = clone(S.hyps[el.dataset.id]); if (!h) return; const note = ($('#hx-note').value || '').trim(); h.ev = (h.ev || []).concat([{ date:dayKey(), kind:el.dataset.v, note }]); h.updated = new Date().toISOString(); ui.hypOpen = null; render(); try { await put('hyps', h.id, h); render(); if (el.dataset.v === 'con') toast('反例记下了。它是新信息：试试缩小这条的条件。'); } catch (e) {} },
+  async hypEv(el){ if (!needReady()) return; const h = clone(S.hyps[el.dataset.id]); if (!h) return; const note = ($('#hx-note').value || '').trim(), str = (ui.hypOpen && ui.hypOpen.str) === 'weak' ? 'weak' : 'strong'; h.ev = (h.ev || []).concat([{ date:dayKey(), kind:el.dataset.v, note, str }]); h.updated = new Date().toISOString(); ui.hypOpen = null; render(); try { await put('hyps', h.id, h); render(); if (el.dataset.v === 'con') toast('反例记下了。它是新信息：试试缩小这条的条件。'); } catch (e) {} },
   async hypStatus(el){ if (!needReady()) return; const h = clone(S.hyps[el.dataset.id]); if (!h) return; h.status = el.dataset.v; h.updated = new Date().toISOString(); render(); try { await put('hyps', h.id, h); render(); } catch (e) {} },
   async hypRevise(el){
     if (!needReady()) return;
-    const old = clone(S.hyps[el.dataset.id]); if (!old) return;
-    const sit = $('#hx-sit').value.trim(), rea = $('#hx-rea').value.trim();
-    if (!sit || !rea){ toast('情境和反应都要写。'); return; }
-    if (sit === old.sit && rea === old.rea){ toast('还没改动。'); return; }
-    const now = new Date().toISOString(), t = dayKey();
-    const n = { id:newId(), sit, rea, created:t, updated:now, status:'test', ev:[], parent:old.id, child:null };
-    old.status = 'revised'; old.revisedOn = t; old.child = n.id; old.updated = now;
+    const h = clone(S.hyps[el.dataset.id]); if (!h) return;
+    const text = ($('#hx-text').value || '').trim();
+    if (!text){ toast('改写后的版本不能是空的。'); return; }
+    if (sameText(text, hypText(h))){ toast('还没改动。'); return; }
+    const t = dayKey();
+    pushHistory(h, t);
+    h.text = text; h.sit = null; h.rea = null; h.ev = []; h.revisedOn = t; h.verBy = null; h.status = 'test'; h.updated = new Date().toISOString();
     ui.hypOpen = null; render();
-    try { await put('hyps', n.id, n); await put('hyps', old.id, old); render(); toast('改写了。这就是一次重新认识。'); } catch (e) {}
+    try { await put('hyps', h.id, h); render(); toast(hypNo(h) + ' 改写了，旧版本存进了历史。这就是一次重新认识。'); } catch (e) {}
   },
   async hypDel(el){ if (!needReady()) return; const id = el.dataset.id; ui.hypOpen = null; render(); try { await remove('hyps', id); render(); } catch (e) {} },
   logOpen(el){ ui.logOpen = ui.logOpen === el.dataset.key ? null : el.dataset.key; render(); },
-  copy(el){ const k = el.dataset.key; copyText(dayText(k) + '\n\n' + hypListText() + '\n\n' + OPENER); },
+  copy(el){ const k = el.dataset.key; copyText((dayText(k) || '【复盘日 ' + k + ' ' + wdOf(k) + '】\n今天还没有记录。') + '\n\n' + hypListText() + '\n\n' + OPENER + '\n' + ARCHIVE_TAIL); },
   copyAll(){ const ks = allDayKeys().filter(k => k <= dayKey()).sort(); copyText(ks.map(dayText).filter(Boolean).join('\n\n') + '\n\n' + hypListText()); },
   closeCopy(){ ui.copy = null; render(); },
-  importPick(){ const i = $('#importFile'); if (i){ i.value = ''; i.click(); } },
   newEvent(){ openForm('event', 'new'); },
   eventFromCap(el){ const e = eventForCap(el.dataset.key, el.dataset.id); openForm('event', e ? e.id : 'new|' + el.dataset.key + '|' + el.dataset.id); },
   editEvent(el){ openForm('event', el.dataset.id); },
@@ -1325,7 +1798,7 @@ const A = {
     try { await dlNs.save({ filename:'单件复盘-' + ev.date + (part ? '-' + part : '') + '.docx', data:blob }); toast('Word 保存好了。'); }
     catch (e){ if (e && e.code === 'declined') return; toast('没保存成功，可以先用「复制给 Claude」把文字留下来。'); }
   },
-  copyEvent(el){ const ev = S.events[el.dataset.id]; if (ev) copyText(eventText(ev) + '\n\n' + hypListText() + '\n\n' + EVENT_OPENER); },
+  copyEvent(el){ const ev = S.events[el.dataset.id]; if (ev) copyText(eventText(ev) + '\n\n' + hypListText() + '\n\n' + EVENT_OPENER + '\n' + ARCHIVE_TAIL); },
   async wordDay(el){
     if (!dlNs){ toast('这里不能保存文件，可以先用「复制给 Claude」把文字留下来。'); return; }
     const k = el.dataset.key;
@@ -1340,8 +1813,62 @@ const A = {
   },
   async export(){
     if (!dlNs){ toast('这里不能导出文件，用「复制全部为文字」。'); return; }
-    try { await dlNs.save({ filename:'自我观察本-' + dayKey() + '.json', data:JSON.stringify({ exportedAt:new Date().toISOString(), days:S.days, hyps:S.hyps, weeks:S.weeks, events:S.events }, null, 2) }); try { localStorage.setItem('zwgcb-lastbackup', dayKey()); } catch (e2) {} toast('备份导出好了。'); render(); }
+    const o = { app:'自我观察本', exportedAt:new Date().toISOString() }; COLS.forEach(c => { o[c] = S[c]; });
+    try { await dlNs.save({ filename:'自我观察本-全部数据-' + dayKey() + '.json', data:JSON.stringify(o, null, 2) }); try { localStorage.setItem('zwgcb-lastbackup', dayKey()); } catch (e2) {} toast('全部数据导出好了。'); render(); }
     catch (e){ if (!e || e.code !== 'declined') toast('导出没成功，可以先用「复制全部为文字」。'); }
+  },
+  importPick(){ const i = $('#importFile'); if (i){ i.value = ''; i.click(); } },
+  impOpen(){ openForm('import', 'new'); },
+  impParse(){
+    const x = form.data, ta = $('#f-text'); if (ta) x.text = ta.value;
+    const r = extractArchive(x.text);
+    if (r.error){ x.err = [r.error]; x.a = null; render(); return; }
+    const errs = validateArchive(r.obj);
+    if (errs.length){ x.err = errs; x.a = null; render(); return; }
+    x.err = null; x.a = r.obj; x.mode = archivesOn(r.obj.date).length ? null : 'add'; x.tmr = true;
+    drafts[form.type + ':' + form.key] = x; draftLater(); render(); window.scrollTo(0, 0);
+  },
+  impBack(){ form.data.a = null; form.data.err = null; render(); },
+  impMode(el){ form.data.mode = el.dataset.v; render(); },
+  impTmr(){ form.data.tmr = !form.data.tmr; render(); },
+  async impCommit(){
+    if (!needReady() || !form || !form.data.a) return;
+    const x = form.data, a = x.a, same = archivesOn(a.date);
+    if (same.length && !x.mode){ toast('先选「覆盖」还是「另存一条」。'); return; }
+    const ow = (x.mode && x.mode !== 'add') ? S.archives[x.mode] : null;
+    const p = planArchive(a, ow);
+    if (p.errors.length){ render(); return; }
+    const now = new Date().toISOString();
+    const rec = { id:p.recId, date:a.date, time:a.time || '', chat_link:a.chat_link || '', imported:now, data:a, applied:p.items, tmrPredId:null, resolvedQ:[] };
+    const tp = String(a.tomorrow_prediction || '').trim();
+    if (tp && x.tmr){ const nk = addDays(a.date, 1), nd = p.days[nk] || getDay(nk); rec.tmrPredId = newId(); nd.preds = (nd.preds || []).concat([{ id:rec.tmrPredId, kind:'specific', text:tp, hid:null, at:now, src:'eve', result:'', actual:'', arc:rec.id }]); p.days[nk] = nd; }
+    const ops = [];
+    p.putIds.forEach(id => ops.push(put('hyps', id, p.hs[id])));
+    p.delIds.forEach(id => ops.push(remove('hyps', id)));
+    Object.keys(p.days).forEach(k => ops.push(put('days', k, p.days[k])));
+    if (p.seq > curSeq()) ops.push(put('meta', 'counters', { hypSeq:p.seq }));
+    ops.push(put('archives', rec.id, rec));
+    if (ow) ops.push(remove('archives', ow.id));
+    closeForm(); ui.logOpen = a.date;
+    if (location.hash === '#log'){ route = 'log'; render(); } else location.hash = '#log';
+    window.scrollTo(0, 0);
+    try { await Promise.all(ops); toast('导入好了，归到 ' + md(a.date) + (p.items.length ? '，假设清单变了 ' + p.items.length + ' 处' : '') + '。'); } catch (e) {}
+  },
+  openDay(el){ ui.logOpen = el.dataset.key; if (location.hash === '#log'){ form = null; route = 'log'; render(); } else location.hash = '#log'; },
+  async qToggle(el){ if (!needReady()) return; const r = clone(S.archives[el.dataset.id]); if (!r) return; const i = +el.dataset.v, set = new Set(r.resolvedQ || []); if (set.has(i)) set.delete(i); else set.add(i); r.resolvedQ = Array.from(set).sort((a, b) => a - b); const p = put('archives', r.id, r); render(); try { await p; } catch (e) {} },
+  arcDelAsk(el){ ui.arcDel = el.dataset.id; render(); },
+  arcDelNo(){ ui.arcDel = null; render(); },
+  async arcDel(el){
+    if (!needReady()) return;
+    const rec = S.archives[el.dataset.id]; if (!rec) return;
+    const hs = clone(S.hyps) || {}, days = {};
+    revertInto(rec, hs, days);
+    const d = hypDiff(hs), ops = [];
+    d.putIds.forEach(id => ops.push(put('hyps', id, hs[id]))); d.delIds.forEach(id => ops.push(remove('hyps', id)));
+    Object.keys(days).forEach(k => ops.push(put('days', k, days[k])));
+    ops.push(remove('archives', rec.id));
+    ui.arcDel = null; render();
+    try { await Promise.all(ops); toast('删掉了这份存档，它加的证据和假设也撤回了。'); } catch (e) {}
   }
 };
 function applyResults(d, R){ d.preds = d.preds.map(p => { const r = R && R[p.id]; return r ? Object.assign({}, p, { result:r.r || '', actual:(r.a || '').trim() }) : p; }); }
@@ -1351,15 +1878,15 @@ function applyD(k, D, writes){
   if (D.op === 'new'){
     const sit = (D.sit || '').trim(), rea = (D.rea || '').trim();
     if (!sit && !rea) return { op:'none' };
-    const h = { id:newId(), sit:sit || '（情境没写）', rea:rea || '（反应没写）', created:k, updated:now, status:'test', ev:[{ date:k, kind:'sup', note:(D.ev || '').trim() }], parent:null, child:null };
+    const h = makeHyp({ sit:sit || '（情境没写）', rea:rea || '（反应没写）', date:k, ev:[{ date:k, kind:'sup', note:(D.ev || '').trim(), str:D.str === 'weak' ? 'weak' : 'strong' }] });
     writes.push(() => put('hyps', h.id, h));
-    return { op:'new', hid:h.id, text:hypText(h), line:'<div class="hmeta"><span class="st test">新假设</span></div>' + hypLines(h) };
+    return { op:'new', hid:h.id, text:hypNo(h) + ' ' + hypText(h), line:'<div class="hmeta"><span class="hno">' + hypNo(h) + '</span></div>' +'<div class="hmeta"><span class="st test">新假设</span></div>' + hypLines(h) };
   }
   if (D.op === 'old' && D.hid && S.hyps[D.hid]){
     const h = clone(S.hyps[D.hid]), kind = D.kind === 'con' ? 'con' : 'sup';
-    h.ev = (h.ev || []).concat([{ date:k, kind, note:(D.ev || '').trim() }]); h.updated = now;
+    h.ev = (h.ev || []).concat([{ date:k, kind, note:(D.ev || '').trim(), str:D.str === 'weak' ? 'weak' : 'strong' }]); h.updated = now;
     writes.push(() => put('hyps', h.id, h));
-    return { op:'old', hid:h.id, kind, text:hypText(h) + '（' + (kind === 'con' ? '反例' : '支持') + '）', line:'<div class="hmeta"><span class="st ' + (kind === 'con' ? 'revised' : 'test') + '">' + (kind === 'con' ? '记了一次反例' : '记了一次支持') + '</span></div>' + hypLines(h) };
+    return { op:'old', hid:h.id, kind, text:hypNo(h) + ' ' + hypText(h) + '（' + (kind === 'con' ? '反例' : '支持') + '）', line:'<div class="hmeta"><span class="st ' + (kind === 'con' ? 'revised' : 'test') + '">' + (kind === 'con' ? '记了一次反例' : '记了一次支持') + '</span></div>' + hypLines(h) };
   }
   return { op:'none' };
 }
@@ -1409,7 +1936,7 @@ function onHash(){
   const r = (location.hash || '#today').slice(1);
   route = ['today','log','capture','hyps','week'].includes(r) ? r : 'today';
   if (form && form.dirty){ drafts[form.type + ':' + form.key] = form.data; saveDrafts(); }
-  form = null; ui.hypOpen = null; ui.hypNew = false; ui.copy = null;
+  form = null; ui.hypOpen = null; ui.hypNew = false; ui.copy = null; ui.arcDel = null;
   render(); window.scrollTo(0, 0);
 }
 window.addEventListener('hashchange', onHash);

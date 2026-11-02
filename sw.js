@@ -1,5 +1,5 @@
 // 自我观察本 · offline cache. Bump VERSION whenever any file changes.
-const VERSION = 'v2';
+const VERSION = 'v3';
 const CACHE = 'zwgcb-' + VERSION;
 const ASSETS = ['./', './index.html', './manifest.webmanifest', './icons/icon-192.png', './icons/icon-512.png', './icons/icon-maskable-512.png', './icons/apple-touch-icon.png'];
 self.addEventListener('install', e => {
