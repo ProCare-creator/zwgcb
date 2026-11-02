@@ -3,7 +3,7 @@
   "short_name": "自我观察本",
   "description": "每天的预测、随手记、复盘和自我假设清单，离线可用。",
   "lang": "zh-CN",
-  "start_url": "./#today",
+  "start_url": "./#pred",
   "scope": "./",
   "display": "standalone",
   "background_color": "#F3F5F2",
@@ -40,8 +40,18 @@
       ]
     },
     {
-      "name": "今天",
-      "url": "./#today",
+      "name": "预测",
+      "url": "./#pred",
+      "icons": [
+        {
+          "src": "icons/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "复盘",
+      "url": "./#review",
       "icons": [
         {
           "src": "icons/icon-192.png",

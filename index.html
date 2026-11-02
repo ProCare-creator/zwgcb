@@ -90,10 +90,10 @@ h2.h2{ font-family:var(--f-display); font-size:17px; font-weight:600; margin:26p
 .f{ display:flex; flex-direction:column; gap:6px; min-width:0; }
 .f>label,.lab{ font-size:13.5px; font-weight:600; color:var(--ink-2); }
 .f .hint{ font-size:12.5px; color:var(--ink-3); }
-textarea,input[type=text],input[type=date]{ width:100%; border:1px solid var(--line); background:var(--field); border-radius:8px; padding:9px 11px; font-size:16px; line-height:1.5; }
+textarea,input[type=text],input[type=date],input[type=time],input[type=password]{ width:100%; border:1px solid var(--line); background:var(--field); border-radius:8px; padding:9px 11px; font-size:16px; line-height:1.5; }
 textarea{ resize:vertical; min-height:44px; }
-input[type=date]{ min-height:44px; display:block; }
-textarea:focus,input[type=text]:focus,input[type=date]:focus{ outline:none; border-color:var(--blue); box-shadow:0 0 0 3px var(--blue-soft); }
+input[type=date],input[type=time]{ min-height:44px; display:block; }
+textarea:focus,input[type=text]:focus,input[type=date]:focus,input[type=time]:focus,input[type=password]:focus{ outline:none; border-color:var(--blue); box-shadow:0 0 0 3px var(--blue-soft); }
 .pair{ display:grid; grid-template-columns:auto 1fr; gap:6px 8px; align-items:center; }
 .pair span{ font-size:14px; color:var(--ink-2); white-space:nowrap; }
 .warn{ font-size:12.5px; color:var(--red); }
@@ -211,6 +211,41 @@ details.cv ul, details.drafts ul, details.hist ol{ margin:8px 0 0; padding-left:
 .pv-row{ display:flex; gap:8px; align-items:flex-start; font-size:14px; }
 .mono-in{ font-family:var(--f-mono); }
 .pen.half{ color:var(--ink-2); }
+/* date bar + calendar */
+.datebar{ display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:12px; }
+.dnav{ flex:none; width:40px; height:40px; border-radius:50%; border:1px solid var(--line); background:var(--card); font-size:22px; line-height:1; color:var(--ink); display:grid; place-items:center; padding:0 0 3px; }
+.dnav.sm{ width:32px; height:32px; font-size:18px; }
+.dnav[disabled]{ opacity:.35; cursor:default; }
+.dlabel{ flex:1; min-width:0; border:0; background:none; display:flex; align-items:baseline; justify-content:center; gap:8px; padding:4px 0; color:var(--ink); }
+.dlabel .date{ font-size:26px; }
+.dwd{ font-size:14px; color:var(--ink-2); font-weight:600; white-space:nowrap; }
+.caret{ font-size:12px; color:var(--blue); }
+.backrow{ justify-content:center; margin:-4px 0 12px; }
+.calpop{ margin-bottom:12px; }
+.calhead{ display:flex; align-items:center; justify-content:space-between; font-weight:700; font-size:15px; }
+.cal{ display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:5px; }
+.cal .wd{ font-size:11px; color:var(--ink-3); text-align:center; font-family:var(--f-mono); }
+.cday{ position:relative; aspect-ratio:1; min-width:0; max-width:100%; border-radius:7px; border:1px solid var(--line); background:var(--card); padding:0; display:flex; align-items:center; justify-content:center; font-family:var(--f-mono); font-size:13px; color:var(--ink); }
+.cday.std{ background:var(--blue); border-color:var(--blue); color:var(--on-blue); }
+.cday.min{ background:linear-gradient(135deg,var(--blue-soft) 0 50%,var(--card) 50%); border-color:var(--blue); }
+.cday.part{ border:2px solid var(--blue); }
+.cday.skip{ background:repeating-linear-gradient(135deg,var(--line) 0 1.5px,var(--card) 1.5px 6px); }
+.cday.none{ border-style:dashed; color:var(--ink-3); }
+.cday.future{ border-style:dotted; color:var(--ink-3); }
+.cday.today{ box-shadow:0 0 0 2px var(--card), 0 0 0 3.5px var(--red); }
+.cday.sel{ outline:2px solid var(--ink); outline-offset:2px; }
+.cday[disabled]{ opacity:.3; cursor:default; }
+.mks{ position:absolute; bottom:3px; left:0; right:0; display:flex; justify-content:center; gap:2px; }
+.mk{ width:5px; height:5px; border-radius:50%; display:block; }
+.mk.a{ background:var(--red); } .mk.e{ background:var(--green); }
+.cday.std .mk{ box-shadow:0 0 0 1px var(--on-blue); }
+.legend i.dot{ border-radius:50%; width:7px; height:7px; border:0; vertical-align:1px; }
+.legend i.dot.a{ background:var(--red); } .legend i.dot.e{ background:var(--green); }
+/* prediction summary line */
+.psum{ display:flex; flex-wrap:wrap; align-items:baseline; gap:4px 12px; font-size:14px; color:var(--ink-2); }
+.psum .n{ font-family:var(--f-mono); font-size:20px; font-weight:500; color:var(--ink); margin-right:2px; }
+.psum .ok{ color:var(--green); } .psum .no{ color:var(--red); }
+.steps{ margin:0; padding-left:1.3em; display:flex; flex-direction:column; gap:6px; font-size:14px; color:var(--ink-2); }
 .evt-title{ font-weight:700; font-size:16px; line-height:1.45; overflow-wrap:anywhere; }
 .evt .kv{ grid-template-columns:5.2em 1fr; }
 
@@ -271,11 +306,11 @@ details.cv ul, details.drafts ul, details.hist ol{ margin:8px 0 0; padding-left:
 </div>
 <nav class="tabs" aria-label="页面">
   <div class="in">
-    <a href="#today" data-r="today"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 9h16M9 3v4M15 3v4"/></svg>今天</a>
-    <a href="#log" data-r="log"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 4h10l3 3v13H6z"/><path d="M9 10h7M9 14h7M9 18h4"/></svg>记录</a>
-    <a href="#capture" data-r="capture" class="cap-tab"><span class="dot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg></span>随手记</a>
-    <a href="#hyps" data-r="hyps"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="6" width="18" height="13" rx="1.5"/><path d="M3 10h18M7 14h6"/></svg>假设清单</a>
-    <a href="#week" data-r="week"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 18l5-6 4 3 7-9"/><path d="M15 6h5v5"/></svg>周复盘</a>
+    <a href="#pred" data-r="pred"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r="0.9" fill="currentColor"/></svg>预测</a>
+    <a href="#capture" data-r="capture"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></svg>随手记</a>
+    <a href="#review" data-r="review"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 14.5A7.5 7.5 0 0 1 9.5 5a7.5 7.5 0 1 0 9.5 9.5z"/></svg>复盘</a>
+    <a href="#hyps" data-r="hyps"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="6" width="18" height="13" rx="1.5"/><path d="M3 10h18M7 14h6"/></svg>假设</a>
+    <a href="#more" data-r="more"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 9h16M9 3v4M15 3v4"/></svg>更多</a>
   </div>
 </nav>
 <div id="toast" hidden></div>
@@ -295,7 +330,7 @@ const VAGUE = ['充实','好好','努力','认真','尽量','高效','顺利','�
 const MOMENTS = ['情绪最强的一刻','最不像自己的一刻','最有劲的一刻','别的时刻'];
 const FORMAT = 'review-archive/v1';
 const OFFLINE_APP = true;
-const APP_VERSION = 'v4';
+const APP_VERSION = 'v5';
 const LS_KEY = 'zwgcb-data-v1', LS_DRAFT = 'zwgcb-drafts-v1';
 
 /* ---------- utils ---------- */
@@ -338,9 +373,10 @@ let S = { days:{}, hyps:{}, weeks:{}, events:{}, archives:{}, meta:{} };
 const COLS = ['days','hyps','weeks','events','archives','meta'];
 let mode = 'init';           // init | cloud | local
 let ready = false, slow = false, migrated = false;
-let route = 'today';
+let route = 'pred';
+let sel = dayKey();          // the day the 预测 / 随手记 / 复盘 pages show
 let form = null;             // {type, key, data, dirty}
-let ui = { skipOpen:false, logOpen:null, hypOpen:null, hypNew:false, copy:null, fresh:null, weekKey:null, arcDel:null };
+let ui = { skipOpen:false, logOpen:null, hypOpen:null, hypNew:false, copy:null, fresh:null, weekKey:null, arcDel:null, cal:false, calMonth:null, moreMonth:null, moreDay:null, syncEdit:false, syncErr:null, syncOff:false, syncChecking:false };
 let drafts = {};
 try { drafts = JSON.parse(localStorage.getItem(LS_DRAFT) || '{}') || {}; } catch (e) { drafts = {}; }
 let dlNs = null;
@@ -351,6 +387,7 @@ const queues = {};
 function lsWrite(){ try { const o = { savedAt:Date.now() }; COLS.forEach(c => { o[c] = S[c]; }); localStorage.setItem(LS_KEY, JSON.stringify(o)); return true; } catch (e) { return false; } }
 function lsRead(){ try { return JSON.parse(localStorage.getItem(LS_KEY) || 'null'); } catch (e) { return null; } }
 function put(col, id, data){
+  data = Object.assign({}, data, { _t:Date.now() });   // change stamp, used when merging with the cloud copy
   S[col] = Object.assign({}, S[col]); S[col][id] = data;
   if (mode === 'cloud'){
     const path = col + '/' + id;
@@ -359,8 +396,12 @@ function put(col, id, data){
     return p.catch(e => { toast(errMsg(e)); throw e; });
   }
   if (!lsWrite()) toast('这个浏览器不允许保存，刷新后会丢失。');
+  noteLocalChange(); queueRefresh();
   return Promise.resolve();
 }
+// Local saves have no snapshot listener to redraw the page, so redraw once after the current step.
+let refreshQ = false;
+function queueRefresh(){ if (refreshQ) return; refreshQ = true; Promise.resolve().then(() => { refreshQ = false; refresh(); }); }
 function remove(col, id){
   S[col] = Object.assign({}, S[col]); delete S[col][id];
   if (mode === 'cloud'){
@@ -369,11 +410,146 @@ function remove(col, id){
     queues[path] = p;
     return p.catch(e => { toast(errMsg(e)); throw e; });
   }
-  lsWrite(); return Promise.resolve();
+  const del = readDel(); del[col + '/' + id] = Date.now(); writeDel(del);
+  lsWrite(); noteLocalChange(); queueRefresh(); return Promise.resolve();
 }
 function saveDrafts(){ try { localStorage.setItem(LS_DRAFT, JSON.stringify(drafts)); } catch (e) {} }
 let draftT = null;
 function draftLater(){ clearTimeout(draftT); draftT = setTimeout(saveDrafts, 400); }
+
+/* ---------- cloud sync (offline app only): encrypted file in a private GitHub repo ---------- */
+const SYNC_KEY = 'zwgcb-sync', DEL_KEY = 'zwgcb-del', SYNC_PATH = 'zwgcb-data.json';
+let syncCfg = null; try { syncCfg = JSON.parse(localStorage.getItem(SYNC_KEY) || 'null'); } catch (e) {}
+let syncBusy = false, syncAgain = false, syncT = null, syncDirty = false, localRev = 0;
+let syncState = { ok:null, msg:'', at:null };
+function saveSyncCfg(){ try { if (syncCfg) localStorage.setItem(SYNC_KEY, JSON.stringify(syncCfg)); else localStorage.removeItem(SYNC_KEY); } catch (e) {} }
+function readDel(){ try { return JSON.parse(localStorage.getItem(DEL_KEY) || '{}') || {}; } catch (e) { return {}; } }
+function writeDel(o){ try { localStorage.setItem(DEL_KEY, JSON.stringify(o)); } catch (e) {} }
+function noteLocalChange(){ localRev++; syncDirty = true; syncLater(); }
+function syncLater(ms){ if (!OFFLINE_APP || !syncCfg || !syncCfg.token) return; clearTimeout(syncT); syncT = setTimeout(() => syncNow(), ms || 4000); }
+const b64enc = u8 => { let s = ''; for (let i = 0; i < u8.length; i += 0x8000) s += String.fromCharCode.apply(null, u8.subarray(i, i + 0x8000)); return btoa(s); };
+const b64dec = str => Uint8Array.from(atob(String(str).replace(/\s/g, '')), c => c.charCodeAt(0));
+async function deriveKey(pass, salt){
+  const base = await crypto.subtle.importKey('raw', new TextEncoder().encode(pass), 'PBKDF2', false, ['deriveKey']);
+  return crypto.subtle.deriveKey({ name:'PBKDF2', salt, iterations:200000, hash:'SHA-256' }, base, { name:'AES-GCM', length:256 }, false, ['encrypt', 'decrypt']);
+}
+async function encryptJSON(obj, pass){
+  const salt = crypto.getRandomValues(new Uint8Array(16)), iv = crypto.getRandomValues(new Uint8Array(12)), key = await deriveKey(pass, salt);
+  const ct = new Uint8Array(await crypto.subtle.encrypt({ name:'AES-GCM', iv }, key, new TextEncoder().encode(JSON.stringify(obj))));
+  return { app:'自我观察本', v:1, kdf:'PBKDF2-SHA256-200000', cipher:'AES-256-GCM', salt:b64enc(salt), iv:b64enc(iv), data:b64enc(ct) };
+}
+async function decryptJSON(env, pass){
+  const key = await deriveKey(pass, b64dec(env.salt));
+  const pt = await crypto.subtle.decrypt({ name:'AES-GCM', iv:b64dec(env.iv) }, key, b64dec(env.data));
+  return JSON.parse(new TextDecoder().decode(pt));
+}
+const ghHeaders = extra => Object.assign({ Authorization:'Bearer ' + syncCfg.token, Accept:'application/vnd.github+json', 'X-GitHub-Api-Version':'2022-11-28' }, extra || {});
+const ghFileURL = () => 'https://api.github.com/repos/' + syncCfg.repo + '/contents/' + SYNC_PATH;
+async function ghGet(){
+  const r = await fetch(ghFileURL(), { headers:ghHeaders(), cache:'no-store' });
+  if (r.status === 404) return { exists:false };
+  if (!r.ok) throw { status:r.status };
+  const j = await r.json();
+  let text;
+  if (j.content && j.encoding === 'base64') text = new TextDecoder().decode(b64dec(j.content));
+  else { const r2 = await fetch(ghFileURL(), { headers:ghHeaders({ Accept:'application/vnd.github.raw+json' }), cache:'no-store' }); if (!r2.ok) throw { status:r2.status }; text = await r2.text(); }
+  return { exists:true, sha:j.sha, text };
+}
+async function ghPut(text, sha){
+  const body = { message:'自我观察本同步 ' + new Date().toISOString(), content:b64enc(new TextEncoder().encode(text)) };
+  if (sha) body.sha = sha;
+  const r = await fetch(ghFileURL(), { method:'PUT', headers:ghHeaders({ 'Content-Type':'application/json' }), body:JSON.stringify(body) });
+  if (r.status === 409 || r.status === 422) return { conflict:true };
+  if (!r.ok) throw { status:r.status };
+  return { ok:true };
+}
+function syncErrText(e){
+  if (e && e.msg) return e.msg;
+  const st = e && e.status;
+  if (st === 401) return '同步失败：访问密钥无效或已过期。到「更多 → 云端同步 → 修改设置」重新填。';
+  if (st === 403) return '同步失败：访问密钥没有写入权限（Contents 要设成 Read and write），或者 GitHub 暂时限制了访问次数。';
+  if (st === 404) return '同步失败：找不到这个仓库，或者访问密钥没有它的权限。';
+  if (st) return '同步失败：GitHub 返回了错误（' + st + '），稍后会自动再试。';
+  return '同步失败：连不上 GitHub，联网后会自动再试。';
+}
+function snapshotLocal(){ const cols = {}; COLS.forEach(c => { cols[c] = S[c] || {}; }); return { cols, del:readDel() }; }
+// Per-document last-write-wins on the _t stamp; deletion records win over older copies.
+function mergeSnap(a, b){
+  const out = { cols:{}, del:Object.assign({}, a.del || {}) };
+  let changedLocal = false, changedRemote = false;
+  Object.entries(b.del || {}).forEach(([k, t]) => { if (!(out.del[k] >= t)){ out.del[k] = t; changedLocal = true; } });
+  Object.keys(out.del).forEach(k => { if (!((b.del || {})[k] >= out.del[k])) changedRemote = true; });
+  COLS.forEach(c => {
+    const A = (a.cols && a.cols[c]) || {}, B = (b.cols && b.cols[c]) || {}, o = {};
+    new Set(Object.keys(A).concat(Object.keys(B))).forEach(id => {
+      const x = A[id], y = B[id], tx = x ? (x._t || 0) : -1, ty = y ? (y._t || 0) : -1;
+      let pick = ty > tx ? y : x, tp = Math.max(tx, ty);
+      if (c === 'meta' && id === 'counters' && x && y) pick = Object.assign({}, pick, { hypSeq:Math.max(x.hypSeq || 0, y.hypSeq || 0) });
+      const dt = out.del[c + '/' + id];
+      if (dt && dt >= tp){ if (x) changedLocal = true; if (y) changedRemote = true; return; }
+      o[id] = pick;
+      if (c === 'meta'){
+        if (JSON.stringify(pick) !== JSON.stringify(x)) changedLocal = true;
+        if (JSON.stringify(pick) !== JSON.stringify(y)) changedRemote = true;
+      } else {
+        if (!x || tx !== tp) changedLocal = true;
+        if (!y || ty !== tp) changedRemote = true;
+      }
+    });
+    out.cols[c] = o;
+  });
+  const cut = Date.now() - 120 * 864e5;
+  Object.keys(out.del).forEach(k => { if (out.del[k] < cut) delete out.del[k]; });
+  out.changedLocal = changedLocal; out.changedRemote = changedRemote;
+  return out;
+}
+function applySnap(m){
+  const n = {}; COLS.forEach(c => { n[c] = m.cols[c] || {}; });
+  S = n; writeDel(m.del); lsWrite();
+  hypsMigrated = false; migrateHyps(); refresh();
+}
+function setSync(ok, msg){
+  syncState = { ok, msg:msg || '', at:ok ? Date.now() : syncState.at };
+  if (ok && syncCfg){ syncCfg.lastAt = syncState.at; saveSyncCfg(); }
+  syncLabel();
+  if (route === 'more' && !form && !ui.syncEdit && syncCfg) render();
+}
+async function syncNow(){
+  if (!OFFLINE_APP || !syncCfg || !syncCfg.token || !syncCfg.repo || !syncCfg.pass || !ready) return;
+  if (syncBusy){ syncAgain = true; return; }
+  if (navigator.onLine === false){ setSync(false, '没联网，联网后会自动同步。'); return; }
+  syncBusy = true; setSync(null, '同步中…');
+  try {
+    // give documents saved before sync existed a stamp, so they take part in the merge
+    let stamped = false; const now = Date.now();
+    COLS.forEach(c => Object.keys(S[c] || {}).forEach(id => { if (!S[c][id]._t){ S[c][id] = Object.assign({}, S[c][id], { _t:now }); stamped = true; } }));
+    if (stamped) lsWrite();
+    let done = false, rev0 = localRev;
+    for (let attempt = 0; attempt < 3 && !done; attempt++){
+      const remote = await ghGet();
+      let rsnap = { cols:{}, del:{} };
+      if (remote.exists){
+        let env = null; try { env = JSON.parse(remote.text); } catch (e) {}
+        if (!env || !env.data || !env.iv || !env.salt) throw { msg:'同步失败：仓库里的 ' + SYNC_PATH + ' 不是这个应用写的，为了安全没有动它。换一个空的私有仓库试试。' };
+        try { rsnap = await decryptJSON(env, syncCfg.pass); } catch (e) { throw { msg:'同步失败：同步密码和云端数据对不上。每台设备要填同一个同步密码。为了不弄坏云端数据，这次没有上传。' }; }
+      }
+      rev0 = localRev;   // everything saved up to here is in this snapshot
+      const merged = mergeSnap(snapshotLocal(), rsnap);
+      if (merged.changedLocal) applySnap(merged);
+      if (!remote.exists || merged.changedRemote){
+        const env = await encryptJSON({ cols:merged.cols, del:merged.del, at:Date.now() }, syncCfg.pass);
+        const res = await ghPut(JSON.stringify(env), remote.sha);
+        if (res.conflict) continue;
+      }
+      done = true;
+    }
+    if (!done) throw { msg:'同步失败：另一台设备也在同步，稍后会自动再试。' };
+    if (localRev !== rev0) syncAgain = true; else syncDirty = false;   // saved while uploading: go again
+    setSync(true, '');
+  } catch (e) { setSync(false, syncErrText(e)); }
+  syncBusy = false;
+  if (syncAgain){ syncAgain = false; syncLater(1500); }
+}
 
 function useLocal(){
   if (mode === 'cloud') return;
@@ -423,7 +599,10 @@ function syncLabel(){
   const el = $('#sync');
   let t = '连接中', w = false;
   if (mode === 'cloud') { t = !ready ? '载入中' : slow ? '连接慢，可能不是最新' : '已同步 · 仅自己可见'; w = slow; }
-  else if (mode === 'local') { t = OFFLINE_APP ? '离线可用 · 存在这部手机' : '只存在这台设备'; w = !OFFLINE_APP; }
+  else if (mode === 'local'){
+    if (OFFLINE_APP && syncCfg && syncCfg.token){ const at = syncState.at || syncCfg.lastAt; t = syncState.msg === '同步中…' ? '同步中…' : syncState.ok === false ? '同步失败' : at ? '已同步 ' + hm(new Date(at).toISOString()) : '等待同步'; w = syncState.ok === false; }
+    else { t = OFFLINE_APP ? '离线可用 · 存在这部手机' : '只存在这台设备'; w = !OFFLINE_APP; }
+  }
   el.textContent = t; el.classList.toggle('warn', w);
 }
 function saveFile(filename, data){
@@ -451,6 +630,9 @@ async function init(){
   dlNs = { save:({ filename, data }) => saveFile(filename, data) };
   useLocal();
   try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch (e) {}
+  syncLater(1500);
+  window.addEventListener('online', () => syncLater(800));
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') syncLater(1000); else if (syncDirty) syncNow(); });
   try { if (sessionStorage.getItem('zwgcb-updated')){ sessionStorage.removeItem('zwgcb-updated'); setTimeout(() => toast('已更新到新版本 ' + APP_VERSION + '。'), 400); } } catch (e) {}
 }
 
@@ -797,13 +979,6 @@ function pinCard(t){
   }).join('') + '</ul>';
   return s + '<div class="row"><a class="linkbtn" href="#hyps">打开假设清单</a></div></section>';
 }
-function arcCardToday(t){
-  const list = archivesOn(t);
-  let s = '<section class="card"><div class="stage"><span class="tag">对话</span>对话复盘</div>';
-  if (list.length) s += list.map(r => '<p class="arc-mini">' + esc((r.data && r.data.summary && r.data.summary.headline) || '') + '</p>').join('') + '<div class="row"><button type="button" class="linkbtn" data-act="openDay" data-key="' + t + '">看今天的完整记录</button></div>';
-  else s += '<p class="muted">和 Claude 聊完复盘，把它最后给的那段存档粘贴进来，结论就回到这个本子里。</p>';
-  return s + '<div class="row"><button type="button" class="btn ghost sm" data-act="impOpen">导入对话复盘</button><button type="button" class="btn ghost sm" data-act="copy" data-key="' + t + '">复制今天的材料给 Claude</button></div></section>';
-}
 function appliedHTML(it){
   const lab = { new:'新增', update:'改写', evidence:'加证据' }[it.kind] || '';
   return '<div class="arc-h"><div class="hmeta"><span class="hno">H' + it.no + '</span><span class="st ' + (it.kind === 'update' ? 'revised' : 'test') + '">' + lab + '</span>' + (it.note ? '<span>' + esc(it.note) + '</span>' : '') + '</div>'
@@ -821,7 +996,7 @@ function archiveHTML(rec){
   s += '<div class="arc-head">' + esc(s0.headline) + '</div>';
   if (points.length) s += '<ul class="arc-pts">' + points.map(x => '<li>' + esc(x) + '</li>').join('') + '</ul>';
   if ((rec.applied || []).length) s += '<div class="arc-sec">假设变化</div>' + rec.applied.map(appliedHTML).join('');
-  if (preds.length) s += '<div class="arc-sec">预测对照</div><ul class="preds">' + preds.map(p => { const r = resKind(p.result); return '<li class="pred' + (r === 'miss' ? ' r-miss' : '') + '"><div class="pt">' + esc(p.text) + '</div>' + (p.actual ? '<div class="pa">实际：' + esc(p.actual) + '</div>' : '') + (p.result ? '<span class="pen ' + r + '">' + esc(p.result) + '</span>' : '') + '</li>'; }).join('') + '</ul>';
+  if (preds.length) s += '<div class="arc-sec">预测对照</div>' + arcPredSummary(preds) + arcPredList(preds);
   if (dd.moment || dd.note_time || tl.length || gaps.length){
     s += '<div class="arc-sec">深挖经过</div>';
     if (dd.moment || dd.note_time) s += '<p class="arc-moment">' + (dd.note_time ? '<span class="mono">' + esc(dd.note_time) + '</span> ' : '') + esc(dd.moment || '') + '</p>';
@@ -843,24 +1018,96 @@ function archiveHTML(rec){
 }
 
 /* ---------- views ---------- */
-function vToday(){
-  const t = dayKey(), y = addDays(t, -1), d = S.days[t] || newDay(t), yd = S.days[y], f = firstDay();
-  let h = '<div class="dayhead"><div><div class="date">' + md(t) + '<span>' + wdOf(t) + '</span></div><div class="sub">复盘日以凌晨 4 点为界，凌晨写的算前一天</div></div></div>';
-  h += copyBox();
-  h += '<div class="stack">';
+function vPred(){
+  const t = dayKey(), k = sel, d = S.days[k] || newDay(k), y = addDays(t, -1), yd = S.days[y], f = firstDay();
+  let h = dateBar() + copyBox() + '<div class="stack">';
   h += pinCard(t);
-  if (ready && fuseOn()) h += '<section class="card fuse"><div class="stage">最近三次写完都觉得更沉了</div><p class="muted">这通常说明在反复咀嚼，而不是在看清自己。接下来几天只做最低版，并且用第三人称写。持续一周以上的话，找一个信任的人当面聊聊。</p></section>';
-  if (ready && f && f <= y && !(yd && (yd.evening || yd.skip))) h += yBanner(y);
-  h += statsCard(t);
-  const dow = parse(t).getDay();
-  if (ready && (dow === 0 || dow === 1)){
-    const ws = dow === 0 ? weekStart(t) : addDays(weekStart(t), -7);
-    if (!S.weeks[ws]) h += '<section class="card"><div class="stage">周复盘<span class="right">' + mdShort(ws) + '–' + mdShort(addDays(ws, 6)) + '</span></div><p class="muted">把这周落空的预测排在一起看：有没有同一个方向的错？20 分钟。</p><div class="row"><button type="button" class="btn sm" data-act="goWeek" data-key="' + ws + '">开始周复盘</button></div></section>';
+  if (k === t){
+    if (ready && fuseOn()) h += '<section class="card fuse"><div class="stage">最近三次写完都觉得更沉了</div><p class="muted">这通常说明在反复咀嚼，而不是在看清自己。接下来几天只做最低版，并且用第三人称写。持续一周以上的话，找一个信任的人当面聊聊。</p></section>';
+    if (ready && f && f <= y && !(yd && (yd.evening || yd.skip))) h += yBanner(y);
+    const dow = parse(t).getDay();
+    if (ready && (dow === 0 || dow === 1)){
+      const ws = dow === 0 ? weekStart(t) : addDays(weekStart(t), -7);
+      if (!S.weeks[ws]) h += '<section class="card"><div class="stage">周复盘<span class="right">' + mdShort(ws) + '–' + mdShort(addDays(ws, 6)) + '</span></div><p class="muted">把这周落空的预测排在一起看：有没有同一个方向的错？20 分钟。</p><div class="row"><button type="button" class="btn sm" data-act="goWeek" data-key="' + ws + '">开始周复盘</button></div></section>';
+    }
   }
-  h += predCard(t, d) + capCardToday(t, d) + eventCardToday(t) + eveCard(t, d, yd) + arcCardToday(t);
-  h += '</div>';
-  return h;
+  h += predCard(k, d);
+  archivesOn(k).forEach(r => {
+    const ps = (r.data && r.data.predictions) || [];
+    if (ps.length) h += '<section class="card"><div class="stage"><span class="tag">对话</span>对话复盘里的预测对照' + (r.time ? '<span class="right">' + esc(r.time) + '</span>' : '') + '</div>' + arcPredSummary(ps) + arcPredList(ps) + '</section>';
+  });
+  return h + '</div>';
 }
+function vReview(){
+  const t = dayKey(), k = sel, d = S.days[k] || newDay(k), y = addDays(t, -1), yd = S.days[y], f = firstDay();
+  let h = dateBar() + copyBox() + '<div class="stack">';
+  if (k > t) return h + '<p class="muted">这一天还没到，复盘不了。可以去「预测」页给它出题。</p></div>';
+  if (k === t && ready && f && f <= y && !(yd && (yd.evening || yd.skip))) h += yBanner(y);
+  h += eveCard(k, d) + reviewEventCard(k) + reviewArcCard(k);
+  return h + '</div>';
+}
+function vMore(){
+  const t = dayKey(), ym = ui.moreMonth || t.slice(0, 7), ws = weekStart(t);
+  let h = copyBox() + '<h1 class="h">更多</h1><div class="stack">';
+  h += '<section class="card"><div class="stage">日历<span class="right">点一天，看那天的全部记录</span></div>' + calendarHTML(ym, 'more') + '</section>';
+  if (ui.moreDay){
+    const k = ui.moreDay;
+    h += '<section class="card"><div class="stage">' + md(k) + ' ' + wdOf(k) + '<span class="right"><button type="button" class="linkbtn" data-act="calPick" data-key="' + k + '" data-mode="more">收起</button></span></div>'
+      + '<div class="row"><button type="button" class="btn ghost sm" data-act="goDay" data-key="' + k + '" data-v="pred">这天的预测</button><button type="button" class="btn ghost sm" data-act="goDay" data-key="' + k + '" data-v="capture">随手记</button><button type="button" class="btn ghost sm" data-act="goDay" data-key="' + k + '" data-v="review">复盘</button></div>'
+      + (dayStatus(k, t) === 'none' || dayStatus(k, t) === 'future' ? '<p class="fine">这一天还没有记录。</p>' : dayDetail(k)) + '</section>';
+  }
+  h += '<section class="card"><div class="stage">周复盘</div><p class="muted">把一周落空的预测排在一起看，找同一个方向的错，再更新假设清单。</p><div class="row"><button type="button" class="btn sm" data-act="goWeek" data-key="' + ws + '">这周</button><button type="button" class="btn ghost sm" data-act="goWeek" data-key="' + addDays(ws, -7) + '">上周</button></div></section>';
+  h += statsCard(t);
+  h += syncCard() + dataCard();
+  return h + '</div>';
+}
+function dateBar(){
+  const t = dayKey(), rel = sel === t ? '今天' : sel === addDays(t, -1) ? '昨天' : sel === addDays(t, 1) ? '明天' : '';
+  let s = '<div class="datebar"><button type="button" class="dnav" data-act="selDay" data-v="-1" aria-label="前一天">‹</button>'
+    + '<button type="button" class="dlabel" data-act="calToggle" aria-expanded="' + !!ui.cal + '" aria-label="选日期"><span class="date">' + md(sel) + '</span><span class="dwd">' + wdOf(sel) + (rel ? ' · ' + rel : '') + '</span><span class="caret" aria-hidden="true">▾</span></button>'
+    + '<button type="button" class="dnav" data-act="selDay" data-v="1" aria-label="后一天"' + (sel >= addDays(t, 1) ? ' disabled' : '') + '>›</button></div>';
+  if (sel !== t) s += '<div class="row backrow"><button type="button" class="linkbtn" data-act="selToday">回到今天</button></div>';
+  if (ui.cal) s += '<div class="card calpop">' + calendarHTML(ui.calMonth || sel.slice(0, 7), 'pick') + '</div>';
+  return s;
+}
+const shiftYM = (ym, n) => { const d = new Date(+ym.slice(0, 4), +ym.slice(5, 7) - 1 + n, 1); return d.getFullYear() + '-' + pad(d.getMonth() + 1); };
+function calendarHTML(ym, modeName){
+  const t = dayKey(), maxK = addDays(t, 1), y = +ym.slice(0, 4), m = +ym.slice(5, 7), lead = (new Date(y, m - 1, 1).getDay() + 6) % 7, n = new Date(y, m, 0).getDate();
+  const cur = modeName === 'pick' ? sel : ui.moreDay;
+  let s = '<div class="calhead"><button type="button" class="dnav sm" data-act="calMonth" data-v="-1" data-mode="' + modeName + '" aria-label="上个月">‹</button><span>' + y + '年' + m + '月</span><button type="button" class="dnav sm" data-act="calMonth" data-v="1" data-mode="' + modeName + '" aria-label="下个月"' + (ym >= maxK.slice(0, 7) ? ' disabled' : '') + '>›</button></div>';
+  s += '<div class="cal">' + '一二三四五六日'.split('').map(x => '<div class="wd">' + x + '</div>').join('');
+  for (let i = 0; i < lead; i++) s += '<div></div>';
+  for (let dd = 1; dd <= n; dd++){
+    const k = y + '-' + pad(m) + '-' + pad(dd), st = dayStatus(k, t);
+    const mk = (archivesOn(k).length ? '<i class="mk a"></i>' : '') + (eventsOn(k).length ? '<i class="mk e"></i>' : '');
+    s += '<button type="button" class="cday ' + st + (k === t ? ' today' : '') + (k === cur ? ' sel' : '') + '" data-act="calPick" data-key="' + k + '" data-mode="' + modeName + '"' + (k > maxK ? ' disabled' : '') + ' aria-label="' + md(k) + '"><span class="dn">' + dd + '</span>' + (mk ? '<span class="mks">' + mk + '</span>' : '') + '</button>';
+  }
+  s += '</div><div class="legend"><span><i class="std"></i>标准版</span><span><i class="min"></i>最低版</span><span><i class="part"></i>有记录</span><span><i class="skip"></i>放过</span><span><i class="dot a"></i>对话存档</span><span><i class="dot e"></i>单件复盘</span></div>';
+  return s;
+}
+function predSummary(preds){
+  if (!preds || !preds.length) return '';
+  const c = { hit:0, miss:0, half:0, open:0 }; preds.forEach(p => { c[RES[p.result] ? p.result : 'open']++; });
+  const seg = [];
+  if (c.hit) seg.push('<span class="ok">对 ' + c.hit + '</span>');
+  if (c.miss) seg.push('<span class="no">落空 ' + c.miss + '</span>');
+  if (c.half) seg.push('一半 ' + c.half);
+  if (c.open) seg.push('待判 ' + c.open);
+  return '<div class="psum"><span><b class="n">' + preds.length + '</b> 条预测</span>' + (seg.length ? '<span>' + seg.join(' · ') + '</span>' : '') + '</div>';
+}
+function arcPredSummary(ps){
+  if (!ps || !ps.length) return '';
+  const c = { hit:0, miss:0, half:0, other:0 }; ps.forEach(p => { c[resKind(p.result) || 'other']++; });
+  const seg = [];
+  if (c.hit) seg.push('<span class="ok">中 ' + c.hit + '</span>');
+  if (c.miss) seg.push('<span class="no">没中 ' + c.miss + '</span>');
+  if (c.half) seg.push('暂时中或一半 ' + c.half);
+  if (c.other) seg.push('未判 ' + c.other);
+  return '<div class="psum"><span><b class="n">' + ps.length + '</b> 条预测</span>' + (seg.length ? '<span>' + seg.join(' · ') + '</span>' : '') + '</div>';
+}
+const arcPredList = ps => '<ul class="preds">' + ps.map(p => { const r = resKind(p.result); return '<li class="pred' + (r === 'miss' ? ' r-miss' : '') + '"><div class="pt">' + esc(p.text) + '</div>' + (p.actual ? '<div class="pa">实际：' + esc(p.actual) + '</div>' : '') + (p.result ? '<span class="pen ' + r + '">' + esc(p.result) + '</span>' : '') + '</li>'; }).join('') + '</ul>';
+function predSummaryText(preds){ const c = { hit:0, miss:0, half:0, open:0 }; preds.forEach(p => { c[RES[p.result] ? p.result : 'open']++; }); return preds.length + ' 条预测：对 ' + c.hit + ' · 落空 ' + c.miss + ' · 一半 ' + c.half + ' · 待判 ' + c.open; }
+function arcPredSummaryText(ps){ const c = { hit:0, miss:0, half:0, other:0 }; ps.forEach(p => { c[resKind(p.result) || 'other']++; }); return ps.length + ' 条预测：中 ' + c.hit + ' · 没中 ' + c.miss + ' · 暂时中或一半 ' + c.half + (c.other ? ' · 未判 ' + c.other : ''); }
 function yBanner(y){
   let s = '<section class="card banner"><div class="stage">昨天（' + md(y) + '）没有收尾</div>'
     + '<p class="muted">规则只有一条：别连着空两天。可以补 2 分钟，也可以直接放过。</p>'
@@ -887,44 +1134,31 @@ function statsCard(t){
     + '<div class="figs"><span>本周收尾<b>' + w.rec + '</b>/ 7 天</span><span class="redb">本周新信息<b>' + w.newInfo + '</b>条</span><span>清单<b>' + (test + solid) + '</b>条（较可信 ' + solid + '）</span></div>'
     + '<p class="note">新信息 = 落空的预测 + 意外的反应 + 反例 + 改写。它们都是你对自己的看法需要更新的地方，所以这个数字越大越好。' + lrLine + '</p>' + backupLine() + '</section>';
 }
-function predCard(t, d){
-  const hr = new Date().getHours(), isMorning = hr >= 4 && hr < 12, isNight = hr >= 18 || hr < 4;
-  let s = '<section class="card"><div class="stage"><span class="tag">早</span>预测</div>';
+function predCard(k, d){
+  const t = dayKey(), hr = new Date().getHours(), isMorning = hr >= 4 && hr < 12, isNight = hr >= 18 || hr < 4;
+  let s = '<section class="card"><div class="stage"><span class="tag">早</span>' + (k === t ? '今天的预测' : k > t ? '明天的预测' : '这一天的预测') + '</div>';
+  if (!ready) return s + '<p class="muted">正在打开记录本…</p></section>';
   if (d.preds.length){
-    s += '<ul class="preds">' + d.preds.map(p => predRow(p, t, !d.evening)).join('') + '</ul>';
-    if (!d.evening) s += '<div class="row"><button type="button" class="btn ghost sm" data-act="open" data-type="morning" data-key="' + t + '">再加一条</button></div>';
-  } else if (!ready){
-    s += '<p class="muted">正在打开记录本…</p>';
+    s += predSummary(d.preds) + '<ul class="preds">' + d.preds.map(p => predRow(p, k, !d.evening && k >= t)).join('') + '</ul>';
+    if (k >= t && !d.evening) s += '<div class="row"><button type="button" class="btn ghost sm" data-act="open" data-type="morning" data-key="' + k + '">再加一条</button></div>';
+    if (k <= t && !d.evening && d.preds.some(p => !p.result)) s += '<p class="fine">对错在复盘时判。</p><div class="row"><a class="btn ghost sm" href="#review">去复盘</a></div>';
+  } else if (k > t){
+    s += '<p class="muted">给明天出一道题：写一条明天晚上能判对错的预测，明早打开就能看到。</p><div class="row"><button type="button" class="btn" data-act="open" data-type="morning" data-key="' + k + '">给明天出题</button></div>';
+  } else if (k < t){
+    s += '<p class="muted">这一天没写预测。过去的事没法再预测，可以去「复盘」页补记那天印象最深的一刻。</p>';
   } else if (isMorning){
-    s += '<p class="muted">1 分钟，写 2–3 条晚上能判对错的预测。写错了正好。</p><div class="row"><button type="button" class="btn" data-act="open" data-type="morning" data-key="' + t + '">写今天的预测</button></div>';
+    s += '<p class="muted">1 分钟，写 2–3 条晚上能判对错的预测。写错了正好。</p><div class="row"><button type="button" class="btn" data-act="open" data-type="morning" data-key="' + k + '">写今天的预测</button></div>';
   } else if (!isNight){
-    s += '<p class="muted">上午过去了。现在补写也有用，但只预测接下来还没发生的事。</p><div class="row"><button type="button" class="btn" data-act="open" data-type="morning" data-key="' + t + '">补写预测</button></div>';
+    s += '<p class="muted">上午过去了。现在补写也有用，但只预测接下来还没发生的事。</p><div class="row"><button type="button" class="btn" data-act="open" data-type="morning" data-key="' + k + '">补写预测</button></div>';
   } else {
-    s += '<p class="muted">今天没写预测，没关系。晚上复盘时，「对照」会换成「意外回看」。复盘最后可以给明天出一道题，明早就不用再想。</p><div class="row"><button type="button" class="btn ghost sm" data-act="open" data-type="morning" data-key="' + t + '">还是补一条</button></div>';
+    s += '<p class="muted">今天没写预测，没关系。晚上复盘时，「对照」会换成「意外回看」。复盘最后可以给明天出一道题，明早就不用再想。</p><div class="row"><button type="button" class="btn ghost sm" data-act="open" data-type="morning" data-key="' + k + '">还是补一条</button></div>';
   }
   return s + '</section>';
-}
-function capCardToday(t, d){
-  const cs = (d.caps || []).slice().sort((a, b) => b.at.localeCompare(a.at));
-  let s = '<section class="card"><div class="stage"><span class="tag">日间</span>随手记<span class="right">' + cs.length + ' 条</span></div>';
-  if (cs.length) s += '<ul class="capmini">' + cs.slice(0, 4).map(c => '<li><span class="mono">' + hm(c.at) + '</span><span class="txt">' + esc((c.emos || []).join('·')) + (c.emos && c.emos.length ? ' ｜ ' : '') + esc(c.fact || c.quote || '') + '</span></li>').join('') + '</ul>';
-  else s += '<p class="muted">情绪起伏、反应出乎自己意料、或者卡住的时候，当场记一句。晚上深挖可以直接选它。</p>';
-  return s + '<div class="row"><a class="btn ghost sm" href="#capture">记一笔</a></div></section>';
 }
 function evLink(k, c){
   const e = eventForCap(k, c.id);
   return e ? '<button type="button" class="linkbtn" data-act="editEvent" data-id="' + e.id + '">看单件复盘</button>'
     : '<button type="button" class="linkbtn" data-act="eventFromCap" data-key="' + k + '" data-id="' + c.id + '">单独复盘这件</button>';
-}
-function eventCardToday(t){
-  const all = Object.values(S.events);
-  const open = all.filter(e => !e.done && e.date >= addDays(t, -14)).sort((a, b) => (b.updated || '').localeCompare(a.updated || ''));
-  const done = all.filter(e => e.done && e.date === t);
-  const list = open.concat(done).slice(0, 5);
-  let s = '<section class="card"><div class="stage"><span class="tag">随时</span>单件复盘</div>';
-  if (!list.length) s += '<p class="muted">挑一件事单独慢放一遍，不用等到晚上。适合你反复在想、或者想不通自己为什么那样做的事。</p>';
-  else s += '<ul class="capmini">' + list.map(e => '<li><span class="mono">' + mdShort(e.date) + '</span><button type="button" class="linkbtn" data-act="editEvent" data-id="' + e.id + '">' + esc(e.title) + '</button>' + (!e.done ? '<span class="pending">没写完</span>' : '') + '</li>').join('') + '</ul>';
-  return s + '<div class="row"><button type="button" class="btn ghost sm" data-act="newEvent">复盘一件事</button></div></section>';
 }
 function eventCardHTML(ev){
   const emo = (ev.emos || []).join(' · '), kv = [];
@@ -945,21 +1179,40 @@ function eventCardHTML(ev){
     + '<button type="button" class="linkbtn" data-act="copyEvent" data-id="' + ev.id + '">复制给 Claude</button></div>'
     + '</article>';
 }
-function eveCard(t, d, yd){
-  let s = '<section class="card"><div class="stage"><span class="tag">晚</span>复盘</div>';
+function eveCard(k, d){
+  const t = dayKey(), isT = k === t, yd = S.days[addDays(k, -1)];
+  let s = '<section class="card"><div class="stage"><span class="tag">晚</span>' + (isT ? '晚上复盘' : '这一天的复盘') + '</div>';
   if (d.evening){
     const e = d.evening, D = e.D || {};
-    s += '<p class="muted">' + (e.mode === 'std' ? '标准版' : '最低版') + ' · ' + hm(e.at) + ' 写完</p>';
+    s += '<p class="muted">' + (e.mode === 'std' ? '标准版' : (e.late ? '补记' : '最低版')) + ' · ' + hm(e.at) + ' 写完</p>';
     if (D.line) s += '<div class="hyp">' + D.line + '</div>';
-    s += '<div class="row">' + (dlNs ? '<button type="button" class="btn sm" data-act="wordDay" data-key="' + t + '">保存为 Word</button>' : '') + '<button type="button" class="btn ghost sm" data-act="copy" data-key="' + t + '">复制给 Claude</button><button type="button" class="btn ghost sm" data-act="open" data-type="' + (e.mode === 'std' ? 'evening' : 'min') + '" data-key="' + t + '">修改</button></div>';
+    s += '<div class="row">' + (dlNs ? '<button type="button" class="btn sm" data-act="wordDay" data-key="' + k + '">保存为 Word</button>' : '') + '<button type="button" class="btn ghost sm" data-act="copy" data-key="' + k + '">复制给 Claude</button><button type="button" class="btn ghost sm" data-act="open" data-type="' + (e.mode === 'std' ? 'evening' : 'min') + '" data-key="' + k + '">修改</button></div>';
+  } else if (d.skip){
+    s += '<p class="muted">这一天放过了，原因：' + esc(d.skip.reason) + '。</p><div class="row"><button type="button" class="btn ghost sm" data-act="open" data-type="min" data-key="' + k + '">还是补记 · 2 分钟</button></div>';
   } else {
-    if (!d.preds.length) s += '<p class="muted">今天没有预测，「对照」会换成「意外回看」。</p>';
-    else s += '<p class="muted">先对答案，再挑一个时刻挖深。一天里看清一件事就够了。</p>';
-    if (yd && !yd.evening && firstDay() && firstDay() < t) s += '<p class="fine">昨天空着。今天收个尾，就不算连着空两天。</p>';
-    s += '<div class="row"><button type="button" class="btn" data-act="open" data-type="evening" data-key="' + t + '">标准版 · 10–15 分钟</button><button type="button" class="btn ghost" data-act="open" data-type="min" data-key="' + t + '">最低版 · 2 分钟</button></div>';
-    s += '<div class="row"><button type="button" class="linkbtn" data-act="copy" data-key="' + t + '">想和 Claude 对话着复盘？复制今天的材料</button></div>';
+    s += d.preds.length ? '<p class="muted">先对答案，再挑一个时刻挖深。一天里看清一件事就够了。</p>' : '<p class="muted">' + (isT ? '今天' : '这一天') + '没有预测，「对照」会换成「意外回看」。</p>';
+    if (!isT) s += '<p class="fine">隔得越久，越容易把记忆补成故事。记不清的就空着。</p>';
+    if (isT && yd && !yd.evening && !yd.skip && firstDay() && firstDay() < t) s += '<p class="fine">昨天空着。今天收个尾，就不算连着空两天。</p>';
+    s += '<div class="row"><button type="button" class="btn" data-act="open" data-type="evening" data-key="' + k + '">' + (isT ? '标准版 · 10–15 分钟' : '补写标准版') + '</button><button type="button" class="btn ghost" data-act="open" data-type="min" data-key="' + k + '">' + (isT ? '最低版 · 2 分钟' : '补记 · 2 分钟') + '</button></div>';
+    s += '<div class="row"><button type="button" class="linkbtn" data-act="copy" data-key="' + k + '">想和 Claude 对话着复盘？复制' + (isT ? '今天' : '这一天') + '的材料</button></div>';
   }
   return s + '</section>';
+}
+function reviewEventCard(k){
+  const t = dayKey(), evs = eventsOn(k);
+  const open = k === t ? Object.values(S.events).filter(e => !e.done && e.date !== k && e.date >= addDays(t, -14)).sort((a, b) => (b.updated || '').localeCompare(a.updated || '')) : [];
+  let s = '<section class="card"><div class="stage"><span class="tag">随时</span>单件复盘<span class="right">' + evs.length + ' 件</span></div>';
+  if (evs.length) s += '<div class="stack">' + evs.map(eventCardHTML).join('') + '</div>';
+  else s += '<p class="muted">挑一件事单独慢放一遍，不用等到晚上。适合你反复在想、或者想不通自己为什么那样做的事。</p>';
+  if (open.length) s += '<div class="lab">别的日子还没写完的</div><ul class="capmini">' + open.slice(0, 5).map(e => '<li><span class="mono">' + mdShort(e.date) + '</span><button type="button" class="linkbtn" data-act="editEvent" data-id="' + e.id + '">' + esc(e.title) + '</button><span class="pending">没写完</span></li>').join('') + '</ul>';
+  return s + '<div class="row"><button type="button" class="btn ghost sm" data-act="newEvent">复盘' + (k === t ? '一件事' : '这一天的一件事') + '</button></div></section>';
+}
+function reviewArcCard(k){
+  const t = dayKey(), list = archivesOn(k);
+  let s = '<section class="card"><div class="stage"><span class="tag">对话</span>对话复盘</div>';
+  if (list.length) s += '<div class="stack">' + list.map(archiveHTML).join('') + '</div>';
+  else s += '<p class="muted">和 Claude 聊完复盘，把它最后给的那段存档粘贴进来，结论就回到这个本子里。</p>';
+  return s + '<div class="row"><button type="button" class="btn ghost sm" data-act="impOpen">导入对话复盘</button><button type="button" class="btn ghost sm" data-act="copy" data-key="' + k + '">复制' + (k === t ? '今天' : '这一天') + '的材料给 Claude</button></div></section>';
 }
 function copyBox(){
   if (!ui.copy) return '';
@@ -1105,11 +1358,12 @@ function fMin(){
   return h;
 }
 function fCapture(){
-  const x = form.data, editing = form.key !== 'new', t = dayKey();
-  let h = '<h1 class="h">随手记</h1><p class="lede">当场记一句就行，理清可以晚点。顺序是刻意的：先事实，再名字，再身体，最后才问它碰到了什么。</p>';
+  const x = form.data, editing = form.key !== 'new', t = dayKey(), k0 = sel > t ? t : sel, back = !editing && k0 !== t;
+  let h = dateBar() + (sel > t ? '<p class="fine">明天还没到，随手记会记在今天。</p>' : '') + (back ? '<p class="lede">给 ' + md(k0) + ' 补一条随手记。隔得越久越容易记成故事，记不清的就空着。</p>' : '<p class="lede">当场记一句就行，理清可以晚点。顺序是刻意的：先事实，再名字，再身体，最后才问它碰到了什么。</p>');
   if (editing) h = formHead('接着理清这一条', '补上原话、身体感觉和它碰到了什么。', '');
   h += '<div class="card">';
-  h += fieldTA('fact', '刚刚发生了什么', '一句话，像摄像机拍到的那样');
+  if (back) h += '<div class="f"><label for="f-time">大概几点</label><input type="time" id="f-time" data-f="time" value="' + esc(x.time || '12:00') + '"></div>';
+  h += fieldTA('fact', back ? '那时发生了什么' : '刚刚发生了什么', '一句话，像摄像机拍到的那样');
   h += '<div class="f"><div class="lab">是什么情绪</div>' + chipsHTML('emos', EMOS, true) + '<div class="hint">给情绪起个准确的名字，通常就能让它降下来一点。</div></div>';
   h += '<div class="f"><div class="lab">有多强</div>' + segHTML('inten', [[1,'1'],[2,'2'],[3,'3'],[4,'4'],[5,'5']].map(a => [a[0], a[1]])) + '</div>';
   const chs = openHyps().slice().sort((a, b) => (a.no || 0) - (b.no || 0));
@@ -1130,12 +1384,12 @@ function fCapture(){
   }
   h += '</div>';
   if (!editing){
-    const d = S.days[t];
-    const today = d ? (d.caps || []).slice().sort((a, b) => b.at.localeCompare(a.at)) : [];
-    h += '<h2 class="h2">今天 · ' + today.length + ' 条</h2>';
-    h += today.length ? '<div class="stack">' + today.map(c => capCardHTML(c, t)).join('') + '</div>' : '<p class="fine">今天还没有记。存下的每一条会在这里排成一张卡片：时间、情绪和强度、原话、身体、在乎的东西。</p>';
+    const d = S.days[k0];
+    const list = d ? (d.caps || []).slice().sort((a, b) => b.at.localeCompare(a.at)) : [];
+    h += '<h2 class="h2">' + (k0 === t ? '今天' : md(k0)) + ' · ' + list.length + ' 条</h2>';
+    h += list.length ? '<div class="stack">' + list.map(c => capCardHTML(c, k0)).join('') + '</div>' : '<p class="fine">' + (k0 === t ? '今天还没有记。存下的每一条会在这里排成一张卡片：时间、情绪和强度、原话、身体、在乎的东西。' : '这一天没有随手记。') + '</p>';
     const pend = [];
-    for (let i = 1; i <= 14; i++){ const k = addDays(t, -i), dd = S.days[k]; if (dd) (dd.caps || []).forEach(c => { if (!c.done) pend.push([k, c]); }); }
+    if (k0 === t) for (let i = 1; i <= 14; i++){ const k = addDays(t, -i), dd = S.days[k]; if (dd) (dd.caps || []).forEach(c => { if (!c.done) pend.push([k, c]); }); }
     if (pend.length) h += '<h2 class="h2">还没理清的</h2><div class="stack">' + pend.map(p => capCardHTML(p[1], p[0], { date:true })).join('') + '</div>';
   }
   return h;
@@ -1345,40 +1599,48 @@ function hypCard(x){
   if (o === 'del') s += '<div class="inline"><p class="muted">删掉后找不回来。确定删除这条？</p><div class="row"><button type="button" class="btn sm red" data-act="hypDel" data-id="' + x.id + '">删除</button><button type="button" class="btn ghost sm" data-act="hypClose">算了</button></div></div>';
   return s + '</article>';
 }
-function vLog(){
-  const t = dayKey();
-  const keys = allDayKeys().filter(k => k <= t && dayStatus(k, t) !== 'none').sort().reverse();
-  let h = copyBox() + '<h1 class="h">记录</h1><p class="lede">每一天的预测、随手记和复盘。点开一天，可以复制给 Claude 接着聊。</p>';
-  h += '<div class="row" style="margin-bottom:12px"><button type="button" class="btn sm" data-act="impOpen">导入对话复盘</button></div>';
-  if (!keys.length) h += '<p class="fine">还没有记录。从「今天」写下第一条预测，或者点下面的「随手记」记一笔。</p>';
-  h += '<div class="stack">';
-  keys.forEach(k => {
-    const d = S.days[k] || newDay(k), st = dayStatus(k, t), miss = (d.preds || []).filter(p => p.result === 'miss' || p.result === 'half').length;
-    const sum = [], arcs = archivesOn(k);
-    if (arcs.length) sum.push((arcs[0].data && arcs[0].data.summary && arcs[0].data.summary.headline) || '对话存档');
-    if (d.preds && d.preds.length) sum.push('预测 ' + d.preds.length + (miss ? '（落空 ' + miss + '）' : ''));
-    if (d.caps && d.caps.length) sum.push('随手记 ' + d.caps.length);
-    const ne = eventsOn(k).length; if (ne) sum.push('单件复盘 ' + ne);
-    if (d.evening && d.evening.D && d.evening.D.text) sum.push(d.evening.D.text);
-    if (d.skip) sum.push('放过：' + d.skip.reason);
-    h += '<div><button type="button" class="logrow" data-act="logOpen" data-key="' + k + '" aria-expanded="' + (ui.logOpen === k) + '"><span class="cell ' + st + '"></span><span class="d">' + mdShort(k) + ' ' + wdOf(k) + '</span><span class="s">' + esc(sum.join(' · ')) + '</span></button>';
-    if (ui.logOpen === k) h += dayDetail(k);
-    h += '</div>';
-  });
-  h += '</div>';
-  h += '<h2 class="h2">数据</h2><div class="card">';
-  if (OFFLINE_APP) h += '<p class="muted">记录只存在这部手机的这个应用里，不联网，也不上传到任何地方。删掉桌面图标、清理浏览器数据或者换手机，记录会一起消失，所以每周做一次全部数据导出。</p>';
+function dataCard(){
+  let h = '<section class="card"><div class="stage">数据</div>';
+  if (OFFLINE_APP) h += '<p class="muted">记录存在这部手机的这个应用里。没开云端同步时，不上传到任何地方；删掉桌面图标、清理浏览器数据或者换手机，记录会一起消失。</p>';
   else if (mode === 'cloud') h += '<p class="muted">记录存在这个页面里只属于你的私人空间：别人即使拿到链接，也读不到你的内容。换设备打开同一个链接，记录还在。</p>';
   else h += '<p class="muted">现在只存在这台设备的浏览器里。清理浏览器数据会把它们一起清掉，记得定期导出。</p>';
-  h += '<p class="fine">全部数据导出是一个 JSON 文件，用来备份，也可以在网页版和离线版之间搬家：在一边导出，在另一边导入。导入时这里已有的记录会跳过，不会被覆盖。要把某一天存成 Word，点开那一天，点「保存为 Word」。</p>';
+  h += '<p class="fine">全部数据导出是一个 JSON 文件，用来备份，也可以在网页版和离线版之间搬家：在一边导出，在另一边导入。导入时这里已有的记录会跳过，不会被覆盖。要把某一天存成 Word，在上面的日历里点开那一天。</p>';
   if (APP_VERSION) h += '<p class="fine">当前版本：<span class="mono">' + APP_VERSION + '</span></p>';
-  h += '<div class="row">' + (dlNs ? '<button type="button" class="btn ghost sm" data-act="export">全部数据导出</button>' : '') + '<button type="button" class="btn ghost sm" data-act="importPick">全部数据导入</button><button type="button" class="btn ghost sm" data-act="copyAll">复制全部为文字</button></div><input type="file" id="importFile" accept=".json,application/json" hidden></div>';
+  h += '<div class="row">' + (dlNs ? '<button type="button" class="btn ghost sm" data-act="export">全部数据导出</button>' : '') + '<button type="button" class="btn ghost sm" data-act="importPick">全部数据导入</button><button type="button" class="btn ghost sm" data-act="copyAll">复制全部为文字</button></div><input type="file" id="importFile" accept=".json,application/json" hidden></section>';
   return h;
+}
+function syncStatusText(){
+  if (syncState.msg) return syncState.msg;
+  const at = syncState.at || (syncCfg && syncCfg.lastAt);
+  if (!at) return '还没同步过。';
+  const d = new Date(at), k = ymd(d);
+  return '上次同步：' + (k === ymd(new Date()) ? '今天' : md(k)) + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+}
+function syncCard(){
+  if (!OFFLINE_APP) return '';
+  let s = '<section class="card"><div class="stage">云端同步</div>';
+  if (syncCfg && syncCfg.token && !ui.syncEdit){
+    s += '<p class="muted">已连接私有仓库 <span class="mono">' + esc(syncCfg.repo) + '</span>。数据在这部手机上先加密再上传，没有同步密码谁也看不懂。联网时会自动同步。</p>';
+    s += '<p class="' + (syncState.ok === false ? 'warn' : 'fine') + '" style="margin:0">' + esc(syncStatusText()) + '</p>';
+    s += '<div class="row"><button type="button" class="btn sm" data-act="syncNowBtn"' + (syncBusy ? ' disabled' : '') + '>立即同步</button><button type="button" class="btn ghost sm" data-act="syncEdit">修改设置</button>'
+      + (ui.syncOff ? '<span class="warn">停止后不再上传，本机和云端的数据都保留。</span><button type="button" class="btn sm red" data-act="syncOff">确定停止</button><button type="button" class="btn ghost sm" data-act="syncOffNo">算了</button>' : '<button type="button" class="linkbtn" data-act="syncOffAsk">停止同步</button>') + '</div>';
+    return s + '</section>';
+  }
+  s += '<p class="muted">把这部手机里的记录加密后，存进一个只有你能看的 GitHub 私有仓库。换手机、清了浏览器数据，都能从云端拉回来；两台设备填同样的设置，就会互相同步。</p>';
+  s += '<ol class="steps"><li>在 GitHub 新建一个仓库，名字比如 <span class="mono">zwgcb-data</span>，可见性选 Private。</li>'
+    + '<li>打开 GitHub 的 Settings → Developer settings → Personal access tokens → Fine-grained tokens，点 Generate new token。Repository access 选 Only select repositories，只勾这个私有仓库；Permissions 里把 Contents 设成 Read and write。生成后复制那串密钥。</li>'
+    + '<li>回到这里，填下面三项。访问密钥和同步密码只存在这部手机里。</li></ol>';
+  s += '<div class="f"><label for="sy-repo">仓库</label><input type="text" id="sy-repo" placeholder="用户名/仓库名，比如 ProCare-creator/zwgcb-data" value="' + esc((syncCfg && syncCfg.repo) || '') + '" autocapitalize="off" autocorrect="off" spellcheck="false"></div>';
+  s += '<div class="f"><label for="sy-token">访问密钥</label><input type="password" id="sy-token" placeholder="' + (syncCfg && syncCfg.token ? '不改就留空' : 'github_pat_ 开头的一长串') + '" autocomplete="off"></div>';
+  s += '<div class="f"><label for="sy-pass">同步密码</label><input type="password" id="sy-pass" placeholder="' + (syncCfg && syncCfg.pass ? '不改就留空' : '至少 6 位，自己定') + '" autocomplete="new-password"><div class="hint">用来加密数据，每台设备都填同一个。忘了它，云端数据就打不开了，请记在安全的地方。</div></div>';
+  if (ui.syncErr) s += '<div class="errbox"><p>' + esc(ui.syncErr) + '</p></div>';
+  s += '<div class="row"><button type="button" class="btn sm" data-act="syncSetup"' + (ui.syncChecking ? ' disabled' : '') + '>' + (ui.syncChecking ? '正在检查…' : '连接并同步') + '</button>' + (syncCfg && syncCfg.token ? '<button type="button" class="btn ghost sm" data-act="syncEditCancel">算了</button>' : '') + '</div>';
+  return s + '</section>';
 }
 function dayDetail(k){
   const d = S.days[k] || newDay(k), e = d.evening;
   let s = '<div class="detail">' + archivesOn(k).map(archiveHTML).join('');
-  if (d.preds && d.preds.length) s += '<ul class="preds">' + d.preds.map(p => predRow(p, k, false)).join('') + '</ul>';
+  if (d.preds && d.preds.length) s += predSummary(d.preds) + '<ul class="preds">' + d.preds.map(p => predRow(p, k, false)).join('') + '</ul>';
   (d.caps || []).slice().sort((a, b) => a.at.localeCompare(b.at)).forEach(c => { s += capCardHTML(c, k); });
   if (e){
     const r = e.raw || {};
@@ -1401,12 +1663,13 @@ function dayDetail(k){
 /* ---------- render ---------- */
 function render(){
   syncLabel();
-  document.querySelectorAll('.tabs a').forEach(a => { const on = a.dataset.r === route; a.classList.toggle('on', on); if (on) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
+  const tabR = route === 'week' ? 'more' : route;
+  document.querySelectorAll('.tabs a').forEach(a => { const on = a.dataset.r === tabR; a.classList.toggle('on', on); if (on) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
   if (!form && route === 'capture') form = { type:'capture', key:'new', data:drafts['capture:new'] ? clone(drafts['capture:new']) : { fact:'', emos:[], inten:0, quote:'', body:[], did:'', wanted:'', care:'', tags:[], more:false }, dirty:false };
   if (!form && route === 'week'){ const k = ui.weekKey || weekStart(dayKey()); const w = S.weeks[k]; form = { type:'week', key:k, data:drafts['week:' + k] ? clone(drafts['week:' + k]) : (w ? clone(w) : { dir:'', said:['','',''], did:['','',''], was:'', saw:'' }), dirty:false }; }
   let html;
   if (form){ html = ({ morning:fMorning, evening:fEvening, min:fMin, capture:fCapture, week:fWeek, event:fEvent, import:fImport })[form.type](); }
-  else html = ({ today:vToday, log:vLog, hyps:vHyps })[route] ? ({ today:vToday, log:vLog, hyps:vHyps })[route]() : vToday();
+  else { const V = { pred:vPred, review:vReview, hyps:vHyps, more:vMore }; html = (V[route] || vPred)(); }
   $('#view').innerHTML = html;
   const ca = $('#copyArea'); if (ca){ ca.focus(); ca.select(); }
 }
@@ -1511,6 +1774,7 @@ function dayDocXml(k){
   B.push(wTxt(e ? (e.mode === 'std' ? '晚上复盘：标准版' : (e.late ? '第二天补记（最低版）' : '晚上复盘：最低版')) : d.skip ? '这一天放过了，原因：' + d.skip.reason : '这一天还没有复盘', 'Small'));
   archivesOn(k).forEach(r => { B.push.apply(B, archiveBlocks(r)); });
   B.push(wH1('早上的预测'));
+  if (d.preds.length) B.push(wTxt(predSummaryText(d.preds), 'Small'));
   if (d.preds.length) d.preds.forEach((p, i) => {
     B.push(wP(wRun((i + 1) + '. ', { b:true }) + wRun(p.text) + (p.result ? wRun('　' + RES[p.result], { b:true, color:p.result === 'hit' ? '2C7150' : 'B5362B' }) : '')));
     B.push(wTxt(KINDS[p.kind] + ' · ' + SRC[p.src] + ' ' + hm(p.at) + (p.actual ? ' · 实际：' + p.actual : ''), 'Small'));
@@ -1569,7 +1833,7 @@ function archiveBlocks(rec){
   }
   const preds = a.predictions || [];
   if (preds.length){
-    B.push(wH2('预测对照'));
+    B.push(wH2('预测对照'), wTxt(arcPredSummaryText(preds), 'Small'));
     preds.forEach((p, i) => { const r = resKind(p.result); B.push(wP(wRun((i + 1) + '. ', { b:true }) + wRun(p.text) + (p.result ? wRun('　' + p.result, { b:true, color:r === 'hit' ? '2C7150' : r === 'miss' ? 'B5362B' : '4D596B' }) : '')), p.actual ? wTxt('实际：' + p.actual, 'Small') : ''); });
   }
   const tl = dd.timeline || [], gaps = dd.gaps || [];
@@ -1670,6 +1934,12 @@ function buildDocx(docXml){
 }
 
 /* ---------- actions ---------- */
+// When a 随手记 is added to an earlier day, use the time the person picked on that day.
+function capAt(k, time){
+  if (k === dayKey()) return new Date().toISOString();
+  const p = k.split('-').map(Number), tm = /^(\d{1,2}):(\d{2})/.exec(time || '') || [0, '12', '00'];
+  return new Date(p[0], p[1] - 1, p[2], +tm[1], +tm[2]).toISOString();
+}
 function needReady(){ if (!ready){ toast('还在打开记录本，稍等几秒再存。'); return false; } return true; }
 function predSrc(k){ const t = dayKey(); if (k > t) return 'eve'; const h = new Date().getHours(); return (k === t && h >= 4 && h < 12) ? 'morning' : 'late'; }
 const A = {
@@ -1728,9 +1998,9 @@ const A = {
     const x = clone(form.data);
     if (!(x.fact || '').trim() && !(x.quote || '').trim() && !(x.emos || []).length){ toast('至少写一句发生了什么，或者点一个情绪。'); return; }
     const editing = form.key !== 'new';
-    const k = editing ? form.key.split('|')[0] : dayKey(), id = editing ? form.key.split('|')[1] : newId();
+    const t0 = dayKey(), k = editing ? form.key.split('|')[0] : (sel > t0 ? t0 : sel), id = editing ? form.key.split('|')[1] : newId();
     const d = getDay(k), old = d.caps.find(c => c.id === id);
-    const c = { id, at:old ? old.at : new Date().toISOString(), fact:(x.fact || '').trim(), emos:x.emos || [], inten:x.inten || 0, quote:(x.quote || '').trim(), body:x.body || [], did:(x.did || '').trim(), wanted:(x.wanted || '').trim(), care:(x.care || '').trim(), tags:x.tags || [], hyp:(x.hyp && S.hyps[x.hyp]) ? x.hyp : null, hypKind:x.hypKind === 'con' ? 'con' : 'sup' };
+    const c = { id, at:old ? old.at : capAt(k, x.time), fact:(x.fact || '').trim(), emos:x.emos || [], inten:x.inten || 0, quote:(x.quote || '').trim(), body:x.body || [], did:(x.did || '').trim(), wanted:(x.wanted || '').trim(), care:(x.care || '').trim(), tags:x.tags || [], hyp:(x.hyp && S.hyps[x.hyp]) ? x.hyp : null, hypKind:x.hypKind === 'con' ? 'con' : 'sup' };
     c.done = !!(c.quote || c.care);
     d.caps = old ? d.caps.map(c2 => c2.id === id ? c : c2) : d.caps.concat([c]);
     const evOps = capEvidenceOps(k, c, old);
@@ -1770,7 +2040,41 @@ const A = {
   copy(el){ const k = el.dataset.key; copyText((dayText(k) || '【复盘日 ' + k + ' ' + wdOf(k) + '】\n今天还没有记录。') + '\n\n' + hypListText() + '\n\n' + OPENER + '\n' + ARCHIVE_TAIL); },
   copyAll(){ const ks = allDayKeys().filter(k => k <= dayKey()).sort(); copyText(ks.map(dayText).filter(Boolean).join('\n\n') + '\n\n' + hypListText()); },
   closeCopy(){ ui.copy = null; render(); },
-  newEvent(){ openForm('event', 'new'); },
+  newEvent(){ openForm('event', 'new'); if (form && form.type === 'event' && !S.events[form.key] && !form.data.capRef && sel <= dayKey()){ form.data.date = sel; render(); } },
+  selDay(el){ const n = addDays(sel, +el.dataset.v); if (n > addDays(dayKey(), 1)) return; sel = n; ui.cal = false; render(); },
+  selToday(){ sel = dayKey(); ui.cal = false; render(); },
+  calToggle(){ ui.cal = !ui.cal; ui.calMonth = sel.slice(0, 7); render(); },
+  calMonth(el){ const n = +el.dataset.v; if (el.dataset.mode === 'pick') ui.calMonth = shiftYM(ui.calMonth || sel.slice(0, 7), n); else ui.moreMonth = shiftYM(ui.moreMonth || dayKey().slice(0, 7), n); render(); },
+  calPick(el){ const k = el.dataset.key; if (el.dataset.mode === 'pick'){ sel = k; ui.cal = false; } else ui.moreDay = ui.moreDay === k ? null : k; render(); },
+  goDay(el){ const k = el.dataset.key; sel = k > addDays(dayKey(), 1) ? dayKey() : k; ui.cal = false; const r = '#' + el.dataset.v; if (location.hash === r) onHash(); else location.hash = r; },
+  syncNowBtn(){ syncNow(); render(); },
+  syncEdit(){ ui.syncEdit = true; ui.syncErr = null; render(); },
+  syncEditCancel(){ ui.syncEdit = false; ui.syncErr = null; render(); },
+  syncOffAsk(){ ui.syncOff = true; render(); },
+  syncOffNo(){ ui.syncOff = false; render(); },
+  syncOff(){ syncCfg = null; saveSyncCfg(); ui.syncOff = false; syncState = { ok:null, msg:'', at:null }; render(); toast('已停止同步。本机和云端的数据都还在。'); },
+  async syncSetup(){
+    const repo = ($('#sy-repo').value || '').trim().replace(/^https?:\/\/github\.com\//i, '').replace(/\.git$/i, '').replace(/\/+$/, '');
+    const token = ($('#sy-token').value || '').trim() || (syncCfg && syncCfg.token) || '';
+    const pass = $('#sy-pass').value || (syncCfg && syncCfg.pass) || '';
+    const fail = m => { ui.syncErr = m; ui.syncChecking = false; render(); };
+    if (!/^[\w.-]+\/[\w.-]+$/.test(repo)) return fail('仓库要写成「用户名/仓库名」，比如 ProCare-creator/zwgcb-data。');
+    if (!token) return fail('还没填访问密钥。');
+    if (pass.length < 6) return fail('同步密码至少 6 位。');
+    ui.syncErr = null; ui.syncChecking = true; render();
+    let r;
+    try { r = await fetch('https://api.github.com/repos/' + repo, { headers:{ Authorization:'Bearer ' + token, Accept:'application/vnd.github+json', 'X-GitHub-Api-Version':'2022-11-28' }, cache:'no-store' }); }
+    catch (e){ return fail('连不上 GitHub。检查网络后再试。'); }
+    if (r.status === 401) return fail('访问密钥无效或已过期。重新生成一个，完整复制后再粘贴。');
+    if (r.status === 404) return fail('找不到这个仓库，或者访问密钥没有它的权限。检查仓库名，以及生成密钥时有没有勾选这个仓库。');
+    if (!r.ok) return fail('GitHub 返回了错误（' + r.status + '），稍后再试。');
+    let j = {}; try { j = await r.json(); } catch (e) {}
+    if (j.private === false) return fail('这个仓库是公开的。请换成私有（Private）仓库：数据虽然加密了，也不该放在公开的地方。');
+    syncCfg = { repo, token, pass, lastAt:(syncCfg && syncCfg.repo === repo) ? syncCfg.lastAt : null };
+    saveSyncCfg(); ui.syncChecking = false; ui.syncEdit = false; render();
+    await syncNow(); render();
+    if (syncState.ok) toast('云端同步已开启。');
+  },
   eventFromCap(el){ const e = eventForCap(el.dataset.key, el.dataset.id); openForm('event', e ? e.id : 'new|' + el.dataset.key + '|' + el.dataset.id); },
   editEvent(el){ openForm('event', el.dataset.id); },
   evCap(el){ const p = el.dataset.v.split('|'); prefillFromCap(form.data, p[0], p[1]); form.dirty = true; drafts[form.type + ':' + form.key] = form.data; draftLater(); render(); },
@@ -1852,12 +2156,12 @@ const A = {
     if (p.seq > curSeq()) ops.push(put('meta', 'counters', { hypSeq:p.seq }));
     ops.push(put('archives', rec.id, rec));
     if (ow) ops.push(remove('archives', ow.id));
-    closeForm(); ui.logOpen = a.date;
-    if (location.hash === '#log'){ route = 'log'; render(); } else location.hash = '#log';
+    closeForm(); if (a.date <= addDays(dayKey(), 1)) sel = a.date;
+    if (location.hash === '#review'){ route = 'review'; render(); } else location.hash = '#review';
     window.scrollTo(0, 0);
     try { await Promise.all(ops); toast('导入好了，归到 ' + md(a.date) + (p.items.length ? '，假设清单变了 ' + p.items.length + ' 处' : '') + '。'); } catch (e) {}
   },
-  openDay(el){ ui.logOpen = el.dataset.key; if (location.hash === '#log'){ form = null; route = 'log'; render(); } else location.hash = '#log'; },
+  openDay(el){ sel = el.dataset.key; if (location.hash === '#review') onHash(); else location.hash = '#review'; },
   async qToggle(el){ if (!needReady()) return; const r = clone(S.archives[el.dataset.id]); if (!r) return; const i = +el.dataset.v, set = new Set(r.resolvedQ || []); if (set.has(i)) set.delete(i); else set.add(i); r.resolvedQ = Array.from(set).sort((a, b) => a - b); const p = put('archives', r.id, r); render(); try { await p; } catch (e) {} },
   arcDelAsk(el){ ui.arcDel = el.dataset.id; render(); },
   arcDelNo(){ ui.arcDel = null; render(); },
@@ -1923,7 +2227,7 @@ function hypToast(D){
 /* ---------- events ---------- */
 document.addEventListener('click', e => {
   const tab = e.target.closest('.tabs a');
-  if (tab && tab.getAttribute('href') === (location.hash || '#today')){ e.preventDefault(); onHash(); return; }
+  if (tab && tab.getAttribute('href') === (location.hash || '#pred')){ e.preventDefault(); onHash(); return; }
   const el = e.target.closest('[data-act]'); if (!el) return;
   const f = A[el.dataset.act]; if (f){ e.preventDefault(); f(el, e); }
 });
@@ -1935,16 +2239,17 @@ document.addEventListener('input', e => {
   if (el.dataset.f === 'E.tmr'){ const w = $('#w-tmr'); if (w) w.textContent = vagueWarn(el.value); }
   if (el.dataset.live === 'hyp'){ const w = $('#w-hyp'); if (w) w.textContent = hypWarn((form.data.D.sit || '') + (form.data.D.rea || '')); }
 });
+const ROUTE_ALIAS = { today:'pred', log:'more' };   // links and icons saved from older versions
+function resolveRoute(hash){ const r = (hash || '#pred').slice(1), a = ROUTE_ALIAS[r] || r; return ['pred','capture','review','hyps','more','week'].includes(a) ? a : 'pred'; }
 function onHash(){
-  const r = (location.hash || '#today').slice(1);
-  route = ['today','log','capture','hyps','week'].includes(r) ? r : 'today';
+  route = resolveRoute(location.hash); ui.cal = false;
   if (form && form.dirty){ drafts[form.type + ':' + form.key] = form.data; saveDrafts(); }
   form = null; ui.hypOpen = null; ui.hypNew = false; ui.copy = null; ui.arcDel = null;
   render(); window.scrollTo(0, 0);
 }
 window.addEventListener('hashchange', onHash);
 document.addEventListener('change', e => { if (e.target && e.target.id === 'importFile' && e.target.files && e.target.files[0]) importFile(e.target.files[0]); });
-const r0 = (location.hash || '#today').slice(1); route = ['today','log','capture','hyps','week'].includes(r0) ? r0 : 'today';
+route = resolveRoute(location.hash);
 init();
 })();
 </script>
