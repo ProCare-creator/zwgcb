@@ -90,9 +90,10 @@ h2.h2{ font-family:var(--f-display); font-size:17px; font-weight:600; margin:26p
 .f{ display:flex; flex-direction:column; gap:6px; min-width:0; }
 .f>label,.lab{ font-size:13.5px; font-weight:600; color:var(--ink-2); }
 .f .hint{ font-size:12.5px; color:var(--ink-3); }
-textarea,input[type=text]{ width:100%; border:1px solid var(--line); background:var(--field); border-radius:8px; padding:9px 11px; font-size:16px; line-height:1.5; }
+textarea,input[type=text],input[type=date]{ width:100%; border:1px solid var(--line); background:var(--field); border-radius:8px; padding:9px 11px; font-size:16px; line-height:1.5; }
 textarea{ resize:vertical; min-height:44px; }
-textarea:focus,input[type=text]:focus{ outline:none; border-color:var(--blue); box-shadow:0 0 0 3px var(--blue-soft); }
+input[type=date]{ min-height:44px; display:block; }
+textarea:focus,input[type=text]:focus,input[type=date]:focus{ outline:none; border-color:var(--blue); box-shadow:0 0 0 3px var(--blue-soft); }
 .pair{ display:grid; grid-template-columns:auto 1fr; gap:6px 8px; align-items:center; }
 .pair span{ font-size:14px; color:var(--ink-2); white-space:nowrap; }
 .warn{ font-size:12.5px; color:var(--red); }
@@ -166,6 +167,11 @@ textarea:focus,input[type=text]:focus{ outline:none; border-color:var(--blue); b
 .capmini li{ display:flex; gap:8px; min-width:0; }
 .capmini .mono{ color:var(--ink-3); font-size:12.5px; flex:none; padding-top:2px; }
 .capmini span.txt{ min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.capmini .linkbtn{ min-width:0; flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; text-align:left; }
+.capmini .pending{ flex:none; padding-top:2px; }
+.cool{ border-color:var(--blue); background:var(--blue-soft); }
+.evt-title{ font-weight:700; font-size:16px; line-height:1.45; overflow-wrap:anywhere; }
+.evt .kv{ grid-template-columns:5.2em 1fr; }
 
 /* hypotheses: index cards */
 .hyp{ background:var(--card); border:1px solid var(--line); border-radius:6px; padding:14px 16px 12px; display:flex; flex-direction:column; gap:8px; background-image:linear-gradient(var(--card) 30px,transparent 30px),repeating-linear-gradient(transparent 0 25px,var(--grid) 25px 26px); min-width:0; }
@@ -265,7 +271,9 @@ const newId = () => Date.now().toString(36) + Math.random().toString(36).slice(2
 const clone = o => o == null ? o : JSON.parse(JSON.stringify(o));
 const newDay = k => ({ date:k, preds:[], caps:[], evening:null, skip:null });
 const getDay = k => clone(S.days[k]) || newDay(k);
-const hypText = h => '在' + h.sit + '时，我可能会' + h.rea;
+const sitOf = h => String(h.sit || '').trim().replace(/(的时候|时候|时)$/, '');
+const reaOf = h => String(h.rea || '').trim().replace(/^(我可能会|可能会)/, '');
+const hypText = h => '在' + sitOf(h) + '时，我可能会' + reaOf(h);
 function setPath(o, path, v){ const ps = path.split('.'); let c = o; for (let i = 0; i < ps.length - 1; i++){ if (c[ps[i]] == null || typeof c[ps[i]] !== 'object') c[ps[i]] = {}; c = c[ps[i]]; } c[ps[ps.length - 1]] = v; }
 function getPath(o, path){ return path.split('.').reduce((c, p) => c == null ? undefined : c[p], o); }
 let toastT = null;
@@ -279,7 +287,8 @@ function errMsg(e){
 }
 
 /* ---------- state ---------- */
-let S = { days:{}, hyps:{}, weeks:{} };
+let S = { days:{}, hyps:{}, weeks:{}, events:{} };
+const COLS = ['days','hyps','weeks','events'];
 let mode = 'init';           // init | cloud | local
 let ready = false, slow = false, migrated = false;
 let route = 'today';
@@ -292,7 +301,7 @@ let dlNs = null;
 /* ---------- storage ---------- */
 let base = null;
 const queues = {};
-function lsWrite(){ try { localStorage.setItem(LS_KEY, JSON.stringify({ days:S.days, hyps:S.hyps, weeks:S.weeks, savedAt:Date.now() })); return true; } catch (e) { return false; } }
+function lsWrite(){ try { localStorage.setItem(LS_KEY, JSON.stringify({ days:S.days, hyps:S.hyps, weeks:S.weeks, events:S.events, savedAt:Date.now() })); return true; } catch (e) { return false; } }
 function lsRead(){ try { return JSON.parse(localStorage.getItem(LS_KEY) || 'null'); } catch (e) { return null; } }
 function put(col, id, data){
   S[col] = Object.assign({}, S[col]); S[col][id] = data;
@@ -323,17 +332,17 @@ function useLocal(){
   if (mode === 'cloud') return;
   mode = 'local';
   const l = lsRead();
-  if (l){ S = { days:l.days || {}, hyps:l.hyps || {}, weeks:l.weeks || {} }; }
+  if (l){ S = { days:l.days || {}, hyps:l.hyps || {}, weeks:l.weeks || {}, events:l.events || {} }; }
   ready = true; refresh();
 }
 function startCloud(db, uid){
   mode = 'cloud';
   base = db.doc('data/users/' + uid + '/main');
   const loaded = {}, definite = {};
-  const slowT = setTimeout(() => { if (!(definite.days && definite.hyps && definite.weeks)){ slow = true; syncLabel(); } }, 10000);
+  const slowT = setTimeout(() => { if (!COLS.every(c => definite[c])){ slow = true; syncLabel(); } }, 10000);
   const done = () => {
-    if (loaded.days && loaded.hyps && loaded.weeks && !ready){ ready = true; }
-    if (definite.days && definite.hyps && definite.weeks){ clearTimeout(slowT); slow = false; migrate(); }
+    if (COLS.every(c => loaded[c]) && !ready){ ready = true; }
+    if (COLS.every(c => definite[c])){ clearTimeout(slowT); slow = false; migrate(); }
     refresh();
   };
   const sub = (col, q) => q.onSnapshot(snap => {
@@ -343,12 +352,13 @@ function startCloud(db, uid){
   sub('days', base.collection('days').orderBy('date', 'desc').limit(600));
   sub('hyps', base.collection('hyps'));
   sub('weeks', base.collection('weeks'));
+  sub('events', base.collection('events'));
 }
 async function migrate(){
   if (migrated) return; migrated = true;
   const l = lsRead(); if (!l) return;
   let n = 0;
-  for (const col of ['days','hyps','weeks']){
+  for (const col of COLS){
     for (const id of Object.keys(l[col] || {})){
       if (!S[col][id]){ try { await put(col, id, l[col][id]); n++; } catch (e) { return; } }
     }
@@ -394,7 +404,7 @@ function importFile(f){
     let o = null; try { o = JSON.parse(r.result); } catch (e) {}
     if (!o || typeof o !== 'object' || !o.days || typeof o.days !== 'object'){ toast('这个文件里没有自我观察本的记录。确认是从「导出备份」得到的 JSON。'); return; }
     let n = 0, skipped = 0;
-    ['days','hyps','weeks'].forEach(col => {
+    COLS.forEach(col => {
       const src = (o[col] && typeof o[col] === 'object') ? o[col] : {};
       Object.keys(src).forEach(id => { if (!S[col][id]){ S[col][id] = src[id]; n++; } else skipped++; });
     });
@@ -421,10 +431,10 @@ async function init(){
 /* ---------- derived ---------- */
 function dayStatus(k, t){
   if (k > t) return 'future';
-  const d = S.days[k]; if (!d) return 'none';
+  const d = S.days[k], evs = eventsOn(k).length; if (!d) return evs ? 'part' : 'none';
   if (d.evening) return d.evening.mode === 'std' ? 'std' : 'min';
   if (d.skip) return 'skip';
-  if ((d.preds && d.preds.length) || (d.caps && d.caps.length)) return 'part';
+  if ((d.preds && d.preds.length) || (d.caps && d.caps.length) || evs) return 'part';
   return 'none';
 }
 function firstDay(){
@@ -452,6 +462,8 @@ function weekData(ws){
     (h.ev || []).forEach(e => { if (e.date >= ws && e.date <= we){ if (e.kind === 'sup') r.sup++; else r.con++; } });
     if (h.status === 'revised' && h.revisedOn >= ws && h.revisedOn <= we) r.revised.push(h);
   });
+  r.evs = Object.values(S.events).filter(e => e.date >= ws && e.date <= we).sort((a, b) => a.date.localeCompare(b.date));
+  r.evs.forEach(e => { if (e.gap) r.surprises.push({ k:e.date, text:(e.title ? e.title + '：' : '') + e.gap, label:'单件复盘 · 事后回想的预期' }); });
   r.newInfo = r.misses.length + r.surprises.length + (r.tags['不像自己'] || 0) + r.con + r.revised.length;
   return r;
 }
@@ -462,6 +474,26 @@ function fuseOn(){
   return ev.length === 3 && ev.every(d => d.evening.after === 'heavy');
 }
 const openHyps = () => Object.values(S.hyps).filter(h => h.status !== 'revised').sort((a, b) => (b.updated || '').localeCompare(a.updated || ''));
+const eventsOn = k => Object.values(S.events || {}).filter(e => e.date === k).sort((a, b) => (a.created || '').localeCompare(b.created || ''));
+const eventForCap = (k, id) => Object.values(S.events || {}).find(e => e.capRef === k + '|' + id);
+const allDayKeys = () => Array.from(new Set(Object.keys(S.days).concat(Object.values(S.events || {}).map(e => e.date))));
+function capByRef(ref){
+  if (!ref) return null;
+  const p = ref.split('|'), d = S.days[p[0]], c = d && (d.caps || []).find(x => x.id === p[1]);
+  return c ? { k:p[0], c } : null;
+}
+function prefillFromCap(data, k, id){
+  const r = capByRef(k + '|' + id); if (!r) return;
+  const c = r.c;
+  data.capRef = k + '|' + id; data.date = k;
+  if (!data.title) data.title = (c.fact || c.quote || '').slice(0, 40);
+  if (!data.facts) data.facts = [c.fact, c.did && '我做了：' + c.did, c.wanted && '想做没做：' + c.wanted].filter(Boolean).join('\n');
+  if (!data.quote) data.quote = c.quote || '';
+  if (!(data.emos || []).length) data.emos = (c.emos || []).slice();
+  if (!data.inten) data.inten = c.inten || 0;
+  if (!(data.body || []).length) data.body = (c.body || []).slice();
+  if (!data.care) data.care = c.care || '';
+}
 
 /* ---------- small renderers ---------- */
 function tally(n){
@@ -498,10 +530,10 @@ function capCardHTML(c, k, opts){
     + (c.quote ? '<div class="quote">' + esc(c.quote) + '</div>' : '')
     + (kv.length ? '<dl class="kv">' + kv.map(x => '<dt>' + x[0] + '</dt><dd>' + esc(x[1]) + '</dd>').join('') + '</dl>' : '')
     + (c.care ? '<div class="care">碰到了我在乎的：<b>' + esc(c.care) + '</b></div>' : '')
-    + (opts.actions !== false ? '<div class="row">' + (!c.done ? '<span class="pending">还没理清</span>' : '') + '<button type="button" class="linkbtn" data-act="editCap" data-key="' + k + '" data-id="' + c.id + '">' + (c.done ? '修改' : '接着理清') + '</button></div>' : '')
+    + (opts.actions !== false ? '<div class="row">' + (!c.done ? '<span class="pending">还没理清</span>' : '') + '<button type="button" class="linkbtn" data-act="editCap" data-key="' + k + '" data-id="' + c.id + '">' + (c.done ? '修改' : '接着理清') + '</button>' + evLink(k, c) + '</div>' : '')
     + '</article>';
 }
-function hypLines(h){ return '<div class="hs"><span class="pre">在</span>' + esc(h.sit) + '<span class="pre">时，</span><br><span class="pre">我可能会</span>' + esc(h.rea) + '</div>'; }
+function hypLines(h){ return '<div class="hs"><span class="pre">在</span>' + esc(sitOf(h)) + '<span class="pre">时，</span><br><span class="pre">我可能会</span>' + esc(reaOf(h)) + '</div>'; }
 
 /* ---------- views ---------- */
 function vToday(){
@@ -517,7 +549,7 @@ function vToday(){
     const ws = dow === 0 ? weekStart(t) : addDays(weekStart(t), -7);
     if (!S.weeks[ws]) h += '<section class="card"><div class="stage">周复盘<span class="right">' + mdShort(ws) + '–' + mdShort(addDays(ws, 6)) + '</span></div><p class="muted">把这周落空的预测排在一起看：有没有同一个方向的错？20 分钟。</p><div class="row"><button type="button" class="btn sm" data-act="goWeek" data-key="' + ws + '">开始周复盘</button></div></section>';
   }
-  h += predCard(t, d) + capCardToday(t, d) + eveCard(t, d, yd);
+  h += predCard(t, d) + capCardToday(t, d) + eventCardToday(t) + eveCard(t, d, yd);
   h += '</div>';
   return h;
 }
@@ -571,6 +603,40 @@ function capCardToday(t, d){
   else s += '<p class="muted">情绪起伏、反应出乎自己意料、或者卡住的时候，当场记一句。晚上深挖可以直接选它。</p>';
   return s + '<div class="row"><a class="btn ghost sm" href="#capture">记一笔</a></div></section>';
 }
+function evLink(k, c){
+  const e = eventForCap(k, c.id);
+  return e ? '<button type="button" class="linkbtn" data-act="editEvent" data-id="' + e.id + '">看单件复盘</button>'
+    : '<button type="button" class="linkbtn" data-act="eventFromCap" data-key="' + k + '" data-id="' + c.id + '">单独复盘这件</button>';
+}
+function eventCardToday(t){
+  const all = Object.values(S.events);
+  const open = all.filter(e => !e.done && e.date >= addDays(t, -14)).sort((a, b) => (b.updated || '').localeCompare(a.updated || ''));
+  const done = all.filter(e => e.done && e.date === t);
+  const list = open.concat(done).slice(0, 5);
+  let s = '<section class="card"><div class="stage"><span class="tag">随时</span>单件复盘</div>';
+  if (!list.length) s += '<p class="muted">挑一件事单独慢放一遍，不用等到晚上。适合你反复在想、或者想不通自己为什么那样做的事。</p>';
+  else s += '<ul class="capmini">' + list.map(e => '<li><span class="mono">' + mdShort(e.date) + '</span><button type="button" class="linkbtn" data-act="editEvent" data-id="' + e.id + '">' + esc(e.title) + '</button>' + (!e.done ? '<span class="pending">没写完</span>' : '') + '</li>').join('') + '</ul>';
+  return s + '<div class="row"><button type="button" class="btn ghost sm" data-act="newEvent">复盘一件事</button></div></section>';
+}
+function eventCardHTML(ev){
+  const emo = (ev.emos || []).join(' · '), kv = [];
+  if (ev.fork) kv.push(['岔路口', ev.fork]);
+  if (ev.why) kv.push(['没选的理由', ev.why]);
+  if (ev.gap) kv.push(['和预期差在', ev.gap]);
+  return '<article class="cap evt">'
+    + '<div class="cap-top"><span class="tg">单件复盘</span><span class="mono">' + mdShort(ev.date) + ' ' + wdOf(ev.date) + '</span>' + (emo ? '<span class="emo">' + esc(emo) + ' ' + bars(ev.inten || 0) + '</span>' : '') + '</div>'
+    + '<div class="evt-title">' + esc(ev.title) + '</div>'
+    + (ev.quote ? '<div class="quote">' + esc(ev.quote) + '</div>' : '')
+    + (kv.length ? '<dl class="kv">' + kv.map(x => '<dt>' + x[0] + '</dt><dd>' + esc(x[1]) + '</dd>').join('') + '</dl>' : '')
+    + (ev.care ? '<div class="care">碰到了我在乎的：<b>' + esc(ev.care) + '</b></div>' : '')
+    + (ev.Dres && ev.Dres.text ? '<div class="care">收获：<b>' + esc(ev.Dres.text) + '</b></div>' : '')
+    + ((ev.nextIf || ev.nextThen) ? '<div class="care">下次：如果' + esc(ev.nextIf || '___') + '，我就' + esc(ev.nextThen || '___') + '</div>' : '')
+    + '<div class="row">' + (!ev.done ? '<span class="pending">还没写完</span>' : '')
+    + '<button type="button" class="linkbtn" data-act="editEvent" data-id="' + ev.id + '">' + (ev.done ? '修改' : '接着写') + '</button>'
+    + (dlNs ? '<button type="button" class="linkbtn" data-act="wordEvent" data-id="' + ev.id + '">保存为 Word</button>' : '')
+    + '<button type="button" class="linkbtn" data-act="copyEvent" data-id="' + ev.id + '">复制给 Claude</button></div>'
+    + '</article>';
+}
 function eveCard(t, d, yd){
   let s = '<section class="card"><div class="stage"><span class="tag">晚</span>复盘</div>';
   if (d.evening){
@@ -609,7 +675,15 @@ function openForm(type, key, extra){
       else data = { fact:'', emos:[], inten:0, quote:'', body:[], did:'', wanted:'', care:'', tags:[], more:false };
     }
     if (type === 'week'){ const w = S.weeks[key]; data = w ? clone(w) : { dir:'', said:['','',''], did:['','',''], was:'', saw:'' }; }
+    if (type === 'event'){
+      if (S.events[key]) data = clone(S.events[key]);
+      else {
+        data = { title:'', date:dayKey(), capRef:null, facts:'', quote:'', emos:[], inten:0, body:[], expect:'', gap:'', fork:'', alt:'', why:'', care:'', friend:'', D:{ op:'new' }, nextIf:'', nextThen:'', after:'' };
+        if (key.startsWith('new|')){ const p = key.split('|'); prefillFromCap(data, p[1], p[2]); }
+      }
+    }
   }
+  if (type === 'event'){ if (!data.D || typeof data.D !== 'object') data.D = { op:'new' }; if (!data.D.op) data.D.op = 'new'; data._del = false; }
   if (type === 'evening' || type === 'min'){ ['R','A','C','E'].forEach(p => { if (!data[p] || typeof data[p] !== 'object') data[p] = {}; }); if (!data.D || typeof data.D !== 'object') data.D = { op:'new' }; if (!data.D.op) data.D.op = 'new'; }
   form = { type, key, data, dirty:false };
   render(); window.scrollTo(0, 0);
@@ -661,6 +735,8 @@ function fEvening(){
     h += fieldTA('surprise', '今天哪一刻，你的反应出乎自己意料？', '', '没有事前预测，这条可能被事后的解释修饰过，周复盘里会标成弱证据。');
   }
   h += '<div class="sec-h"><span class="mono">C</span>深挖一个时刻<span class="t">5–8 分钟</span></div>';
+  const evsToday = eventsOn(k);
+  if (evsToday.length) h += '<p class="fine">今天已经单独复盘过「' + esc(evsToday.map(e => e.title).join('」「')) + '」。这一节可以挑别的时刻，也可以跳过。</p>';
   const opts = [];
   d.preds.forEach(p => { const r = x.R[p.id] && x.R[p.id].r; if (r === 'miss' || r === 'half') opts.push(['pred:' + p.id, '落空：' + p.text]); });
   caps.forEach(c => opts.push(['cap:' + c.id, hm(c.at) + ' ' + ((c.emos || []).join('·') || '') + ' ' + (c.fact || c.quote || '')]));
@@ -763,10 +839,11 @@ function fWeek(){
   h += '<h2 class="h2">落空的预测，排在一起看</h2>';
   if (w.misses.length || w.surprises.length){
     h += '<ul class="preds">' + w.misses.map(p => '<li class="pred r-' + p.result + '"><div class="pk"><span class="mono">' + mdShort(p.k) + '</span><span>' + KINDS[p.kind] + (p.src === 'late' ? ' · 补写' : '') + '</span></div><div class="pt">' + esc(p.text) + '</div>' + (p.actual ? '<div class="pa">实际：' + esc(p.actual) + '</div>' : '') + '<span class="pen">' + RES[p.result] + '</span></li>').join('')
-      + w.surprises.map(s => '<li class="pred r-half"><div class="pk"><span class="mono">' + mdShort(s.k) + '</span><span>意外回看 · 弱证据</span></div><div class="pt">' + esc(s.text) + '</div></li>').join('') + '</ul>';
+      + w.surprises.map(s => '<li class="pred r-half"><div class="pk"><span class="mono">' + mdShort(s.k) + '</span><span>' + esc(s.label || '意外回看 · 弱证据') + '</span></div><div class="pt">' + esc(s.text) + '</div></li>').join('') + '</ul>';
   } else h += '<p class="fine">这周没有落空的预测。可能是预测写得太保险了：下周写得更具体、更容易错一点。</p>';
   const emos = Object.entries(w.emos).sort((a, b) => b[1] - a[1]);
   if (emos.length) h += '<h2 class="h2">随手记里的情绪</h2><div class="chips">' + emos.map(e => '<span class="chip">' + esc(e[0]) + ' ×' + e[1] + '</span>').join('') + '</div>' + (w.intN ? '<p class="fine" style="margin-top:6px">平均强度 ' + (w.intSum / w.intN).toFixed(1) + ' / 5</p>' : '');
+  if (w.evs.length) h += '<h2 class="h2">这周单独复盘的事 · ' + w.evs.length + '</h2><div class="stack">' + w.evs.map(eventCardHTML).join('') + '</div>';
   h += '<h2 class="h2">清单这周的变化</h2><p class="muted">新增 ' + w.newHyps.length + ' 条 · 支持 +' + w.sup + ' · <span style="color:var(--red)">反例 +' + w.con + '</span> · 改写 ' + w.revised.length + ' 条</p>';
   if (total >= 14 && !anyRevised) h += '<p class="warn" style="margin-top:6px">已经记了两周，清单里还没有被改写过的假设。说明预测太保险，或者深挖太浅：把预测写得更具体、更有可能错。</p>';
   if (w.heavy >= 3) h += '<p class="warn" style="margin-top:6px">这周有 ' + w.heavy + ' 次写完觉得更沉了。下周试试全程用第三人称写。</p>';
@@ -777,6 +854,59 @@ function fWeek(){
   h += '<div class="f"><div class="lab">被动摇的旧印象</div><div class="pair"><span>以前我以为自己</span>' + fieldIn('was', '') + '<span>这周看到</span>' + fieldIn('saw', '') + '</div></div>';
   h += '<p class="fine">写完去「假设清单」：加证据、缩小条件、改状态。</p>';
   h += '<div class="row"><button type="button" class="btn" data-act="saveWeek">存下周复盘</button>' + (S.weeks[ws] ? '<span class="fine">已存过，可以改了再存</span>' : '') + '</div></div>';
+  return h;
+}
+
+function dPartHTML(x, existing){
+  if (existing && existing.op !== 'none' && existing.line) return '<div class="hyp">' + existing.line + '</div><p class="fine">这条已经记进清单了，要改去「假设清单」里改。</p>';
+  const hs = openHyps();
+  let h = segHTML('D.op', [['new','新假设'],['old','给已有的一条记证据'],['none','没看出新东西']]);
+  if (x.D.op === 'new'){
+    h += '<div class="pair"><span>在</span>' + fieldIn('D.sit', '什么情况下', 'hyp') + '<span>我可能会</span>' + fieldIn('D.rea', '怎样', 'hyp') + '</div><div class="warn" id="w-hyp">' + hypWarn((x.D.sit || '') + (x.D.rea || '')) + '</div>';
+    h += fieldTA('D.ev', '证据', '一句话，指向上面的慢放', '', 1);
+  } else if (x.D.op === 'old'){
+    if (!hs.length) h += '<p class="fine">清单还是空的，先写一条新假设。</p>';
+    else h += '<div class="chips">' + hs.map(h2 => '<button type="button" class="chip' + (x.D.hid === h2.id ? ' on' : '') + '" data-act="pick" data-f="D.hid" data-v="' + h2.id + '">' + esc(hypText(h2)) + '</button>').join('') + '</div><div class="lab">这件事对它来说是</div>' + segHTML('D.kind', [['sup','支持'],['con','反例']]) + fieldTA('D.ev', '证据', '一句话', '', 1);
+  }
+  return h;
+}
+function fEvent(){
+  const x = form.data, t = dayKey(), saved = S.events[form.key], editing = !!saved;
+  let h = formHead(editing ? '单件复盘' : '复盘一件事', '不用等到晚上。挑一件事慢放一遍，找到你做选择的那个时刻。大约 10 分钟，每一栏都可以空着，没写完可以先存。', editing ? md(saved.date) + ' 的事' : '');
+  if (x.inten >= 4) h += '<section class="card cool" style="margin-bottom:12px"><p class="muted">情绪强度' + x.inten + '：这时候深挖，容易越想越沉。先写完「慢放」就够了，其余等情绪降下来再补，草稿会自动保留。全程用第三人称写，也会轻一些。</p></section>';
+  h += '<div class="card"><div class="sec">';
+  h += '<div class="sec-h"><span class="mono">1</span>这件事<span class="t">1 分钟</span></div>';
+  if (!editing && !x.capRef){
+    const recent = [];
+    for (let i = 0; i <= 2; i++){ const k = addDays(t, -i), d = S.days[k]; if (d) (d.caps || []).forEach(c => { if (!eventForCap(k, c.id)) recent.push([k, c]); }); }
+    recent.sort((a, b) => b[1].at.localeCompare(a[1].at));
+    if (recent.length) h += '<div class="f"><div class="lab">从随手记里挑一件（可选）</div><div class="chips">' + recent.slice(0, 6).map(r => '<button type="button" class="chip" data-act="evCap" data-v="' + r[0] + '|' + r[1].id + '">' + esc((r[0] === t ? '' : mdShort(r[0]) + ' ') + hm(r[1].at) + ' ' + (r[1].fact || r[1].quote || '').slice(0, 16)) + '</button>').join('') + '</div></div>';
+  }
+  if (x.capRef){ const r = capByRef(x.capRef); if (r) h += '<p class="fine">来自 ' + mdShort(r.k) + ' ' + hm(r.c.at) + ' 的随手记，能用的内容已经填进来了。</p>'; }
+  h += '<div class="f"><label for="f-title">一句话说是什么事</label>' + fieldIn('title', '比如：组会上方案被当场否了') + '</div>';
+  h += '<div class="f"><label for="f-date">发生在哪天</label><input type="date" id="f-date" data-f="date" value="' + esc(x.date) + '" max="' + t + '"></div>';
+  h += '<div class="sec-h"><span class="mono">2</span>慢放<span class="t">3 分钟 · 像摄像机一样</span></div>';
+  h += fieldTA('facts', '按顺序写：先发生了什么，然后呢，我做了什么，结果怎样', '', '只写看得见、听得见的。「他看不起我」是解释，「他没看我就说了下一项」是事实。', 4);
+  h += fieldTA('quote', '那一刻脑子里的原话，逐字', '比如：又搞砸了', '', 1);
+  h += '<div class="f"><div class="lab">当时的情绪和强度</div>' + chipsHTML('emos', EMOS, true) + segHTML('inten', [[1,'1'],[2,'2'],[3,'3'],[4,'4'],[5,'5']]) + '</div>';
+  h += '<div class="f"><div class="lab">身体的感觉</div>' + chipsHTML('body', BODY, true) + '</div>';
+  h += '<div class="sec-h"><span class="mono">3</span>预期和实际<span class="t">2 分钟</span></div>';
+  h += fieldTA('expect', '事前或当时，我以为会怎样？以为自己会怎么做？', '', '这是事后回想的预期，可能被结果改写过，周复盘里算弱证据。');
+  h += fieldTA('gap', '实际和预期差在哪里', '');
+  h += '<div class="sec-h"><span class="mono">4</span>岔路口<span class="t">2 分钟</span></div>';
+  h += fieldTA('fork', '在哪一刻，我做了选择？', '什么都没做，也是一种选择');
+  h += fieldTA('alt', '当时还有什么别的做法？', '');
+  h += fieldTA('why', '没选它，当时脑子里的理由，逐字', '比如：说了也没用', '这一句往往比事后找的原因更接近真实的你。', 1);
+  h += '<div class="sec-h"><span class="mono">5</span>它碰到了什么<span class="t">2 分钟</span></div>';
+  h += fieldTA('care', '这件事碰到了我在乎的什么', '被否定？被打断？被认可？失去掌控？');
+  h += fieldTA('friend', '如果好朋友遇到一模一样的事，你会怎么看他？', '', '对别人，我们通常更公道。两种看法之间的差距，本身就是信息。');
+  h += '<div class="sec-h"><span class="mono">6</span>收获<span class="t">1 分钟</span></div>';
+  h += dPartHTML(x, saved && saved.Dres);
+  h += '<div class="f"><div class="lab">下次遇到类似的情况（可选）</div><div class="pair"><span>如果</span>' + fieldIn('nextIf', '比如：方案又被当场否定') + '<span>我就</span>' + fieldIn('nextThen', '比如：先问一句「主要卡在哪」') + '</div><div class="hint">只写一条，绑在具体的情况上。「下次冷静点」这种不带情况的决心，基本不起作用。</div></div>';
+  h += afterHTML();
+  h += '<div class="row"><button type="button" class="btn" data-act="saveEvent">存下</button>'
+    + (editing ? (x._del ? '<span class="warn">删掉后找不回来。</span><button type="button" class="btn sm red" data-act="delEvent">确定删除</button><button type="button" class="btn ghost sm" data-act="delEventNo">算了</button>' : '<button type="button" class="btn ghost" data-act="delEventAsk">删掉这次复盘</button>') : '')
+    + '</div></div></div>';
   return h;
 }
 
@@ -824,15 +954,16 @@ function hypCard(x){
 }
 function vLog(){
   const t = dayKey();
-  const keys = Object.keys(S.days).filter(k => k <= t && dayStatus(k, t) !== 'none').sort().reverse();
+  const keys = allDayKeys().filter(k => k <= t && dayStatus(k, t) !== 'none').sort().reverse();
   let h = copyBox() + '<h1 class="h">记录</h1><p class="lede">每一天的预测、随手记和复盘。点开一天，可以复制给 Claude 接着聊。</p>';
   if (!keys.length) h += '<p class="fine">还没有记录。从「今天」写下第一条预测，或者点下面的「随手记」记一笔。</p>';
   h += '<div class="stack">';
   keys.forEach(k => {
-    const d = S.days[k], st = dayStatus(k, t), miss = (d.preds || []).filter(p => p.result === 'miss' || p.result === 'half').length;
+    const d = S.days[k] || newDay(k), st = dayStatus(k, t), miss = (d.preds || []).filter(p => p.result === 'miss' || p.result === 'half').length;
     const sum = [];
     if (d.preds && d.preds.length) sum.push('预测 ' + d.preds.length + (miss ? '（落空 ' + miss + '）' : ''));
     if (d.caps && d.caps.length) sum.push('随手记 ' + d.caps.length);
+    const ne = eventsOn(k).length; if (ne) sum.push('单件复盘 ' + ne);
     if (d.evening && d.evening.D && d.evening.D.text) sum.push(d.evening.D.text);
     if (d.skip) sum.push('放过：' + d.skip.reason);
     h += '<div><button type="button" class="logrow" data-act="logOpen" data-key="' + k + '" aria-expanded="' + (ui.logOpen === k) + '"><span class="cell ' + st + '"></span><span class="d">' + mdShort(k) + ' ' + wdOf(k) + '</span><span class="s">' + esc(sum.join(' · ')) + '</span></button>';
@@ -847,7 +978,7 @@ function vLog(){
   return h;
 }
 function dayDetail(k){
-  const d = S.days[k], e = d.evening;
+  const d = S.days[k] || newDay(k), e = d.evening;
   let s = '<div class="detail">';
   if (d.preds && d.preds.length) s += '<ul class="preds">' + d.preds.map(p => predRow(p, k, false)).join('') + '</ul>';
   (d.caps || []).slice().sort((a, b) => a.at.localeCompare(b.at)).forEach(c => { s += capCardHTML(c, k); });
@@ -864,6 +995,7 @@ function dayDetail(k){
     if (kv.length) s += '<dl class="kv">' + kv.map(x => '<dt>' + x[0] + '</dt><dd>' + esc(x[1]) + '</dd>').join('') + '</dl>';
     if (e.D && e.D.line) s += '<div class="hyp">' + e.D.line + '</div>';
   }
+  eventsOn(k).forEach(ev => { s += eventCardHTML(ev); });
   s += '<div class="row">' + (dlNs ? '<button type="button" class="btn sm" data-act="wordDay" data-key="' + k + '">保存为 Word</button>' : '') + '<button type="button" class="btn ghost sm" data-act="copy" data-key="' + k + '">复制给 Claude</button></div></div>';
   return s;
 }
@@ -875,7 +1007,7 @@ function render(){
   if (!form && route === 'capture') form = { type:'capture', key:'new', data:drafts['capture:new'] ? clone(drafts['capture:new']) : { fact:'', emos:[], inten:0, quote:'', body:[], did:'', wanted:'', care:'', tags:[], more:false }, dirty:false };
   if (!form && route === 'week'){ const k = ui.weekKey || weekStart(dayKey()); const w = S.weeks[k]; form = { type:'week', key:k, data:drafts['week:' + k] ? clone(drafts['week:' + k]) : (w ? clone(w) : { dir:'', said:['','',''], did:['','',''], was:'', saw:'' }), dirty:false }; }
   let html;
-  if (form){ html = ({ morning:fMorning, evening:fEvening, min:fMin, capture:fCapture, week:fWeek })[form.type](); }
+  if (form){ html = ({ morning:fMorning, evening:fEvening, min:fMin, capture:fCapture, week:fWeek, event:fEvent })[form.type](); }
   else html = ({ today:vToday, log:vLog, hyps:vHyps })[route] ? ({ today:vToday, log:vLog, hyps:vHyps })[route]() : vToday();
   $('#view').innerHTML = html;
   const ca = $('#copyArea'); if (ca){ ca.focus(); ca.select(); }
@@ -883,7 +1015,9 @@ function render(){
 
 /* ---------- copy text ---------- */
 function dayText(k){
-  const d = S.days[k]; if (!d) return '';
+  const evs = eventsOn(k);
+  if (!S.days[k] && !evs.length) return '';
+  const d = S.days[k] || newDay(k);
   const L = ['【复盘日 ' + k + ' ' + wdOf(k) + '】'];
   if (d.preds && d.preds.length){ L.push('预测：'); d.preds.forEach((p, i) => L.push((i + 1) + '. [' + KINDS[p.kind] + '｜' + SRC[p.src] + ' ' + hm(p.at) + '] ' + p.text + (p.result ? ' → ' + RES[p.result] : '') + (p.actual ? '；实际：' + p.actual : ''))); }
   else L.push('预测：今天没写。');
@@ -900,6 +1034,7 @@ function dayText(k){
     } else { if (r.q1) L.push('不一样的一刻：' + r.q1); if (r.q2) L.push('在乎的：' + r.q2); }
     if (e.D && e.D.text) L.push('今天的假设：' + e.D.text);
   }
+  evs.forEach(ev => L.push(eventText(ev)));
   return L.join('\n');
 }
 function hypListText(){
@@ -968,6 +1103,8 @@ function dayDocXml(k){
     }
     B.push(wKV('写完的感觉', { light:'轻一点', same:'差不多', heavy:'更沉了' }[e.after]));
   }
+  const evs = eventsOn(k);
+  if (evs.length){ B.push(wH1('单件复盘')); evs.forEach(ev => { B.push.apply(B, eventBlocks(ev, true)); }); }
   B.push(wH1('当前的自我假设清单'));
   const hs = openHyps();
   if (hs.length) hs.forEach(h => { B.push(wTxt(hypText(h)), wTxt((h.status === 'solid' ? '较可信' : '待验证') + ' · 支持 ' + evCount(h, 'sup') + ' 次 · 反例 ' + evCount(h, 'con') + ' 次', 'Small')); });
@@ -976,7 +1113,43 @@ function dayDocXml(k){
   return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>' + B.filter(Boolean).join('')
     + '<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1440" w:right="1304" w:bottom="1440" w:left="1304" w:header="708" w:footer="708" w:gutter="0"/></w:sectPr></w:body></w:document>';
 }
-const DOCX_STYLES = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">'
+const AFTERS = { light:'轻一点', same:'差不多', heavy:'更沉了' };
+function eventBlocks(ev, nested){
+  const B = [], group = (title, items) => { const body = items.filter(Boolean); if (!body.length) return; if (!nested) B.push(wH2(title)); B.push.apply(B, body); };
+  if (nested) B.push(wH2(ev.title || '单件复盘'));
+  const emo = (ev.emos || []).join('、') + (ev.inten ? '，强度 ' + ev.inten + '/5' : '');
+  group('慢放', [wKV('经过', ev.facts), ev.quote ? wTxt('「' + ev.quote + '」', 'Quote') : '', wKV('情绪', emo), wKV('身体', (ev.body || []).join('、'))]);
+  group('预期和实际', [wKV('事前以为', ev.expect), wKV('实际差在', ev.gap)]);
+  group('岔路口', [wKV('做选择的那一刻', ev.fork), wKV('别的做法', ev.alt), wKV('没选它的理由', ev.why)]);
+  group('它碰到了什么', [wKV('碰到了我在乎的', ev.care), wKV('换成好朋友，我会怎么看他', ev.friend)]);
+  group('收获', [wKV('假设', ev.Dres && ev.Dres.text), (ev.nextIf || ev.nextThen) ? wKV('下次', '如果' + (ev.nextIf || '___') + '，我就' + (ev.nextThen || '___')) : '', wKV('写完的感觉', AFTERS[ev.after])]);
+  return B;
+}
+function docWrap(B){
+  return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>' + B.filter(Boolean).join('')
+    + '<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1440" w:right="1304" w:bottom="1440" w:left="1304" w:header="708" w:footer="708" w:gutter="0"/></w:sectPr></w:body></w:document>';
+}
+function eventDocXml(ev){
+  const B = [wTxt('自我观察本 · 单件复盘', 'Small'), wTxt(ev.title || '单件复盘', 'Title'), wTxt(ev.date.slice(0, 4) + '年' + md(ev.date) + ' ' + wdOf(ev.date) + ' 的事' + (ev.created ? ' · 复盘于 ' + md(ymd(new Date(ev.created))) + ' ' + hm(ev.created) : ''), 'Small')].concat(eventBlocks(ev, false));
+  const h = ev.Dres && ev.Dres.hid && S.hyps[ev.Dres.hid];
+  if (h) B.push(wH2('相关的假设'), wTxt(hypText(h)), wTxt((h.status === 'solid' ? '较可信' : h.status === 'revised' ? '已改写' : '待验证') + ' · 支持 ' + evCount(h, 'sup') + ' 次 · 反例 ' + evCount(h, 'con') + ' 次', 'Small'));
+  B.push(wTxt('导出于 ' + ymd(new Date()) + ' ' + hm(new Date().toISOString()), 'Small'));
+  return docWrap(B);
+}
+function eventText(ev){
+  const L = ['【单件复盘 ' + ev.date + ' ' + wdOf(ev.date) + '】' + (ev.title || '')];
+  const add = (k, v) => { if (v && String(v).trim()) L.push(k + '：' + String(v).trim()); };
+  add('经过', ev.facts); add('原话', ev.quote && '「' + ev.quote + '」');
+  add('情绪', (ev.emos || []).join('、') + (ev.inten ? ' ' + ev.inten + '/5' : '')); add('身体', (ev.body || []).join('、'));
+  add('事前以为（事后回想）', ev.expect); add('实际差在', ev.gap);
+  add('做选择的那一刻', ev.fork); add('别的做法', ev.alt); add('没选它的理由', ev.why);
+  add('碰到了我在乎的', ev.care); add('换成好朋友，我会怎么看他', ev.friend);
+  add('假设', ev.Dres && ev.Dres.text);
+  if (ev.nextIf || ev.nextThen) add('下次', '如果' + (ev.nextIf || '___') + '，我就' + (ev.nextThen || '___'));
+  return L.join('\n');
+}
+const EVENT_OPENER = '这是我单独复盘的一件事。请只问事实，一次一个问题，帮我看清那个岔路口：当时我看到了什么、脑子里说了什么、为什么走了那条路。我开始解释原因或评价自己时，把我拉回「当时发生了什么」。不安慰，不给建议。最后帮我写成「在___时，我可能会___」，并指出它和清单里哪一条有关，是支持还是反例。';
+const DOCX_STYLES ='<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">'
   + '<w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="Calibri" w:hAnsi="Calibri" w:eastAsia="Microsoft YaHei" w:cs="Calibri"/><w:sz w:val="22"/><w:szCs w:val="22"/><w:lang w:val="en-US" w:eastAsia="zh-CN"/></w:rPr></w:rPrDefault><w:pPrDefault><w:pPr><w:spacing w:after="100" w:line="312" w:lineRule="auto"/></w:pPr></w:pPrDefault></w:docDefaults>'
   + '<w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/><w:qFormat/></w:style>'
   + '<w:style w:type="paragraph" w:styleId="Title"><w:name w:val="Title"/><w:basedOn w:val="Normal"/><w:next w:val="Normal"/><w:qFormat/><w:pPr><w:spacing w:after="120"/></w:pPr><w:rPr><w:b/><w:color w:val="1D2C45"/><w:sz w:val="40"/><w:szCs w:val="40"/></w:rPr></w:style>'
@@ -1118,9 +1291,41 @@ const A = {
   async hypDel(el){ if (!needReady()) return; const id = el.dataset.id; ui.hypOpen = null; render(); try { await remove('hyps', id); render(); } catch (e) {} },
   logOpen(el){ ui.logOpen = ui.logOpen === el.dataset.key ? null : el.dataset.key; render(); },
   copy(el){ const k = el.dataset.key; copyText(dayText(k) + '\n\n' + hypListText() + '\n\n' + OPENER); },
-  copyAll(){ const ks = Object.keys(S.days).filter(k => k <= dayKey()).sort(); copyText(ks.map(dayText).filter(Boolean).join('\n\n') + '\n\n' + hypListText()); },
+  copyAll(){ const ks = allDayKeys().filter(k => k <= dayKey()).sort(); copyText(ks.map(dayText).filter(Boolean).join('\n\n') + '\n\n' + hypListText()); },
   closeCopy(){ ui.copy = null; render(); },
   importPick(){ const i = $('#importFile'); if (i){ i.value = ''; i.click(); } },
+  newEvent(){ openForm('event', 'new'); },
+  eventFromCap(el){ const e = eventForCap(el.dataset.key, el.dataset.id); openForm('event', e ? e.id : 'new|' + el.dataset.key + '|' + el.dataset.id); },
+  editEvent(el){ openForm('event', el.dataset.id); },
+  evCap(el){ const p = el.dataset.v.split('|'); prefillFromCap(form.data, p[0], p[1]); form.dirty = true; drafts[form.type + ':' + form.key] = form.data; draftLater(); render(); },
+  delEventAsk(){ form.data._del = true; render(); },
+  delEventNo(){ form.data._del = false; render(); },
+  async delEvent(){ if (!needReady()) return; const id = form.key; closeForm(); render(); try { await remove('events', id); render(); toast('删掉了。'); } catch (e) {} },
+  async saveEvent(){
+    if (!needReady()) return;
+    const x = clone(form.data), t = dayKey(), prev = S.events[form.key] || null;
+    const title = (x.title || '').trim(), facts = (x.facts || '').trim();
+    if (!title && !facts){ toast('至少写一句是什么事。'); return; }
+    const id = prev ? prev.id : newId(), now = new Date().toISOString();
+    let date = /^\d{4}-\d{2}-\d{2}$/.test(x.date || '') ? x.date : t; if (date > t) date = t;
+    const writes = [];
+    const Dres = (prev && prev.Dres && prev.Dres.op !== 'none') ? prev.Dres : applyD(date, x.D, writes);
+    const tr = v => (v || '').trim();
+    const ev = { id, date, created:prev ? prev.created : now, updated:now, capRef:x.capRef || null, title:title || facts.slice(0, 30), facts, quote:tr(x.quote), emos:x.emos || [], inten:x.inten || 0, body:x.body || [],
+      expect:tr(x.expect), gap:tr(x.gap), fork:tr(x.fork), alt:tr(x.alt), why:tr(x.why), care:tr(x.care), friend:tr(x.friend), nextIf:tr(x.nextIf), nextThen:tr(x.nextThen), after:x.after || '', D:x.D, Dres };
+    ev.done = !!(ev.fork || ev.care || (Dres && Dres.op !== 'none'));
+    closeForm(); render(); window.scrollTo(0, 0);
+    try { await put('events', id, ev); for (const w of writes) await w(); toast(hypToast(Dres) || (ev.done ? '这件事复盘好了。' : '存下了。没写完的部分，之后在「今天」页接着写。')); } catch (e) {}
+  },
+  async wordEvent(el){
+    const ev = S.events[el.dataset.id]; if (!ev) return;
+    if (!dlNs){ toast('这里不能保存文件，可以先用「复制给 Claude」把文字留下来。'); return; }
+    let blob; try { blob = buildDocx(eventDocXml(ev)); } catch (e){ toast('生成 Word 时出错了，先用「复制给 Claude」把文字留下来。'); return; }
+    const part = String(ev.title || '').replace(/[\\\/:*?"<>|\s]+/g, '').slice(0, 14);
+    try { await dlNs.save({ filename:'单件复盘-' + ev.date + (part ? '-' + part : '') + '.docx', data:blob }); toast('Word 保存好了。'); }
+    catch (e){ if (e && e.code === 'declined') return; toast('没保存成功，可以先用「复制给 Claude」把文字留下来。'); }
+  },
+  copyEvent(el){ const ev = S.events[el.dataset.id]; if (ev) copyText(eventText(ev) + '\n\n' + hypListText() + '\n\n' + EVENT_OPENER); },
   async wordDay(el){
     if (!dlNs){ toast('这里不能保存文件，可以先用「复制给 Claude」把文字留下来。'); return; }
     const k = el.dataset.key;
@@ -1135,7 +1340,7 @@ const A = {
   },
   async export(){
     if (!dlNs){ toast('这里不能导出文件，用「复制全部为文字」。'); return; }
-    try { await dlNs.save({ filename:'自我观察本-' + dayKey() + '.json', data:JSON.stringify({ exportedAt:new Date().toISOString(), days:S.days, hyps:S.hyps, weeks:S.weeks }, null, 2) }); try { localStorage.setItem('zwgcb-lastbackup', dayKey()); } catch (e2) {} toast('备份导出好了。'); render(); }
+    try { await dlNs.save({ filename:'自我观察本-' + dayKey() + '.json', data:JSON.stringify({ exportedAt:new Date().toISOString(), days:S.days, hyps:S.hyps, weeks:S.weeks, events:S.events }, null, 2) }); try { localStorage.setItem('zwgcb-lastbackup', dayKey()); } catch (e2) {} toast('备份导出好了。'); render(); }
     catch (e){ if (!e || e.code !== 'declined') toast('导出没成功，可以先用「复制全部为文字」。'); }
   }
 };
