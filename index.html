@@ -330,7 +330,7 @@ const VAGUE = ['充实','好好','努力','认真','尽量','高效','顺利','�
 const MOMENTS = ['情绪最强的一刻','最不像自己的一刻','最有劲的一刻','别的时刻'];
 const FORMAT = 'review-archive/v1';
 const OFFLINE_APP = true;
-const APP_VERSION = 'v5.1';
+const APP_VERSION = 'v5.2';
 const LS_KEY = 'zwgcb-data-v1', LS_DRAFT = 'zwgcb-drafts-v1';
 
 /* ---------- utils ---------- */
@@ -524,6 +524,9 @@ async function syncNow(){
     let stamped = false; const now = Date.now();
     COLS.forEach(c => Object.keys(S[c] || {}).forEach(id => { if (!S[c][id]._t){ S[c][id] = Object.assign({}, S[c][id], { _t:now }); stamped = true; } }));
     if (stamped) lsWrite();
+    // A pending new sync password: read the cloud copy with the current one (or the new one, if a
+    // half-finished change already uploaded), then always re-upload encrypted with the new one.
+    const rekey = (syncCfg.newPass && syncCfg.newPass !== syncCfg.pass) ? syncCfg.newPass : null;
     let done = false, rev0 = localRev;
     for (let attempt = 0; attempt < 3 && !done; attempt++){
       const remote = await ghGet();
@@ -531,23 +534,35 @@ async function syncNow(){
       if (remote.exists){
         let env = null; try { env = JSON.parse(remote.text); } catch (e) {}
         if (!env || !env.data || !env.iv || !env.salt) throw { msg:'同步失败：仓库里的 ' + SYNC_PATH + ' 不是这个应用写的，为了安全没有动它。换一个空的私有仓库试试。' };
-        try { rsnap = await decryptJSON(env, syncCfg.pass); } catch (e) { throw { msg:'同步失败：同步密码和云端数据对不上。每台设备要填同一个同步密码。为了不弄坏云端数据，这次没有上传。' }; }
+        try { rsnap = await decryptJSON(env, syncCfg.pass); }
+        catch (e) {
+          if (!rekey) throw { msg:'同步失败：同步密码和云端数据对不上。每台设备要填同一个同步密码。为了不弄坏云端数据，这次没有上传。' };
+          try { rsnap = await decryptJSON(env, rekey); }
+          catch (e2) { throw { msg:'同步失败：原来的同步密码和新密码都和云端数据对不上，密码没有换成。为了不弄坏云端数据，这次没有上传。到「修改设置」检查一下。' }; }
+        }
       }
       rev0 = localRev;   // everything saved up to here is in this snapshot
       const merged = mergeSnap(snapshotLocal(), rsnap);
       if (merged.changedLocal) applySnap(merged);
-      if (!remote.exists || merged.changedRemote){
-        const env = await encryptJSON({ cols:merged.cols, del:merged.del, at:Date.now() }, syncCfg.pass);
+      if (!remote.exists || merged.changedRemote || rekey){
+        const env = await encryptJSON({ cols:merged.cols, del:merged.del, at:Date.now() }, rekey || syncCfg.pass);
         const res = await ghPut(JSON.stringify(env), remote.sha);
         if (res.conflict) continue;
       }
       done = true;
     }
     if (!done) throw { msg:'同步失败：另一台设备也在同步，稍后会自动再试。' };
+    if (rekey){
+      syncCfg.pass = rekey;
+      if (syncCfg.newPass === rekey) delete syncCfg.newPass;   // changed again meanwhile: keep the newer one pending
+      saveSyncCfg();
+    }
     if (localRev !== rev0) syncAgain = true; else syncDirty = false;   // saved while uploading: go again
     setSync(true, '');
+    if (rekey) toast('同步密码换好了，云端数据已经用新密码重新加密。其他设备也要改成新密码。');
   } catch (e) { setSync(false, syncErrText(e)); }
   syncBusy = false;
+  if (route === 'more' && !form && !ui.syncEdit && syncCfg) render();   // setSync rendered while still busy: re-enable 立即同步
   if (syncAgain){ syncAgain = false; syncLater(1500); }
 }
 
@@ -1622,6 +1637,7 @@ function syncCard(){
   if (syncCfg && syncCfg.token && !ui.syncEdit){
     s += '<p class="muted">已连接私有仓库 <span class="mono">' + esc(syncCfg.repo) + '</span>。数据在这部手机上先加密再上传，没有同步密码谁也看不懂。联网时会自动同步。</p>';
     s += '<p class="' + (syncState.ok === false ? 'warn' : 'fine') + '" style="margin:0">' + esc(syncStatusText()) + '</p>';
+    if (syncCfg.newPass && syncCfg.newPass !== syncCfg.pass) s += '<p class="warn" style="margin:0">新的同步密码还没生效。下次同步成功时，会用它把云端数据重新加密；在那之前用的还是原来的密码。</p>';
     s += '<div class="row"><button type="button" class="btn sm" data-act="syncNowBtn"' + (syncBusy ? ' disabled' : '') + '>立即同步</button><button type="button" class="btn ghost sm" data-act="syncEdit">修改设置</button>'
       + (ui.syncOff ? '<span class="warn">停止后不再上传，本机和云端的数据都保留。</span><button type="button" class="btn sm red" data-act="syncOff">确定停止</button><button type="button" class="btn ghost sm" data-act="syncOffNo">算了</button>' : '<button type="button" class="linkbtn" data-act="syncOffAsk">停止同步</button>') + '</div>';
     return s + '</section>';
@@ -1633,7 +1649,9 @@ function syncCard(){
     + '<li>回到这里，填下面三项。访问密钥和同步密码只存在这部手机里。</li></ol>';
   s += '<div class="f"><label for="sy-repo">仓库</label><input type="text" id="sy-repo" placeholder="用户名/仓库名，比如 ProCare-creator/zwgcb-data" value="' + esc((syncCfg && syncCfg.repo) || '') + '" autocapitalize="off" autocorrect="off" spellcheck="false"></div>';
   s += '<div class="f"><label for="sy-token">访问密钥</label><input type="password" id="sy-token" placeholder="' + (syncCfg && syncCfg.token ? '不改就留空' : 'github_pat_ 开头的一长串') + '" autocomplete="off"></div>';
-  s += '<div class="f"><label for="sy-pass">同步密码</label><input type="password" id="sy-pass" placeholder="' + (syncCfg && syncCfg.pass ? '不改就留空' : '至少 6 位，自己定') + '" autocomplete="new-password"><div class="hint">用来加密数据，每台设备都填同一个。忘了它，云端数据就打不开了，请记在安全的地方。</div></div>';
+  s += '<div class="f"><label for="sy-pass">同步密码</label><input type="password" id="sy-pass" placeholder="' + (syncCfg && syncCfg.pass ? '不改就留空' : '至少 6 位，自己定') + '" autocomplete="new-password"><div class="hint">' + (syncCfg && syncCfg.pass
+    ? '要换密码就填新的：同步时会先用原来的密码读出云端数据，再用新密码重新加密上传。换好后，其他设备也要改成新密码。新密码同样要记在安全的地方。'
+    : '用来加密数据，每台设备都填同一个。忘了它，云端数据就打不开了，请记在安全的地方。') + '</div></div>';
   if (ui.syncErr) s += '<div class="errbox"><p>' + esc(ui.syncErr) + '</p></div>';
   s += '<div class="row"><button type="button" class="btn sm" data-act="syncSetup"' + (ui.syncChecking ? ' disabled' : '') + '>' + (ui.syncChecking ? '正在检查…' : '连接并同步') + '</button>' + (syncCfg && syncCfg.token ? '<button type="button" class="btn ghost sm" data-act="syncEditCancel">算了</button>' : '') + '</div>';
   return s + '</section>';
@@ -2057,7 +2075,8 @@ const A = {
   async syncSetup(){
     const repo = ($('#sy-repo').value || '').trim().replace(/^https?:\/\/github\.com\//i, '').replace(/\.git$/i, '').replace(/\/+$/, '');
     const token = ($('#sy-token').value || '').trim() || (syncCfg && syncCfg.token) || '';
-    const pass = $('#sy-pass').value || (syncCfg && syncCfg.pass) || '';
+    const typed = $('#sy-pass').value || '';
+    const pass = typed || (syncCfg && syncCfg.pass) || '';
     const fail = m => { ui.syncErr = m; ui.syncChecking = false; render(); };
     if (!/^[\w.-]+\/[\w.-]+$/.test(repo)) return fail('仓库要写成「用户名/仓库名」，比如 ProCare-creator/zwgcb-data。');
     if (!token) return fail('还没填访问密钥。');
@@ -2071,10 +2090,18 @@ const A = {
     if (!r.ok) return fail('GitHub 返回了错误（' + r.status + '），稍后再试。');
     let j = {}; try { j = await r.json(); } catch (e) {}
     if (j.private === false) return fail('这个仓库是公开的。请换成私有（Private）仓库：数据虽然加密了，也不该放在公开的地方。');
-    syncCfg = { repo, token, pass, lastAt:(syncCfg && syncCfg.repo === repo) ? syncCfg.lastAt : null };
+    if (syncCfg && syncCfg.repo === repo && syncCfg.pass){
+      // same repo: a different password is a change. Keep the current one until the next sync has
+      // read the cloud copy with it and re-uploaded everything under the new one (see syncNow).
+      const want = typed || syncCfg.newPass || syncCfg.pass;
+      const next = { repo, token, pass:syncCfg.pass, lastAt:syncCfg.lastAt };
+      if (want !== syncCfg.pass) next.newPass = want;
+      syncCfg = next;
+    } else syncCfg = { repo, token, pass, lastAt:null };
+    const changing = !!syncCfg.newPass;
     saveSyncCfg(); ui.syncChecking = false; ui.syncEdit = false; render();
     await syncNow(); render();
-    if (syncState.ok) toast('云端同步已开启。');
+    if (syncState.ok && !changing) toast('云端同步已开启。');
   },
   eventFromCap(el){ const e = eventForCap(el.dataset.key, el.dataset.id); openForm('event', e ? e.id : 'new|' + el.dataset.key + '|' + el.dataset.id); },
   editEvent(el){ openForm('event', el.dataset.id); },
