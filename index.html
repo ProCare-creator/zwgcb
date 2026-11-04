@@ -266,6 +266,13 @@ details.cv ul, details.drafts ul, details.hist ol{ margin:8px 0 0; padding-left:
 .st.revised{ background:var(--red-soft); color:var(--red); }
 .evs{ list-style:none; margin:0; padding:0; font-size:13px; color:var(--ink-2); display:flex; flex-direction:column; gap:2px; }
 .evs .c{ color:var(--red); }
+.evedit{ gap:0; }
+.evedit li{ display:flex; gap:10px; align-items:baseline; justify-content:space-between; padding:7px 0; border-bottom:1px dotted var(--line); }
+.evedit li:last-child{ border-bottom:0; }
+.evedit .evt{ min-width:0; flex:1; overflow-wrap:anywhere; }
+.evedit .evb{ flex:none; display:flex; gap:14px; }
+.evedit li.evform{ flex-direction:column; align-items:stretch; gap:8px; color:var(--ink); }
+.evedit .evform .f{ margin:0; }
 .suggest{ font-size:13px; color:var(--green); }
 .suggest.r{ color:var(--red); }
 .inline{ border-top:1px dashed var(--line); padding-top:10px; display:flex; flex-direction:column; gap:8px; }
@@ -330,7 +337,7 @@ const VAGUE = ['充实','好好','努力','认真','尽量','高效','顺利','�
 const MOMENTS = ['情绪最强的一刻','最不像自己的一刻','最有劲的一刻','别的时刻'];
 const FORMAT = 'review-archive/v1';
 const OFFLINE_APP = true;
-const APP_VERSION = 'v5.2';
+const APP_VERSION = 'v5.3';
 const LS_KEY = 'zwgcb-data-v1', LS_DRAFT = 'zwgcb-drafts-v1';
 
 /* ---------- utils ---------- */
@@ -770,11 +777,54 @@ function capEvidenceOps(k, c, old){
   ids.forEach(hid => {
     if (!S.hyps[hid]) return;
     const h = clone(S.hyps[hid]), before = JSON.stringify(h.ev || []);
+    const prev = (h.ev || []).find(e => e.src === src);   // keep a strength the person set by hand
     h.ev = (h.ev || []).filter(e => e.src !== src);
-    if (c.hyp === hid) h.ev.push({ date:k, kind:c.hypKind === 'con' ? 'con' : 'sup', note:c.fact || c.quote || '随手记', str:'strong', src });
+    if (c.hyp === hid) h.ev.push({ date:k, kind:c.hypKind === 'con' ? 'con' : 'sup', note:c.fact || c.quote || '随手记', str:prev && prev.str === 'weak' ? 'weak' : 'strong', src });
     if (JSON.stringify(h.ev) !== before){ h.updated = new Date().toISOString(); ops.push(() => put('hyps', hid, h)); }
   });
   return ops;
+}
+// Evidence linked to a 随手记 ('cap:<day>|<id>'): that note decides it whenever the note is saved again.
+function capOfEv(e){
+  if (!e || typeof e.src !== 'string' || !e.src.startsWith('cap:')) return null;
+  const rest = e.src.slice(4), bar = rest.indexOf('|');
+  if (bar < 0) return null;
+  const k = rest.slice(0, bar), id = rest.slice(bar + 1), d = S.days[k];
+  const cap = d && (d.caps || []).find(c => c.id === id);
+  return cap ? { k, id, cap } : null;
+}
+function evSrcNote(e){
+  if (capOfEv(e)) return '这条来自一条随手记。以后再改那条随手记，这里会按它重新生成（强弱会保留）。';
+  if (e && typeof e.src === 'string' && e.src.startsWith('arc:')) return '这条来自导入的复盘存档。撤回或替换那份存档时，它会被一起撤回。';
+  return '';
+}
+function evEditPanel(x){
+  const o = ui.hypOpen || {}, ev = x.ev || [], t = dayKey();
+  let s = '<div class="inline"><div class="lab">全部证据 · ' + ev.length + ' 条（新的在上）</div><ul class="evs evedit">';
+  ev.map((e, i) => [e, i]).reverse().forEach(([e, i]) => {
+    if (o.ei === i){
+      const d = o.draft || {}, seg = (f, opts) => '<div class="seg">' + opts.map(p => '<button type="button" class="' + (d[f] === p[0] ? 'on' : '') + '" data-act="evPick" data-f="' + f + '" data-v="' + p[0] + '" aria-pressed="' + (d[f] === p[0]) + '">' + p[1] + '</button>').join('') + '</div>';
+      s += '<li class="evform"><div class="f"><label for="ex-date">日期</label><input type="date" id="ex-date" value="' + esc(d.date || '') + '" max="' + (e.date && e.date > t ? e.date : t) + '"></div>'
+        + seg('kind', [['sup','支持'],['con','反例']]) + seg('str', [['strong','强 · 当时记下或预测过'],['weak','弱 · 事后回想']])
+        + '<input type="text" id="ex-note" value="' + esc(d.note || '') + '" placeholder="一句话事实，回看时知道指哪件事">'
+        + (evSrcNote(e) ? '<p class="fine" style="margin:0">' + evSrcNote(e) + '</p>' : '')
+        + '<div class="row"><button type="button" class="btn sm" data-act="evSave">保存</button><button type="button" class="btn ghost sm" data-act="evCancel">算了</button></div></li>';
+    } else if (o.del === i){
+      s += '<li class="evform">' + evLi(e).replace(/^<li[^>]*>|<\/li>$/g, '') + '<p class="muted" style="margin:0">删掉这条证据？删了找不回来。' + (capOfEv(e) ? '那条随手记会留着，只是不再算作这条假设的证据。' : '') + '</p>'
+        + '<div class="row"><button type="button" class="btn sm red" data-act="evDel">删除</button><button type="button" class="btn ghost sm" data-act="evCancel">算了</button></div></li>';
+    } else {
+      s += '<li class="' + (e.kind === 'con' ? 'c' : '') + '"><span class="evt">' + evLi(e).replace(/^<li[^>]*>|<\/li>$/g, '') + (e.note ? '' : '<span class="fine">（没写说明）</span>') + '</span>'
+        + '<span class="evb"><button type="button" class="linkbtn" data-act="evEdit" data-i="' + i + '">改</button><button type="button" class="linkbtn" data-act="evDelAsk" data-i="' + i + '">删</button></span></li>';
+    }
+  });
+  return s + '</ul><div class="row"><button type="button" class="btn ghost sm" data-act="hypClose">完成</button></div></div>';
+}
+function evGrab(){ const o = ui.hypOpen; if (!o || !o.draft) return; const d = $('#ex-date'), n = $('#ex-note'); if (d) o.draft.date = d.value; if (n) o.draft.note = n.value; }
+// The entry being edited must still be the one that was opened (a sync may have changed the list meanwhile).
+function evTarget(i){
+  const o = ui.hypOpen, h = o && clone(S.hyps[o.id]), cur = h && (h.ev || [])[i];
+  if (!cur || JSON.stringify(cur) !== o.fp){ if (o){ o.ei = null; o.del = null; } render(); toast('这条证据刚被同步更新过，重新点「改」或「删」再试一次。'); return null; }
+  return { o, h, cur };
 }
 function backupLine(){
   if (!OFFLINE_APP || Object.keys(S.days).length < 3) return '';
@@ -1596,13 +1646,17 @@ function hypCard(x){
   let s = '<article class="hyp ' + status + '"><div class="hmeta"><span class="hno">' + hypNo(x) + '</span><span class="st ' + status + '">' + (status === 'solid' ? '较可信' : '待验证') + '</span><span>首次 ' + md(x.created) + '</span>' + (x.revisedOn ? '<span>' + md(x.revisedOn) + ' 改写</span>' : '') + '</div>';
   s += hypLines(x);
   s += '<div class="hmeta"><span class="tally">支持 ' + tally(sup) + '</span><span class="tally con">反例 ' + tally(con) + '</span>' + ((st0.supW + st0.conW) ? '<span>其中弱证据 ' + (st0.supW + st0.conW) + '</span>' : '') + '</div>';
-  const ev = (x.ev || []).slice(-4).reverse();
-  if (ev.length) s += '<ul class="evs">' + ev.map(evLi).join('') + '</ul>';
+  const evAll = x.ev || [], ev = evAll.slice(-4).reverse();
+  if (ev.length && o !== 'evs'){
+    s += '<ul class="evs">' + ev.map(evLi).join('') + '</ul>';
+    if (evAll.length > 4) s += '<p class="fine" style="margin:0">只显示最近 4 条，一共 ' + evAll.length + ' 条。点「修改证据」看全部。</p>';
+  }
+  if (o === 'evs') s += evEditPanel(x);
   if (hist.length) s += '<details class="hist"><summary>改写过 ' + hist.length + ' 次，看旧版本</summary><ol>' + hist.slice().reverse().map(v => { const vs = evStats(v.ev); return '<li><span class="old">' + esc(v.text) + '</span><br><span class="fine">' + (v.from ? md(v.from) : '') + ' – ' + md(v.to) + ' · 支持 ' + vs.sup + ' · 反例 ' + vs.con + '</span></li>'; }).join('') + '</ol></details>';
   {
     if (x.status === 'test' && sup >= 3 && con === 0) s += '<p class="suggest">支持 ' + sup + ' 次、没有反例，可以升为「较可信」。</p>';
     if (con > 0) s += '<p class="suggest r">有反例了。先缩小条件，把「在什么情况下」写得更精确。</p>';
-    s += '<div class="row"><button type="button" class="btn ghost sm" data-act="hypAct" data-id="' + x.id + '" data-v="sup">+ 支持</button><button type="button" class="btn ghost sm" data-act="hypAct" data-id="' + x.id + '" data-v="con">+ 反例</button><button type="button" class="btn ghost sm" data-act="hypAct" data-id="' + x.id + '" data-v="rev">缩小条件 / 改写</button>'
+    s += '<div class="row"><button type="button" class="btn ghost sm" data-act="hypAct" data-id="' + x.id + '" data-v="sup">+ 支持</button><button type="button" class="btn ghost sm" data-act="hypAct" data-id="' + x.id + '" data-v="con">+ 反例</button>' + (evAll.length ? '<button type="button" class="btn ghost sm" data-act="hypAct" data-id="' + x.id + '" data-v="evs">修改证据</button>' : '') + '<button type="button" class="btn ghost sm" data-act="hypAct" data-id="' + x.id + '" data-v="rev">缩小条件 / 改写</button>'
       + (x.status === 'test' ? '<button type="button" class="btn ghost sm" data-act="hypStatus" data-id="' + x.id + '" data-v="solid">升为较可信</button>' : '<button type="button" class="btn ghost sm" data-act="hypStatus" data-id="' + x.id + '" data-v="test">退回待验证</button>')
       + '<button type="button" class="linkbtn" data-act="hypAct" data-id="' + x.id + '" data-v="del">删除</button></div>';
   }
@@ -2040,6 +2094,47 @@ const A = {
   hypAct(el){ ui.hypOpen = { id:el.dataset.id, act:el.dataset.v, str:'strong' }; render(); const i = $('#hx-note') || $('#hx-text'); if (i) i.focus(); },
   hypStr(el){ const i = $('#hx-note'); if (ui.hypOpen){ ui.hypOpen.note = i ? i.value : ''; ui.hypOpen.str = el.dataset.v; } render(); const j = $('#hx-note'); if (j){ j.value = (ui.hypOpen && ui.hypOpen.note) || ''; j.focus(); } },
   hypClose(){ ui.hypOpen = null; render(); },
+  evEdit(el){
+    const o = ui.hypOpen, h = o && S.hyps[o.id], i = +el.dataset.i, e = h && (h.ev || [])[i]; if (!e) return;
+    o.ei = i; o.del = null; o.fp = JSON.stringify(e);
+    o.draft = { date:e.date || dayKey(), kind:e.kind === 'con' ? 'con' : 'sup', str:e.str === 'weak' ? 'weak' : 'strong', note:e.note || '' };
+    render(); const n = $('#ex-note'); if (n) n.focus();
+  },
+  evPick(el){ evGrab(); const o = ui.hypOpen; if (!o || !o.draft) return; o.draft[el.dataset.f] = el.dataset.v; render(); },
+  evDelAsk(el){ const o = ui.hypOpen, h = o && S.hyps[o.id], i = +el.dataset.i, e = h && (h.ev || [])[i]; if (!e) return; o.del = i; o.ei = null; o.fp = JSON.stringify(e); render(); },
+  evCancel(){ const o = ui.hypOpen; if (o){ o.ei = null; o.del = null; } render(); },
+  async evSave(){
+    if (!needReady()) return;
+    evGrab();
+    const o0 = ui.hypOpen; if (!o0 || o0.ei == null) return;
+    const d = o0.draft || {};
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(d.date || '')){ toast('日期没填好。'); return; }
+    const tg = evTarget(o0.ei); if (!tg) return;
+    const { o, h, cur } = tg, i = o.ei;
+    if (d.date !== cur.date && d.date > dayKey()){ toast('日期不能是以后的日子。'); return; }   // an unchanged date is fine even if this device's clock is behind
+    const next = Object.assign({}, cur, { date:d.date, kind:d.kind === 'con' ? 'con' : 'sup', str:d.str === 'weak' ? 'weak' : 'strong', note:(d.note || '').trim() });
+    if (JSON.stringify(next) === JSON.stringify(cur)){ o.ei = null; render(); toast('没有改动。'); return; }
+    h.ev = h.ev.slice(); h.ev[i] = next; h.updated = new Date().toISOString();
+    const ops = [() => put('hyps', h.id, h)], cl = capOfEv(cur);
+    if (cl && cl.cap.hyp === h.id && next.kind !== cur.kind){   // keep the 随手记's 支持/反例 choice in step, or its next save would flip this back
+      const day = clone(S.days[cl.k]); day.caps = day.caps.map(c => c.id === cl.id ? Object.assign({}, c, { hypKind:next.kind }) : c); ops.push(() => put('days', cl.k, day));
+    }
+    o.ei = null; render();
+    try { for (const f of ops) await f(); render(); toast('改好了。'); } catch (e) {}
+  },
+  async evDel(){
+    if (!needReady()) return;
+    const o0 = ui.hypOpen; if (!o0 || o0.del == null) return;
+    const tg = evTarget(o0.del); if (!tg) return;
+    const { o, h, cur } = tg, i = o.del;
+    h.ev = h.ev.filter((e, j) => j !== i); h.updated = new Date().toISOString();
+    const ops = [() => put('hyps', h.id, h)], cl = capOfEv(cur);
+    if (cl && cl.cap.hyp === h.id){   // unlink the 随手记 too, or saving it again would bring the evidence back
+      const day = clone(S.days[cl.k]); day.caps = day.caps.map(c => c.id === cl.id ? Object.assign({}, c, { hyp:null }) : c); ops.push(() => put('days', cl.k, day));
+    }
+    o.del = null; if (!h.ev.length) ui.hypOpen = null; render();
+    try { for (const f of ops) await f(); render(); toast('删掉了这条证据。'); } catch (e) {}
+  },
   async hypEv(el){ if (!needReady()) return; const h = clone(S.hyps[el.dataset.id]); if (!h) return; const note = ($('#hx-note').value || '').trim(), str = (ui.hypOpen && ui.hypOpen.str) === 'weak' ? 'weak' : 'strong'; h.ev = (h.ev || []).concat([{ date:dayKey(), kind:el.dataset.v, note, str }]); h.updated = new Date().toISOString(); ui.hypOpen = null; render(); try { await put('hyps', h.id, h); render(); if (el.dataset.v === 'con') toast('反例记下了。它是新信息：试试缩小这条的条件。'); } catch (e) {} },
   async hypStatus(el){ if (!needReady()) return; const h = clone(S.hyps[el.dataset.id]); if (!h) return; h.status = el.dataset.v; h.updated = new Date().toISOString(); render(); try { await put('hyps', h.id, h); render(); } catch (e) {} },
   async hypRevise(el){
