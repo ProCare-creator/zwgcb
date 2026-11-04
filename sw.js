@@ -1,5 +1,5 @@
 // 自我观察本 · offline cache. VERSION is set by build.py; a new value makes every phone pick up the new files.
-const VERSION = 'v5';
+const VERSION = 'v5.1';
 const CACHE = 'zwgcb-' + VERSION;
 const ASSETS = ['./', './index.html', './manifest.webmanifest', './icons/icon-192.png', './icons/icon-512.png', './icons/icon-maskable-512.png', './icons/apple-touch-icon.png'];
 self.addEventListener('install', e => {

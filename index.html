@@ -330,7 +330,7 @@ const VAGUE = ['充实','好好','努力','认真','尽量','高效','顺利','�
 const MOMENTS = ['情绪最强的一刻','最不像自己的一刻','最有劲的一刻','别的时刻'];
 const FORMAT = 'review-archive/v1';
 const OFFLINE_APP = true;
-const APP_VERSION = 'v5';
+const APP_VERSION = 'v5.1';
 const LS_KEY = 'zwgcb-data-v1', LS_DRAFT = 'zwgcb-drafts-v1';
 
 /* ---------- utils ---------- */
@@ -1628,7 +1628,8 @@ function syncCard(){
   }
   s += '<p class="muted">把这部手机里的记录加密后，存进一个只有你能看的 GitHub 私有仓库。换手机、清了浏览器数据，都能从云端拉回来；两台设备填同样的设置，就会互相同步。</p>';
   s += '<ol class="steps"><li>在 GitHub 新建一个仓库，名字比如 <span class="mono">zwgcb-data</span>，可见性选 Private。</li>'
-    + '<li>打开 GitHub 的 Settings → Developer settings → Personal access tokens → Fine-grained tokens，点 Generate new token。Repository access 选 Only select repositories，只勾这个私有仓库；Permissions 里把 Contents 设成 Read and write。生成后复制那串密钥。</li>'
+    + '<li>生成访问密钥：点 GitHub 页面最右上角的头像（不是仓库页面里的 Settings）→ Settings → 左边栏最底下的 Developer settings → Personal access tokens → Fine-grained tokens → Generate new token。也可以直接在地址栏打开 <span class="mono">github.com/settings/personal-access-tokens/new</span>。</li>'
+    + '<li>生成页面里：Expiration 可以选 No expiration（这个密钥只能碰这一个仓库，数据又是加密的；有期限的话，到期后同步会停）。Repository access 选 Only select repositories，只勾这个私有仓库。Permissions 点 Add permissions 加上 Contents，访问级别选 Read and write；自动带上的 Metadata 只读不用管。点 Generate token，马上复制那串 github_pat_ 开头的密钥，它只显示一次。</li>'
     + '<li>回到这里，填下面三项。访问密钥和同步密码只存在这部手机里。</li></ol>';
   s += '<div class="f"><label for="sy-repo">仓库</label><input type="text" id="sy-repo" placeholder="用户名/仓库名，比如 ProCare-creator/zwgcb-data" value="' + esc((syncCfg && syncCfg.repo) || '') + '" autocapitalize="off" autocorrect="off" spellcheck="false"></div>';
   s += '<div class="f"><label for="sy-token">访问密钥</label><input type="password" id="sy-token" placeholder="' + (syncCfg && syncCfg.token ? '不改就留空' : 'github_pat_ 开头的一长串') + '" autocomplete="off"></div>';
