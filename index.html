@@ -12,8 +12,8 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="自我观察本">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#19202A" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#f4f1e9" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#17221e" media="(prefers-color-scheme: dark)">
 <style>
 :root{ color-scheme:light; padding-top:env(safe-area-inset-top,0px); }
 html,body{ margin:0; } img{ max-width:100%; } [hidden]{ display:none !important; }
@@ -301,15 +301,152 @@ details.cv ul, details.drafts ul, details.hist ol{ margin:8px 0 0; padding-left:
 .tabs a.cap-tab .dot svg{ width:20px; height:20px; }
 #toast{ position:fixed; left:50%; transform:translateX(-50%); bottom:calc(76px + env(safe-area-inset-bottom,0px)); background:var(--ink); color:var(--paper); padding:8px 14px; border-radius:8px; font-size:14px; z-index:9; max-width:calc(100% - 32px); }
 @media (prefers-reduced-motion: no-preference){ .cap.fresh{ transition:box-shadow .6s; } }
+/* The field journal: warm paper, forest ink, a vermilion bookmark. */
+:root {
+  --paper:#f4f1e9; --card:#fffdf8; --field:#f8f6f0; --line:#dcded2;
+  --ink:#253d35; --ink-2:#57635a; --ink-3:#6d776d;
+  --blue:#315747; --blue-soft:#e9eee3; --on-blue:#fffdf6;
+  --red:#a94c37; --red-soft:#f6e9df; --green:#496746; --green-soft:#edf0e4;
+}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --paper:#17221e; --card:#202e27; --field:#19271f; --line:#3f5044; --ink:#eeecdf; --ink-2:#c1c9b9; --ink-3:#a3b29f; --blue:#bacfa6; --blue-soft:#314435; --on-blue:#18271d; --red:#e5a386; --red-soft:#43372e; --green:#b6cfa0; --green-soft:#304330;
+}}
+:root[data-theme="dark"]{
+  --paper:#17221e; --card:#202e27; --field:#19271f; --line:#3f5044; --ink:#eeecdf; --ink-2:#c1c9b9; --ink-3:#a3b29f; --blue:#bacfa6; --blue-soft:#314435; --on-blue:#18271d; --red:#e5a386; --red-soft:#43372e; --green:#b6cfa0; --green-soft:#304330;
+}
+body{background-image:none;line-height:1.8}
+#app{max-width:1120px;padding:32px 40px 110px}
+.top{border-bottom:1px solid var(--line);padding-bottom:22px;margin-bottom:90px;min-height:58px}
+.brand{display:flex;align-items:center;gap:12px;font-size:22px;letter-spacing:.08em;color:var(--ink);text-decoration:none}
+.brand-mark{display:grid;place-items:center;width:35px;height:38px;border:1px solid var(--red);border-radius:4px 4px 12px 4px;color:var(--red);font-family:var(--f-display);font-size:20px}
+.brand small{display:block;font:9px/1.6 var(--f-mono);letter-spacing:.16em;color:var(--ink-3)}
+.sync{background:none;border:none;font-family:var(--f-body);font-size:12px;padding:6px 0}
+.sync::before{content:'';display:inline-block;width:5px;height:5px;background:currentColor;border-radius:50%;margin-right:7px;vertical-align:2px}
+.tabs{position:absolute;top:119px;bottom:auto;left:50%;right:auto;transform:translateX(-50%);width:min(1040px,calc(100% - 80px));padding:0;background:none;border-top:0;border-bottom:1px solid var(--line)}
+.tabs .in{max-width:none;display:flex;gap:28px}
+.tabs a{flex-direction:row;gap:9px;padding:12px 7px 15px;font-size:14px;position:relative}
+.tabs a svg{width:19px;height:19px}
+.tabs a.on::after{content:'';position:absolute;height:2px;left:4px;right:4px;bottom:-1px;background:var(--blue)}
+.tabs a[data-r="review"]{order:-1}
+#view{max-width:760px;margin:auto}
+#view[data-view="review"]{max-width:none}
+.datebar{max-width:410px;margin:0 auto 30px}
+.datebar .date{font:19px var(--f-display)}
+.dnav{background:transparent;border-color:transparent;width:44px;height:44px}
+.dlabel{min-height:44px;align-items:center}
+.dwd{font-size:12px;font-weight:400}
+.dnav:hover{background:var(--blue-soft)}
+.calpop{max-width:460px;margin:0 auto 26px}
+.journal-hero{display:grid;grid-template-columns:1fr 300px;gap:25px;align-items:center;padding:8px 28px 34px 4px}
+.eyebrow{font:11px var(--f-mono);letter-spacing:.17em;color:var(--ink-3);margin:0 0 19px}
+.journal-hero h1{font:500 clamp(30px,3.5vw,44px)/1.6 var(--f-display);letter-spacing:.09em;margin:0 0 15px}
+.journal-hero h1 em{font-style:normal;color:var(--red)}
+.journal-hero .intro{font-size:14px;color:var(--ink-2);margin:0;line-height:2}
+.botanical{width:100%;height:225px;color:var(--blue);overflow:visible}
+.journal-layout{display:grid;grid-template-columns:minmax(0,1fr) 285px;gap:36px;align-items:start}
+.journal-main{display:flex;flex-direction:column;gap:22px;min-width:0}
+.journal-main>.card{padding:30px 32px;border-radius:3px 16px 16px 3px;box-shadow:-5px 0 0 var(--blue),0 8px 30px #233d3510;border-color:transparent;gap:20px;position:relative}
+.journal-main>.card::after{content:'';position:absolute;top:0;right:25px;width:19px;height:32px;background:var(--red);clip-path:polygon(0 0,100% 0,100% 100%,50% 80%,0 100%)}
+.journal-main .stage{font:600 22px var(--f-display);padding-right:25px}
+.journal-main .stage .tag{font:10px var(--f-mono);letter-spacing:.1em;color:var(--red);border:1px solid var(--line);padding:4px 6px}
+.journal-main .muted{font-size:14px}
+.card,.arc,.cap{border-radius:12px;padding:23px 25px;gap:16px}
+.stack{gap:18px}
+.btn{min-height:44px;border-radius:6px;font-size:14px;padding:11px 19px;justify-content:center;transition:background .18s,transform .18s}
+.btn.sm{min-height:40px;padding:8px 13px}
+.btn:hover:not([disabled]){filter:brightness(1.09);transform:translateY(-1px)}
+.btn.ghost{background:var(--card)}
+.linkbtn{min-height:36px;text-decoration:none;border-bottom:1px solid transparent}
+.linkbtn:hover{border-bottom-color:currentColor}
+.journal-aside{padding:2px 0;min-width:0}
+.margin-note{padding:0 0 23px;margin:0 0 25px;border-bottom:1px solid var(--line)}
+.margin-note h2{font:600 15px var(--f-display);letter-spacing:.04em;margin:0 0 14px}
+.margin-note p{font-size:13px;line-height:1.9;color:var(--ink-2);margin:12px 0 0}
+.week-trail{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}
+.trail-day{border:0;display:flex;flex-direction:column;align-items:center;gap:8px;background:none;padding:5px 0;color:var(--ink-3);font-size:10px;min-height:48px}
+.trail-day b{width:25px;height:25px;border-radius:50%;border:1px solid var(--line);display:grid;place-items:center;font:11px var(--f-mono);color:var(--ink-2)}
+.trail-day.recorded b{background:var(--blue-soft);border-color:var(--blue);color:var(--blue)}
+.trail-day.current b{outline:1px solid var(--red);outline-offset:3px;color:var(--red)}
+.trail-day:disabled{opacity:.45;cursor:default}
+.count-note{font:32px var(--f-display);color:var(--blue);margin-right:4px}
+.prompt-note{font:18px/1.9 var(--f-display)!important;color:var(--ink)!important}
+.quiet-link{display:flex;align-items:center;justify-content:space-between;width:100%;background:none;border:0;border-top:1px solid var(--line);color:var(--ink-2);padding:14px 0;text-decoration:none;text-align:left;font-size:13px;min-height:48px}
+.quiet-link:hover{color:var(--red)}
+.journal-disclosure{border-top:1px solid var(--line);padding:0 0 4px;min-width:0}
+.journal-disclosure summary{list-style:none;display:flex;justify-content:space-between;gap:12px;align-items:center;padding:19px 0;color:var(--ink);font-size:14px;cursor:pointer}
+.journal-disclosure summary::-webkit-details-marker{display:none}
+.journal-disclosure summary::after{content:'＋';color:var(--ink-3)}
+.journal-disclosure[open] summary::after{content:'−'}
+.journal-disclosure summary small{font:12px var(--f-body);color:var(--ink-3);margin-left:auto}
+.journal-disclosure>.card{box-shadow:none;padding:20px;border:1px solid var(--line);background:transparent}
+.journal-foot{border-top:1px solid var(--line);margin:40px 0 0;padding:22px 0;display:flex;justify-content:space-between;gap:15px;font-size:11px;letter-spacing:.08em;color:var(--ink-3)}
+h1.h{font-size:30px;line-height:1.6;margin-bottom:8px}h2.h2{font-size:20px}
+.lede{font-size:14px;line-height:1.9;margin-bottom:25px}
+.f{gap:10px;margin:3px 0 7px}.f>label,.lab{font-size:14px}
+textarea,input[type=text],input[type=password]{padding:13px 15px;border-radius:6px;line-height:1.9}
+textarea{min-height:96px;background-image:repeating-linear-gradient(transparent,transparent 30px,var(--grid) 30px,var(--grid) 31px);background-position:0 14px}
+.sec{gap:20px}.sec-h{padding-bottom:13px;margin-top:16px;font:600 20px var(--f-display)}
+.sec-h .mono{font-size:12px}.chip,.seg button{min-height:40px;padding:9px 13px}
+.writing-note{font-size:12px;color:var(--ink-3);margin:8px 0 18px;display:flex;gap:8px;align-items:center}
+.writing-note::before{content:'';width:5px;height:5px;border-radius:50%;background:var(--green)}
+.saved-reflection{font:18px/1.9 var(--f-display);border-left:2px solid var(--red);padding-left:18px;margin:0;white-space:pre-wrap;overflow-wrap:anywhere}
+.banner{background:var(--blue-soft);border-color:var(--line)}
+.banner .stage{color:var(--ink)}
+.top:has(+main[data-writing="true"]){margin-bottom:90px}
+#toast{bottom:30px;box-shadow:0 8px 30px #0002;padding:13px 20px;line-height:1.7}
+.qbtn{width:32px;height:32px}.x{min-width:32px;min-height:32px}
+.grid5{grid-template-columns:repeat(7,minmax(0,32px))}
+.backrow{margin-top:-22px;margin-bottom:22px}
+.fine,.hint{line-height:1.8}
+.f input::placeholder,.f textarea::placeholder{color:var(--ink-3);opacity:1}
+@media(min-width:850px){#view[data-writing="true"]{max-width:720px}#view[data-writing="true"]>.card{padding:35px 42px}.journal-main .card>.row{gap:12px}}
+@media(max-width:849px){
+  #app{padding:23px 24px 115px}.top{margin-bottom:30px;padding-bottom:19px}.top:has(+main[data-writing="true"]){margin-bottom:30px}
+  .tabs{position:fixed;left:0;right:0;top:auto;bottom:0;transform:none;width:100%;background:var(--card);border-bottom:0;border-top:1px solid var(--line);padding:8px 10px max(8px,env(safe-area-inset-bottom,0px));z-index:5}
+  .tabs .in{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;max-width:600px}
+  .tabs a{font-size:11px;flex-direction:column;gap:4px;padding:7px 3px;border-radius:8px}
+  .tabs a.on{background:var(--blue-soft)}.tabs a.on::after{display:none}.tabs a svg{width:21px;height:21px}
+  .journal-hero{grid-template-columns:1fr 170px;padding-right:0;gap:8px}.botanical{height:180px}
+  .journal-layout{grid-template-columns:minmax(0,1fr) 220px;gap:25px}
+  .journal-main>.card{padding:25px}.journal-main .stage{font-size:20px}
+  #toast{bottom:100px}.brand{font-size:20px}
+}
+@media(max-width:620px){
+  #app{padding:20px 21px 100px}.brand small{font-size:8px}.sync{font-size:10px;max-width:135px;white-space:normal;text-align:right}
+  .datebar{margin-bottom:12px;max-width:none}.datebar .date{font-size:17px}.dlabel{gap:6px}
+  .journal-hero{grid-template-columns:minmax(0,1fr) 88px;padding:16px 0 28px;gap:0;position:relative}
+  .journal-hero h1{font-size:29px;letter-spacing:.025em;line-height:1.65;margin-bottom:12px;white-space:nowrap}
+  .journal-hero .intro{font-size:12px}.eyebrow{font-size:9px;letter-spacing:.1em;margin-bottom:16px}
+  .botanical{width:110px;height:145px;margin-left:-13px;opacity:.65}
+  .journal-layout{grid-template-columns:1fr;gap:30px}.journal-main{gap:12px}
+  .journal-main>.card{padding:25px 22px;gap:18px}.journal-main .stage{font-size:21px}
+  .journal-main>.card>.row .btn{flex:1;white-space:nowrap;padding:11px 12px;font-size:13px}
+  .journal-main>.card .linkbtn{font-size:12px;text-align:left}
+  .journal-aside{display:grid;grid-template-columns:1fr;gap:0}.margin-note{margin-bottom:20px;padding-bottom:21px}
+  .week-trail{gap:10px}.trail-day b{width:30px;height:30px}.trail-day{gap:8px}
+  .journal-foot{margin-top:20px;font-size:10px}.journal-foot span:last-child{display:none}
+  .card,.cap,.arc{padding:20px 18px}.stage{flex-wrap:wrap}.stage .right{font-size:11px}
+  h1.h{font-size:25px}.lede{font-size:13px}.sec-h{font-size:18px}
+  .journal-disclosure summary{font-size:13px}.journal-disclosure summary small{font-size:11px}
+}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}.btn:hover:not([disabled]){transform:none}}
+
+@media(min-width:850px){
+  .top{margin-bottom:70px}.datebar{margin-bottom:15px}
+  .journal-hero{padding-top:0;padding-bottom:27px}
+  .journal-hero h1{font-size:40px;line-height:1.4}
+  .botanical{height:200px}
+}
+@media(max-width:360px){.journal-hero h1{font-size:25px}.journal-hero{grid-template-columns:minmax(0,1fr) 68px}.botanical{width:90px}}
 </style>
 </head>
 <body>
 <div id="app">
   <header class="top">
-    <div class="brand">自我观察本</div>
+    <a class="brand" href="#review" aria-label="自我观察本 · 回到复盘"><span class="brand-mark" aria-hidden="true">观</span><span>自我观察本<small>A LITTLE CLOSER TO YOURSELF</small></span></a>
     <div class="sync" id="sync">连接中</div>
   </header>
-  <main id="view" aria-live="polite"></main>
+  <main tabindex="-1" id="view" aria-live="polite"></main>
 </div>
 <nav class="tabs" aria-label="页面">
   <div class="in">
@@ -320,7 +457,7 @@ details.cv ul, details.drafts ul, details.hist ol{ margin:8px 0 0; padding-left:
     <a href="#more" data-r="more"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 9h16M9 3v4M15 3v4"/></svg>更多</a>
   </div>
 </nav>
-<div id="toast" hidden></div>
+<div id="toast" role="status" aria-live="polite" hidden></div>
 
 <script>
 (() => {
@@ -337,7 +474,7 @@ const VAGUE = ['充实','好好','努力','认真','尽量','高效','顺利','�
 const MOMENTS = ['情绪最强的一刻','最不像自己的一刻','最有劲的一刻','别的时刻'];
 const FORMAT = 'review-archive/v1';
 const OFFLINE_APP = true;
-const APP_VERSION = 'v5.3';
+const APP_VERSION = 'v6.0';
 const LS_KEY = 'zwgcb-data-v1', LS_DRAFT = 'zwgcb-drafts-v1';
 
 /* ---------- utils ---------- */
@@ -380,7 +517,7 @@ let S = { days:{}, hyps:{}, weeks:{}, events:{}, archives:{}, meta:{} };
 const COLS = ['days','hyps','weeks','events','archives','meta'];
 let mode = 'init';           // init | cloud | local
 let ready = false, slow = false, migrated = false;
-let route = 'pred';
+let route = 'review';
 let sel = dayKey();          // the day the 预测 / 随手记 / 复盘 pages show
 let form = null;             // {type, key, data, dirty}
 let ui = { skipOpen:false, logOpen:null, hypOpen:null, hypNew:false, copy:null, fresh:null, weekKey:null, arcDel:null, cal:false, calMonth:null, moreMonth:null, moreDay:null, syncEdit:false, syncErr:null, syncOff:false, syncChecking:false };
@@ -623,7 +760,7 @@ function syncLabel(){
   if (mode === 'cloud') { t = !ready ? '载入中' : slow ? '连接慢，可能不是最新' : '已同步 · 仅自己可见'; w = slow; }
   else if (mode === 'local'){
     if (OFFLINE_APP && syncCfg && syncCfg.token){ const at = syncState.at || syncCfg.lastAt; t = syncState.msg === '同步中…' ? '同步中…' : syncState.ok === false ? '同步失败' : at ? '已同步 ' + hm(new Date(at).toISOString()) : '等待同步'; w = syncState.ok === false; }
-    else { t = OFFLINE_APP ? '离线可用 · 存在这部手机' : '只存在这台设备'; w = !OFFLINE_APP; }
+    else { t = OFFLINE_APP ? '离线可用 · 本机保存' : '只存在这台设备'; w = !OFFLINE_APP; }
   }
   el.textContent = t; el.classList.toggle('warn', w);
 }
@@ -1088,7 +1225,7 @@ function vPred(){
   let h = dateBar() + copyBox() + '<div class="stack">';
   h += pinCard(t);
   if (k === t){
-    if (ready && fuseOn()) h += '<section class="card fuse"><div class="stage">最近三次写完都觉得更沉了</div><p class="muted">这通常说明在反复咀嚼，而不是在看清自己。接下来几天只做最低版，并且用第三人称写。持续一周以上的话，找一个信任的人当面聊聊。</p></section>';
+    if (ready && fuseOn()) h += '<section class="card fuse"><div class="stage">最近三次写完都觉得更沉了</div><p class="muted">这通常说明在反复咀嚼，而不是在看清自己。接下来几天只做轻量版，并且用第三人称写。持续一周以上的话，找一个信任的人当面聊聊。</p></section>';
     if (ready && f && f <= y && !(yd && (yd.evening || yd.skip))) h += yBanner(y);
     const dow = parse(t).getDay();
     if (ready && (dow === 0 || dow === 1)){
@@ -1103,13 +1240,48 @@ function vPred(){
   });
   return h + '</div>';
 }
+// The home view is derived entirely from existing records; no new storage format.
+function journalArt(){
+  return `<svg class="botanical" viewBox="0 0 300 240" fill="none" aria-hidden="true">
+    <circle cx="156" cy="117" r="91" fill="var(--blue-soft)"/>
+    <path d="M50 201h215M68 210h170" stroke="var(--line)"/>
+    <path d="M158 204c-6-44-4-92 16-157M158 172c-28-10-44-27-55-52M160 144c25-12 47-33 61-54M164 114c-15-13-27-31-32-51" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+    <path d="M155 171c-36 4-57-15-63-44 29-3 53 12 63 44Z" fill="var(--blue)" opacity=".8"/>
+    <path d="M161 144c35 2 60-24 65-58-33 5-58 24-65 58Z" fill="var(--blue)" opacity=".7"/>
+    <path d="M164 113c-27-4-39-27-35-54 25 11 37 30 35 54Z" fill="var(--blue)" opacity=".9"/>
+    <path d="M170 79c26-6 35-27 32-51-25 9-35 27-32 51Z" fill="var(--blue)" opacity=".55"/>
+    <path d="m103 138 45 28m67-66-47 37m-32-65 24 33m36-65-22 32" stroke="var(--card)" stroke-width=".8" opacity=".6"/>
+    <circle cx="71" cy="76" r="9" stroke="var(--red)"/><path d="M71 60v-5m0 42v-5M55 76h-5m42 0h-5" stroke="var(--red)"/>
+    <path d="M243 173c-5 2-7 6-7 11 6-2 9-6 7-11Z" fill="var(--red)"/>
+    <text x="190" y="230" fill="var(--ink-3)" font-size="9" letter-spacing="2" font-family="serif">DAY BY DAY</text>
+  </svg>`;
+}
+function journalAside(k){
+  const t = dayKey(), ws = weekStart(k);
+  let recorded = 0, trail = '';
+  for (let i = 0; i < 7; i++){
+    const date = addDays(ws, i), st = dayStatus(date, t), has = ['std','min','part'].includes(st);
+    if (has) recorded++;
+    trail += '<button type="button" class="trail-day' + (has ? ' recorded' : '') + (date === k ? ' current' : '') + '" data-act="goDay" data-key="' + date + '" data-v="review" aria-label="' + md(date) + (has ? '，有记录' : '，未记录') + '"' + (date > t ? ' disabled' : '') + '><span>' + '一二三四五六日'[i] + '</span><b>' + (has ? '·' : date.slice(8).replace(/^0/,'')) + '</b></button>';
+  }
+  return '<aside class="journal-aside" aria-label="观察手记"><section class="margin-note"><h2>这一周，留下的足迹</h2><div class="week-trail">' + trail + '</div><p><span class="count-note">' + recorded + '</span> 天有记录 · 留白也没有关系</p></section>'
+    + '<section class="margin-note"><h2>换个角度想一想</h2><p class="prompt-note">如果是朋友经历了今天，<br>你会怎样看待他？</p><p>把同样的耐心，也留一点给自己。</p></section>'
+    + '<button class="quiet-link" type="button" data-act="goWeek" data-key="' + ws + '">把这一周连起来看 <span aria-hidden="true">↗</span></button><a class="quiet-link" href="#hyps">看看我对自己的新发现 <span aria-hidden="true">↗</span></a></aside>';
+}
 function vReview(){
-  const t = dayKey(), k = sel, d = S.days[k] || newDay(k), y = addDays(t, -1), yd = S.days[y], f = firstDay();
-  let h = dateBar() + copyBox() + '<div class="stack">';
-  if (k > t) return h + '<p class="muted">这一天还没到，复盘不了。可以去「预测」页给它出题。</p></div>';
-  if (k === t && ready && f && f <= y && !(yd && (yd.evening || yd.skip))) h += yBanner(y);
-  h += eveCard(k, d) + reviewEventCard(k) + reviewArcCard(k);
-  return h + '</div>';
+  const t = dayKey(), k = sel, d = S.days[k] || newDay(k);
+  let h = dateBar() + copyBox();
+  if (k > t) return h + '<section class="card"><h1 class="h">明天，留给明天。</h1><p class="muted">可以先为还没发生的事，写下一个小预测。</p><a class="btn" href="#pred">写明天的预测</a></section>';
+  const done = !!d.evening;
+  h += '<section class="journal-hero"><div><p class="eyebrow">THE FIELD NOTES / 日常观察手记</p><h1>' + (done ? '又多认识了自己<br><em>一点。</em>' : '把今天，<br>轻轻<em>翻一页。</em>') + '</h1><p class="intro">' + (done ? '这一页已经收好。下次回来，再从这里继续。' : '不用写得完整，也不用急着找到答案。<br>从一个留在心里的瞬间开始。') + '</p></div>' + journalArt() + '</section>';
+  h += '<div class="journal-layout"><div class="journal-main">' + eveCard(k, d);
+  const caps = d.caps || [];
+  if (caps.length) h += '<details class="journal-disclosure"><summary>今天已经留下的片段 <small>' + caps.length + ' 条随手记</small></summary><div class="stack">' + caps.map(c => capCardHTML(c, k)).join('') + '</div></details>';
+  h += '<details class="journal-disclosure"><summary>有一件事，想再想一想 <small>单件复盘</small></summary>' + reviewEventCard(k) + '</details>';
+  h += '<details class="journal-disclosure"' + (archivesOn(k).length ? ' open' : '') + '><summary>聊过的，也收进本子里 <small>对话复盘</small></summary>' + reviewArcCard(k) + '</details>';
+  if (k === t && ready && fuseOn()) h += '<section class="card fuse"><div class="stage">最近三次写完都觉得更沉了</div><p class="muted">可以先停一停，或只记事实，不急着分析原因。</p></section>';
+  h += '</div>' + journalAside(k) + '</div><footer class="journal-foot"><span>慢慢观察，慢慢认识自己。</span><span>自我观察本 · PRIVATE FIELD NOTES</span></footer>';
+  return h;
 }
 function vMore(){
   const t = dayKey(), ym = ui.moreMonth || t.slice(0, 7), ws = weekStart(t);
@@ -1147,7 +1319,7 @@ function calendarHTML(ym, modeName){
     const mk = (archivesOn(k).length ? '<i class="mk a"></i>' : '') + (eventsOn(k).length ? '<i class="mk e"></i>' : '');
     s += '<button type="button" class="cday ' + st + (k === t ? ' today' : '') + (k === cur ? ' sel' : '') + '" data-act="calPick" data-key="' + k + '" data-mode="' + modeName + '"' + (k > maxK ? ' disabled' : '') + ' aria-label="' + md(k) + '"><span class="dn">' + dd + '</span>' + (mk ? '<span class="mks">' + mk + '</span>' : '') + '</button>';
   }
-  s += '</div><div class="legend"><span><i class="std"></i>标准版</span><span><i class="min"></i>最低版</span><span><i class="part"></i>有记录</span><span><i class="skip"></i>放过</span><span><i class="dot a"></i>对话存档</span><span><i class="dot e"></i>单件复盘</span></div>';
+  s += '</div><div class="legend"><span><i class="std"></i>标准版</span><span><i class="min"></i>轻量版</span><span><i class="part"></i>有记录</span><span><i class="skip"></i>放过</span><span><i class="dot a"></i>对话存档</span><span><i class="dot e"></i>单件复盘</span></div>';
   return s;
 }
 function predSummary(preds){
@@ -1175,7 +1347,7 @@ function predSummaryText(preds){ const c = { hit:0, miss:0, half:0, open:0 }; pr
 function arcPredSummaryText(ps){ const c = { hit:0, miss:0, half:0, other:0 }; ps.forEach(p => { c[resKind(p.result) || 'other']++; }); return ps.length + ' 条预测：中 ' + c.hit + ' · 没中 ' + c.miss + ' · 暂时中或一半 ' + c.half + (c.other ? ' · 未判 ' + c.other : ''); }
 function yBanner(y){
   let s = '<section class="card banner"><div class="stage">昨天（' + md(y) + '）没有收尾</div>'
-    + '<p class="muted">规则只有一条：别连着空两天。可以补 2 分钟，也可以直接放过。</p>'
+    + '<p class="muted">想起了什么，可以补记；没想起也没关系，从今天继续。</p>'
     + '<div class="row"><button type="button" class="btn sm" data-act="open" data-type="min" data-key="' + y + '">补记昨天 · 2 分钟</button><button type="button" class="btn ghost sm" data-act="skipOpen">放过它</button></div>';
   if (ui.skipOpen){
     s += '<div class="inline"><div class="lab">放过的原因（一下就好）</div><div class="chips">' + SKIPR.map(r => '<button type="button" class="chip" data-act="skip" data-key="' + y + '" data-v="' + r + '">' + r + '</button>').join('') + '</div>'
@@ -1193,11 +1365,11 @@ function statsCard(t){
   const solid = hs.filter(x => x.status === 'solid').length, test = hs.filter(x => x.status === 'test').length;
   let lrLine;
   if (lr){ const days = Math.round((parse(t) - parse(lr)) / 864e5); lrLine = '上一次重新认识自己：' + (days === 0 ? '今天' : days + ' 天前') + '，改写了一条假设。'; }
-  else lrLine = '还没有改写过假设。第一次改写，才算真正重新认识了自己一次。';
+  else lrLine = '每次发现都可以慢慢积累，不急着给自己下结论。';
   return '<section class="card"><div class="stage">近五周<span class="right">本周 ' + mdShort(ws) + ' 起</span></div>' + g
-    + '<div class="legend"><span><i class="std"></i>标准版</span><span><i class="min"></i>最低版</span><span><i class="part"></i>只有预测或随手记</span><span><i class="skip"></i>放过</span><span><i class="none"></i>空白</span></div>'
+    + '<div class="legend"><span><i class="std"></i>标准版</span><span><i class="min"></i>轻量版</span><span><i class="part"></i>只有预测或随手记</span><span><i class="skip"></i>放过</span><span><i class="none"></i>空白</span></div>'
     + '<div class="figs"><span>本周收尾<b>' + w.rec + '</b>/ 7 天</span><span class="redb">本周新信息<b>' + w.newInfo + '</b>条</span><span>清单<b>' + (test + solid) + '</b>条（较可信 ' + solid + '）</span></div>'
-    + '<p class="note">新信息 = 落空的预测 + 意外的反应 + 反例 + 改写。它们都是你对自己的看法需要更新的地方，所以这个数字越大越好。' + lrLine + '</p>' + backupLine() + '</section>';
+    + '<p class="note">新信息 = 落空的预测 + 意外的反应 + 反例 + 改写。它们提示了值得再观察的地方，不必追求数量。' + lrLine + '</p>' + backupLine() + '</section>';
 }
 function predCard(k, d){
   const t = dayKey(), hr = new Date().getHours(), isMorning = hr >= 4 && hr < 12, isNight = hr >= 18 || hr < 4;
@@ -1245,22 +1417,24 @@ function eventCardHTML(ev){
     + '</article>';
 }
 function eveCard(k, d){
-  const t = dayKey(), isT = k === t, yd = S.days[addDays(k, -1)];
-  let s = '<section class="card"><div class="stage"><span class="tag">晚</span>' + (isT ? '晚上复盘' : '这一天的复盘') + '</div>';
+  const isT = k === dayKey();
+  let s = '<section class="card"><div class="stage"><span class="tag">' + (d.evening ? '收好' : '此刻') + '</span>' + (d.evening ? '留给自己的这一页' : '今天，哪一刻留在了心里？') + '</div>';
   if (d.evening){
-    const e = d.evening, D = e.D || {};
-    s += '<p class="muted">' + (e.mode === 'std' ? '标准版' : (e.late ? '补记' : '最低版')) + ' · ' + hm(e.at) + ' 写完</p>';
+    const e = d.evening, D = e.D || {}, raw = e.raw || {};
+    const excerpt = e.mode === 'min' ? raw.q1 : ((raw.C || {}).fact || raw.surprise || (raw.A || {}).self);
+    s += '<p class="fine">' + (e.mode === 'std' ? '深入复盘' : e.late ? '补记' : '轻量复盘') + ' · ' + hm(e.at) + ' 写下</p>';
+    if (excerpt) s += '<blockquote class="saved-reflection">' + esc(excerpt) + '</blockquote>';
+    else s += '<p class="muted">今天的复盘已收好。不必每次都有一个结论。</p>';
     if (D.line) s += '<div class="hyp">' + D.line + '</div>';
-    s += '<div class="row">' + (dlNs ? '<button type="button" class="btn sm" data-act="wordDay" data-key="' + k + '">保存为 Word</button>' : '') + '<button type="button" class="btn ghost sm" data-act="copy" data-key="' + k + '">复制给 Claude</button><button type="button" class="btn ghost sm" data-act="open" data-type="' + (e.mode === 'std' ? 'evening' : 'min') + '" data-key="' + k + '">修改</button></div>';
-  } else if (d.skip){
-    s += '<p class="muted">这一天放过了，原因：' + esc(d.skip.reason) + '。</p><div class="row"><button type="button" class="btn ghost sm" data-act="open" data-type="min" data-key="' + k + '">还是补记 · 2 分钟</button></div>';
+    s += '<div class="row"><button type="button" class="btn" data-act="open" data-type="' + (e.mode === 'std' ? 'evening' : 'min') + '" data-key="' + k + '">再读一遍 / 接着写</button>' + (dlNs ? '<button type="button" class="btn ghost" data-act="wordDay" data-key="' + k + '">保存为 Word</button>' : '') + '</div>';
   } else {
-    s += d.preds.length ? '<p class="muted">先对答案，再挑一个时刻挖深。一天里看清一件事就够了。</p>' : '<p class="muted">' + (isT ? '今天' : '这一天') + '没有预测，「对照」会换成「意外回看」。</p>';
-    if (!isT) s += '<p class="fine">隔得越久，越容易把记忆补成故事。记不清的就空着。</p>';
-    if (isT && yd && !yd.evening && !yd.skip && firstDay() && firstDay() < t) s += '<p class="fine">昨天空着。今天收个尾，就不算连着空两天。</p>';
-    s += '<div class="row"><button type="button" class="btn" data-act="open" data-type="evening" data-key="' + k + '">' + (isT ? '标准版 · 10–15 分钟' : '补写标准版') + '</button><button type="button" class="btn ghost" data-act="open" data-type="min" data-key="' + k + '">' + (isT ? '最低版 · 2 分钟' : '补记 · 2 分钟') + '</button></div>';
-    s += '<div class="row"><button type="button" class="linkbtn" data-act="copy" data-key="' + k + '">想和 Claude 对话着复盘？复制' + (isT ? '今天' : '这一天') + '的材料</button></div>';
+    const draft = drafts['min:' + k], fullDraft = drafts['evening:' + k];
+    s += '<p class="muted">一件小事、一点意外，或一个说不清的感受。<br>写两句，就可以收好今天。</p>';
+    if (d.skip) s += '<p class="fine">这一天选择了留白。想写了，随时可以继续。</p>';
+    s += '<div class="row"><button type="button" class="btn" data-act="open" data-type="min" data-key="' + k + '">' + (draft ? '接着写草稿' : '写两句 · 约 2 分钟') + ' <span aria-hidden="true">↗</span></button><button type="button" class="btn ghost" data-act="open" data-type="evening" data-key="' + k + '">' + (fullDraft ? '继续深入草稿' : '深入写一页') + '</button></div>';
+    s += '<p class="fine">' + (d.preds.length ? '今天的 ' + d.preds.length + ' 条预测，会在写作时一起回看。' : '不需要先写预测。想起什么，就从那里开始。') + '</p>';
   }
+  s += '<button type="button" class="linkbtn" style="align-self:flex-start" data-act="copy" data-key="' + k + '">想聊着梳理？复制' + (isT ? '今天' : '这一天') + '的材料给 Claude ↗</button>';
   return s + '</section>';
 }
 function reviewEventCard(k){
@@ -1329,7 +1503,7 @@ function chipsHTML(path, opts, multi, cls){
 function segHTML(path, opts){ const cur = getPath(form.data, path); return '<div class="seg">' + opts.map(o => '<button type="button" class="' + (cur === o[0] ? 'on' : '') + '" data-act="pick" data-f="' + path + '" data-v="' + o[0] + '" aria-pressed="' + (cur === o[0]) + '">' + o[1] + '</button>').join('') + '</div>'; }
 function vagueWarn(text){ const hit = VAGUE.find(w => (text || '').includes(w)); return hit ? '「' + hit + '」这类词晚上判不了对错。换成看得见的动作或时间点。' : ''; }
 function hypWarn(text){ return /我就是|我这个人|我天生|我一直都/.test(text || '') ? '日复盘不下性格结论。写成「在某种情况下我可能会怎样」。' : ''; }
-function formHead(title, lede, tag){ return '<div class="row" style="justify-content:space-between;margin-bottom:6px"><span class="sub mono">' + (tag || '') + '</span><button type="button" class="linkbtn" data-act="cancel">先放下（草稿保留）</button></div><h1 class="h">' + title + '</h1><p class="lede">' + lede + '</p>'; }
+function formHead(title, lede, tag){ return '<div class="row" style="justify-content:space-between;margin-bottom:6px"><span class="sub mono">' + (tag || '') + '</span><button type="button" class="linkbtn" data-act="cancel">先放下（草稿保留）</button></div><h1 class="h">' + title + '</h1><p class="lede">' + lede + '</p><p class="writing-note">输入时自动保留本机草稿 · 不必一次写完</p>'; }
 
 function fMorning(){
   const k = form.key, x = form.data, now = new Date(), t = dayKey(), hr = now.getHours();
@@ -1409,17 +1583,17 @@ function afterHTML(){
 }
 function fMin(){
   const k = form.key, x = form.data, t = dayKey(), d = S.days[k] || newDay(k), isLate = k < t;
-  let h = formHead(isLate ? '补记' + md(k) : '晚上复盘 · 最低版', isLate ? '只写印象最深的一刻。记不清的就不写，别为了填满而编。' : '累的日子只做这个。它保留了骨架：落空、在乎、假设。', md(k) + ' ' + wdOf(k));
+  let h = formHead(isLate ? '补记' + md(k) : '给今天，留两句话', isLate ? '只写印象最深的一刻。记不清的就不写，别为了填满而编。' : '不用总结整个人生。先记下一刻，再看看它为什么留在心里。', md(k) + ' ' + wdOf(k));
   h += '<div class="card">';
   if (d.preds.length){
     h += '<div class="lab">预测对了吗（点一下就行）</div>' + d.preds.map(p => '<div class="f"><div class="pt" style="font-size:14px">' + esc(p.text) + '</div>' + segHTML('R.' + p.id + '.r', [['hit','对'],['miss','落空'],['half','一半']]) + '</div>').join('');
   }
-  h += fieldTA('q1', (isLate ? '那天' : '今天') + '哪一刻的我，和我以为的自己不一样？', '');
-  h += fieldTA('q2', '那一刻，我在乎的是什么？', '');
-  h += '<div class="f"><div class="lab">写成一条假设（可选）</div><div class="pair"><span>在</span>' + fieldIn('D.sit', '什么情况下', 'hyp') + '<span>我可能会</span>' + fieldIn('D.rea', '怎样', 'hyp') + '</div><div class="warn" id="w-hyp">' + hypWarn((x.D.sit || '') + (x.D.rea || '')) + '</div></div>';
-  h += '<p class="fine">一句都写不出来也行，写「今天没看到新东西」。编出来的假设会污染清单。</p>';
+  h += fieldTA('q1', (isLate ? '那天' : '今天') + '哪一刻的我，和我以为的自己不一样？', '例如：以为自己会一直拖着，结果开始五分钟后，反而不想停了。');
+  h += fieldTA('q2', '那一刻，我在乎的是什么？', '是被理解、能自己做主，还是想把事情做好？');
+  h += '<details class="journal-disclosure"' + ((x.D.sit || x.D.rea) ? ' open' : '') + '><summary>想再往前一步？<small>留一条待验证的发现</small></summary><div class="f"><div class="lab">写成一条假设（可选）</div><div class="pair"><span>在</span>' + fieldIn('D.sit', '什么情况下', 'hyp') + '<span>我可能会</span>' + fieldIn('D.rea', '怎样', 'hyp') + '</div><div class="warn" id="w-hyp">' + hypWarn((x.D.sit || '') + (x.D.rea || '')) + '</div></div>';
+  h += '<p class="fine">没看出规律也没关系。这一栏可以空着，等以后再回来验证。</p></details>';
   h += afterHTML();
-  h += '<div class="row"><button type="button" class="btn" data-act="saveMin">写完了</button></div></div>';
+  h += '<div class="row"><button type="button" class="btn" data-act="saveMin">收好这一页</button></div></div>';
   return h;
 }
 function fCapture(){
@@ -1743,6 +1917,8 @@ function render(){
   let html;
   if (form){ html = ({ morning:fMorning, evening:fEvening, min:fMin, capture:fCapture, week:fWeek, event:fEvent, import:fImport })[form.type](); }
   else { const V = { pred:vPred, review:vReview, hyps:vHyps, more:vMore }; html = (V[route] || vPred)(); }
+  $('#view').dataset.view = form ? form.type : route;
+  $('#view').dataset.writing = String(!!form);
   $('#view').innerHTML = html;
   const ca = $('#copyArea'); if (ca){ ca.focus(); ca.select(); }
 }
@@ -1844,7 +2020,7 @@ function dayDocXml(k){
   const d = S.days[k] || newDay(k), e = d.evening, B = [];
   B.push(wTxt('自我观察本', 'Small'));
   B.push(wTxt(k.slice(0, 4) + '年' + md(k) + ' ' + wdOf(k), 'Title'));
-  B.push(wTxt(e ? (e.mode === 'std' ? '晚上复盘：标准版' : (e.late ? '第二天补记（最低版）' : '晚上复盘：最低版')) : d.skip ? '这一天放过了，原因：' + d.skip.reason : '这一天还没有复盘', 'Small'));
+  B.push(wTxt(e ? (e.mode === 'std' ? '晚上复盘：标准版' : (e.late ? '第二天补记（轻量版）' : '晚上复盘：轻量版')) : d.skip ? '这一天放过了，原因：' + d.skip.reason : '这一天还没有复盘', 'Small'));
   archivesOn(k).forEach(r => { B.push.apply(B, archiveBlocks(r)); });
   B.push(wH1('早上的预测'));
   if (d.preds.length) B.push(wTxt(predSummaryText(d.preds), 'Small'));
@@ -1863,7 +2039,7 @@ function dayDocXml(k){
   else B.push(wTxt('这一天没有随手记。', 'Small'));
   if (e && e.raw){
     const r = e.raw;
-    B.push(wH1(e.mode === 'std' ? '晚上复盘' : '最低版三句'));
+    B.push(wH1(e.mode === 'std' ? '晚上复盘' : '轻量版三句'));
     if (e.mode === 'std'){
       const A0 = r.A || {}, C = r.C || {}, E = r.E || {};
       B.push(wH2('A 事实'), wKV('时间最多的三块', [A0.b0, A0.b1, A0.b2].filter(Boolean).join(' / ')), wKV('没人要求、自己主动做的事', A0.self));
@@ -2062,10 +2238,10 @@ const A = {
     if ((!prev || !prev.D || prev.D.op === 'none') && ((x.D.sit || '').trim() || (x.D.rea || '').trim())) ev.D = applyD(k, { op:'new', sit:x.D.sit, rea:x.D.rea, ev:x.q1 || '' }, writes);
     d.evening = ev; d.skip = null;
     closeForm(); ui.skipOpen = false; render();
-    try { await put('days', k, d); for (const w of writes) await w(); toast(hypToast(ev.D) || '收好尾了。'); } catch (e) {}
+    try { await put('days', k, d); for (const w of writes) await w(); toast(hypToast(ev.D) || '这一页收好了。谢谢你留意今天的自己。'); } catch (e) {}
   },
   skipOpen(){ ui.skipOpen = !ui.skipOpen; render(); },
-  async skip(el){ if (!needReady()) return; const d = getDay(el.dataset.key); d.skip = { reason:el.dataset.v, at:new Date().toISOString() }; ui.skipOpen = false; render(); try { await put('days', el.dataset.key, d); toast('放过了。今天别再空着就好。'); } catch (e) {} },
+  async skip(el){ if (!needReady()) return; const d = getDay(el.dataset.key); d.skip = { reason:el.dataset.v, at:new Date().toISOString() }; ui.skipOpen = false; render(); try { await put('days', el.dataset.key, d); toast('留白也收好了。下次想写时再来。'); } catch (e) {} },
   async saveCap(){
     if (!needReady()) return;
     const x = clone(form.data);
@@ -2350,7 +2526,7 @@ function hypToast(D){
 /* ---------- events ---------- */
 document.addEventListener('click', e => {
   const tab = e.target.closest('.tabs a');
-  if (tab && tab.getAttribute('href') === (location.hash || '#pred')){ e.preventDefault(); onHash(); return; }
+  if (tab && tab.getAttribute('href') === (location.hash || '#review')){ e.preventDefault(); onHash(); return; }
   const el = e.target.closest('[data-act]'); if (!el) return;
   const f = A[el.dataset.act]; if (f){ e.preventDefault(); f(el, e); }
 });
@@ -2363,7 +2539,7 @@ document.addEventListener('input', e => {
   if (el.dataset.live === 'hyp'){ const w = $('#w-hyp'); if (w) w.textContent = hypWarn((form.data.D.sit || '') + (form.data.D.rea || '')); }
 });
 const ROUTE_ALIAS = { today:'pred', log:'more' };   // links and icons saved from older versions
-function resolveRoute(hash){ const r = (hash || '#pred').slice(1), a = ROUTE_ALIAS[r] || r; return ['pred','capture','review','hyps','more','week'].includes(a) ? a : 'pred'; }
+function resolveRoute(hash){ const r = (hash || '#review').slice(1), a = ROUTE_ALIAS[r] || r; return ['pred','capture','review','hyps','more','week'].includes(a) ? a : 'review'; }
 function onHash(){
   route = resolveRoute(location.hash); ui.cal = false;
   if (form && form.dirty){ drafts[form.type + ':' + form.key] = form.data; saveDrafts(); }
@@ -2396,3 +2572,4 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
 </script>
 </body>
 </html>
+
