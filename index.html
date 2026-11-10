@@ -379,6 +379,9 @@ body{background-image:none;line-height:1.8}
 .journal-disclosure[open] summary::after{content:'−'}
 .journal-disclosure summary small{font:12px var(--f-body);color:var(--ink-3);margin-left:auto}
 .journal-disclosure>.card{box-shadow:none;padding:20px;border:1px solid var(--line);background:transparent}
+.capture-history .when-open{display:none}
+.capture-history[open] .when-open{display:inline}
+.capture-history[open] .when-closed{display:none}
 .journal-foot{border-top:1px solid var(--line);margin:40px 0 0;padding:22px 0;display:flex;justify-content:space-between;gap:15px;font-size:11px;letter-spacing:.08em;color:var(--ink-3)}
 h1.h{font-size:30px;line-height:1.6;margin-bottom:8px}h2.h2{font-size:20px}
 .lede{font-size:14px;line-height:1.9;margin-bottom:25px}
@@ -1626,7 +1629,9 @@ function fCapture(){
     const d = S.days[k0];
     const list = d ? (d.caps || []).slice().sort((a, b) => b.at.localeCompare(a.at)) : [];
     h += '<h2 class="h2">' + (k0 === t ? '今天' : md(k0)) + ' · ' + list.length + ' 条</h2>';
-    h += list.length ? '<div class="stack">' + list.map(c => capCardHTML(c, k0)).join('') + '</div>' : '<p class="fine">' + (k0 === t ? '今天还没有记。存下的每一条会在这里排成一张卡片：时间、情绪和强度、原话、身体、在乎的东西。' : '这一天没有随手记。') + '</p>';
+    h += list.length ? '<div class="stack">' + list.slice(0, 3).map(c => capCardHTML(c, k0)).join('')
+      + (list.length > 3 ? '<details class="journal-disclosure capture-history"><summary><span class="when-closed">展开全部（共 ' + list.length + ' 条）</span><span class="when-open">收起（仅显示最近 3 条）</span></summary><div class="stack">' + list.slice(3).map(c => capCardHTML(c, k0)).join('') + '</div></details>' : '')
+      + '</div>' : '<p class="fine">' + (k0 === t ? '今天还没有记。存下的每一条会在这里排成一张卡片：时间、情绪和强度、原话、身体、在乎的东西。' : '这一天没有随手记。') + '</p>';
     const pend = [];
     if (k0 === t) for (let i = 1; i <= 14; i++){ const k = addDays(t, -i), dd = S.days[k]; if (dd) (dd.caps || []).forEach(c => { if (!c.done) pend.push([k, c]); }); }
     if (pend.length) h += '<h2 class="h2">还没理清的</h2><div class="stack">' + pend.map(p => capCardHTML(p[1], p[0], { date:true })).join('') + '</div>';
