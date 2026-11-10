@@ -379,9 +379,10 @@ body{background-image:none;line-height:1.8}
 .journal-disclosure[open] summary::after{content:'−'}
 .journal-disclosure summary small{font:12px var(--f-body);color:var(--ink-3);margin-left:auto}
 .journal-disclosure>.card{box-shadow:none;padding:20px;border:1px solid var(--line);background:transparent}
-.capture-history .when-open{display:none}
-.capture-history[open] .when-open{display:inline}
-.capture-history[open] .when-closed{display:none}
+.capture-fold{border-top:1px solid var(--line);min-width:0}
+.capture-toggle{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;min-height:48px;padding:16px 0;border:0;background:none;text-align:left;font-size:14px;color:var(--ink)}
+.capture-sign{color:var(--ink-3)}
+.capture-overflow[hidden]{display:none!important}
 .more-calendar .cday.sel{background:var(--ink);color:var(--paper);border:1px solid var(--ink);outline:2px solid var(--ink);outline-offset:1px;box-shadow:inset 0 0 0 2px var(--paper);font-weight:700}
 .more-calendar .cday.sel .mk{box-shadow:0 0 0 1px var(--paper)}
 .journal-foot{border-top:1px solid var(--line);margin:40px 0 0;padding:22px 0;display:flex;justify-content:space-between;gap:15px;font-size:11px;letter-spacing:.08em;color:var(--ink-3)}
@@ -479,7 +480,7 @@ const VAGUE = ['充实','好好','努力','认真','尽量','高效','顺利','�
 const MOMENTS = ['情绪最强的一刻','最不像自己的一刻','最有劲的一刻','别的时刻'];
 const FORMAT = 'review-archive/v1';
 const OFFLINE_APP = true;
-const APP_VERSION = 'v6.1';
+const APP_VERSION = 'v6.2';
 const LS_KEY = 'zwgcb-data-v1', LS_DRAFT = 'zwgcb-drafts-v1';
 
 /* ---------- utils ---------- */
@@ -1610,6 +1611,9 @@ function fMin(){
   h += '<div class="row"><button type="button" class="btn" data-act="saveMin">收好这一页</button></div></div>';
   return h;
 }
+function captureFoldHTML(id, openLabel, closeLabel, content){
+  return '<div class="capture-fold"><button type="button" class="capture-toggle" data-act="captureToggle" data-open-label="' + esc(openLabel) + '" data-close-label="' + esc(closeLabel) + '" aria-expanded="false" aria-controls="' + id + '"><span class="capture-label">' + esc(openLabel) + '</span><span class="capture-sign" aria-hidden="true">＋</span></button><div class="stack capture-overflow" id="' + id + '" hidden>' + content + '</div></div>';
+}
 function fCapture(){
   const x = form.data, editing = form.key !== 'new', t = dayKey(), k0 = sel > t ? t : sel, back = !editing && k0 !== t;
   let h = dateBar() + (sel > t ? '<p class="fine">明天还没到，随手记会记在今天。</p>' : '') + (back ? '<p class="lede">给 ' + md(k0) + ' 补一条随手记。隔得越久越容易记成故事，记不清的就空着。</p>' : '<p class="lede">当场记一句就行，理清可以晚点。顺序是刻意的：先事实，再名字，再身体，最后才问它碰到了什么。</p>');
@@ -1641,11 +1645,11 @@ function fCapture(){
     const list = d ? (d.caps || []).slice().sort((a, b) => b.at.localeCompare(a.at)) : [];
     h += '<h2 class="h2">' + (k0 === t ? '今天' : md(k0)) + ' · ' + list.length + ' 条</h2>';
     h += list.length ? '<div class="stack">' + list.slice(0, 3).map(c => capCardHTML(c, k0)).join('')
-      + (list.length > 3 ? '<details class="journal-disclosure capture-history"><summary><span class="when-closed">展开全部（共 ' + list.length + ' 条）</span><span class="when-open">收起（仅显示最近 3 条）</span></summary><div class="stack">' + list.slice(3).map(c => capCardHTML(c, k0)).join('') + '</div></details>' : '')
+      + (list.length > 3 ? captureFoldHTML('capture-older', '展开全部（共 ' + list.length + ' 条）', '收起（仅显示最近 3 条）', list.slice(3).map(c => capCardHTML(c, k0)).join('')) : '')
       + '</div>' : '<p class="fine">' + (k0 === t ? '今天还没有记。存下的每一条会在这里排成一张卡片：时间、情绪和强度、原话、身体、在乎的东西。' : '这一天没有随手记。') + '</p>';
     const pend = [];
     if (k0 === t) for (let i = 1; i <= 14; i++){ const k = addDays(t, -i), dd = S.days[k]; if (dd) (dd.caps || []).forEach(c => { if (!c.done) pend.push([k, c]); }); }
-    if (pend.length) h += '<h2 class="h2">还没理清的</h2><div class="stack">' + pend.map(p => capCardHTML(p[1], p[0], { date:true })).join('') + '</div>';
+    if (pend.length) h += '<h2 class="h2">还没理清的</h2>' + captureFoldHTML('capture-pending', '展开往日未完成（共 ' + pend.length + ' 条）', '收起往日未完成（共 ' + pend.length + ' 条）', pend.map(p => capCardHTML(p[1], p[0], { date:true })).join(''));
   }
   return h;
 }
@@ -2208,6 +2212,15 @@ function capAt(k, time){
 function needReady(){ if (!ready){ toast('还在打开记录本，稍等几秒再存。'); return false; } return true; }
 function predSrc(k){ const t = dayKey(); if (k > t) return 'eve'; const h = new Date().getHours(); return (k === t && h >= 4 && h < 12) ? 'morning' : 'late'; }
 const A = {
+  captureToggle(el){
+    const panel = document.getElementById(el.getAttribute('aria-controls'));
+    if (!panel) return;
+    const open = el.getAttribute('aria-expanded') !== 'true';
+    panel.hidden = !open;
+    el.setAttribute('aria-expanded', String(open));
+    el.querySelector('.capture-label').textContent = open ? el.dataset.closeLabel : el.dataset.openLabel;
+    el.querySelector('.capture-sign').textContent = open ? '−' : '＋';
+  },
   open(el){ const extra = null; if (el.dataset.type === 'evening' || el.dataset.type === 'min' || el.dataset.type === 'morning') openForm(el.dataset.type, el.dataset.key, extra); },
   cancel(){ closeForm(true); render(); },
   pick(el){ if (!form) return; let v = el.dataset.v; if (/^\d+$/.test(v) && el.dataset.f === 'inten') v = +v; const cur = getPath(form.data, el.dataset.f); setPath(form.data, el.dataset.f, cur === v ? (['D.op', 'D.str', 'hypKind'].includes(el.dataset.f) ? cur : '') : v); form.dirty = true; drafts[form.type + ':' + form.key] = form.data; draftLater(); render(); },
