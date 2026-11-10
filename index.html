@@ -385,6 +385,42 @@ body{background-image:none;line-height:1.8}
 .capture-overflow[hidden]{display:none!important}
 .more-calendar .cday.sel{background:var(--ink);color:var(--paper);border:1px solid var(--ink);outline:2px solid var(--ink);outline-offset:1px;box-shadow:inset 0 0 0 2px var(--paper);font-weight:700}
 .more-calendar .cday.sel .mk{box-shadow:0 0 0 1px var(--paper)}
+.more-calendar .cal,.more-calendar .calhead{width:100%;max-width:420px;margin-inline:auto}
+.more-day-head{display:flex;align-items:center;justify-content:space-between;gap:16px}
+.more-day-head h2{font:600 23px/1.5 var(--f-display);margin:0}
+.more-day-head small{display:block;font:12px/1.6 var(--f-body);color:var(--ink-3);margin-top:3px}
+.day-entries{display:flex;flex-direction:column}
+.day-entry{display:grid;grid-template-columns:38px minmax(0,1fr) auto 12px;gap:12px;align-items:center;width:100%;min-height:82px;padding:17px 0;border:0;border-bottom:1px solid var(--line);background:none;text-align:left}
+.day-entry:last-child{border-bottom:0}
+.day-entry:hover{background:var(--blue-soft)}
+.day-entry-icon{display:grid;place-items:center;width:36px;height:36px;border-radius:10px;background:var(--blue-soft);color:var(--blue)}
+.day-entry-icon svg{width:20px;height:20px}
+.day-entry-title{display:block;font-size:16px;font-weight:600;line-height:1.5}
+.day-entry-note{display:block;font-size:12px;line-height:1.6;color:var(--ink-3);margin-top:3px}
+.day-entry-count{font-size:12px;color:var(--ink-2);white-space:nowrap}
+.day-entry-arrow{font-size:21px;color:var(--ink-3)}
+.more-day-tools{display:flex;gap:12px 22px;flex-wrap:wrap;border-top:1px solid var(--line);padding-top:16px}
+.more-reader{max-width:640px;margin:auto;min-width:0}
+.more-back{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0;border:0;background:none;color:var(--ink-2);font-size:13px}
+.more-reader-head{padding:17px 0 24px;border-bottom:1px solid var(--line);margin-bottom:24px}
+.more-reader-date{font-size:12px;letter-spacing:.06em;color:var(--ink-3);margin:0 0 7px}
+.more-reader h1{font:600 30px/1.5 var(--f-display);margin:0}
+.more-reader h1 small{font:13px var(--f-body);color:var(--ink-3);margin-left:12px}
+.more-reader-head p:last-child{margin:8px 0 0;font-size:13px;color:var(--ink-2)}
+.more-content{display:flex;flex-direction:column;gap:18px}
+.more-reader .pred{padding:20px;border:1px solid var(--line);border-left:3px solid var(--blue);background:var(--card);border-radius:10px}
+.more-reader .pred.r-miss,.more-reader .pred.r-half{border-left-color:var(--red)}
+.more-reader .pen{position:static;display:inline-block;transform:none;font:600 12px/1.5 var(--f-body);padding:3px 9px;margin-top:12px;border-radius:5px;background:var(--blue-soft)}
+.more-reader .pen.miss,.more-reader .pen.half{background:var(--red-soft)}
+.more-reader .cap,.more-reader .arc{box-shadow:none;padding:20px}
+.more-reader .kv{grid-template-columns:minmax(0,1fr);gap:4px}
+.more-reader .kv dt{font-size:12px;color:var(--ink-3)}
+.more-reader .kv dd{font-size:15px;line-height:1.9;margin:0}
+.more-reader .kv dd+dt{margin-top:12px}
+.more-reader .psum{padding:0 0 5px;font-size:13px}
+.more-reader .psum .n{font-size:18px}
+.more-reader-tools{margin-top:24px;padding-top:18px;border-top:1px solid var(--line)}
+@media(max-width:420px){.day-entry{grid-template-columns:32px minmax(0,1fr) auto 10px;gap:9px}.day-entry-icon{width:30px;height:32px}.day-entry-title{font-size:15px}.day-entry-note{font-size:11px}.more-reader .cap,.more-reader .arc,.more-reader .pred{padding:18px}}
 .journal-foot{border-top:1px solid var(--line);margin:40px 0 0;padding:22px 0;display:flex;justify-content:space-between;gap:15px;font-size:11px;letter-spacing:.08em;color:var(--ink-3)}
 h1.h{font-size:30px;line-height:1.6;margin-bottom:8px}h2.h2{font-size:20px}
 .lede{font-size:14px;line-height:1.9;margin-bottom:25px}
@@ -480,7 +516,7 @@ const VAGUE = ['充实','好好','努力','认真','尽量','高效','顺利','�
 const MOMENTS = ['情绪最强的一刻','最不像自己的一刻','最有劲的一刻','别的时刻'];
 const FORMAT = 'review-archive/v1';
 const OFFLINE_APP = true;
-const APP_VERSION = 'v6.2';
+const APP_VERSION = 'v6.3';
 const LS_KEY = 'zwgcb-data-v1', LS_DRAFT = 'zwgcb-drafts-v1';
 
 /* ---------- utils ---------- */
@@ -1289,16 +1325,53 @@ function vReview(){
   h += '</div>' + journalAside(k) + '</div><footer class="journal-foot"><span>慢慢观察，慢慢认识自己。</span><span>自我观察本 · PRIVATE FIELD NOTES</span></footer>';
   return h;
 }
+const MORE_SECTIONS = { pred:'预测', capture:'随手记', review:'复盘', events:'单件复盘', archives:'对话存档' };
+function moreLocation(hash = location.hash){
+  if (!/^#more(?:\?|$)/.test(hash || '')) return { day:null, section:null };
+  const params = new URLSearchParams((hash || '').split('?')[1] || ''), day = params.get('day'), section = params.get('section');
+  const valid = validDate(day) && day <= addDays(dayKey(), 1);
+  return { day:valid ? day : null, section:valid && Object.prototype.hasOwnProperty.call(MORE_SECTIONS, section) ? section : null };
+}
+function moreHash(day, section){ return '#more?day=' + day + (section ? '&section=' + section : ''); }
+function moreIcon(section){
+  const paths = {
+    pred:'<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r="1"/>',
+    capture:'<path d="M4 20h4L19 9l-4-4L4 16zM13.5 6.5l4 4"/>',
+    review:'<path d="M19 14.5A7.5 7.5 0 0 1 9.5 5a7.5 7.5 0 1 0 9.5 9.5z"/>',
+    events:'<rect x="4" y="4" width="16" height="16" rx="3"/><path d="M8 9h8M8 13h5M8 17h3"/>',
+    archives:'<path d="M5 4h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-8l-5 3v-3H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zM7 9h10M7 13h6"/>'
+  };
+  return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + paths[section] + '</svg>';
+}
+function moreDayOverview(k){
+  const d = S.days[k] || newDay(k), preds = d.preds || [], caps = d.caps || [], events = eventsOn(k), archives = archivesOn(k);
+  const hit = preds.filter(p => p.result === 'hit').length, miss = preds.filter(p => p.result === 'miss').length;
+  const rows = [
+    ['pred', preds.length + ' 条', preds.length ? '对 ' + hit + ' · 落空 ' + miss + ' · 点开看对照' : '这一天的预期与实际'],
+    ['capture', caps.length + ' 条', '发生的事、情绪和当时的想法'],
+    ['review', d.evening ? '已完成' : d.skip ? '已放过' : '未填写', d.evening ? (d.evening.mode === 'std' ? '标准复盘 · 看看这一天的发现' : '轻量复盘 · 留给自己的两句话') : '留一点时间，回看这一天']
+  ];
+  if (events.length) rows.push(['events', events.length + ' 件', '单独梳理的一件事']);
+  if (archives.length) rows.push(['archives', archives.length + ' 份', '保存下来的对话与发现']);
+  return '<section class="card more-day"><div class="more-day-head"><div><h2>' + md(k) + '<small>' + k.slice(0, 4) + ' · ' + wdOf(k) + '</small></h2></div><button type="button" class="linkbtn" data-act="calPick" data-key="' + k + '" data-mode="more">收起</button></div>'
+    + '<div class="day-entries">' + rows.map(([section, count, note]) => '<button type="button" class="day-entry" data-act="moreOpen" data-key="' + k + '" data-section="' + section + '"><span class="day-entry-icon">' + moreIcon(section) + '</span><span><span class="day-entry-title">' + MORE_SECTIONS[section] + '</span><span class="day-entry-note">' + note + '</span></span><span class="day-entry-count">' + count + '</span><span class="day-entry-arrow" aria-hidden="true">›</span></button>').join('') + '</div>'
+    + '<div class="more-day-tools">' + (dlNs ? '<button type="button" class="linkbtn" data-act="wordDay" data-key="' + k + '">导出当天 Word</button>' : '') + '<button type="button" class="linkbtn" data-act="copy" data-key="' + k + '">复制当天记录</button></div></section>';
+}
+function vMoreSection(k, section){
+  const d = S.days[k] || newDay(k), count = section === 'pred' ? (d.preds || []).length : section === 'capture' ? (d.caps || []).length : section === 'events' ? eventsOn(k).length : section === 'archives' ? archivesOn(k).length : null;
+  const notes = { pred:'把当时的预期，和后来发生的事放在一起看。', capture:'一次看一个片段，慢慢回到当时。', review:'这一天写下的回看与发现。', events:'从一件具体的事，多认识自己一点。', archives:'已经收进本子里的对话。' };
+  const actions = { pred:'去预测页', capture:'去随手记页', review:'去复盘页' };
+  return copyBox() + '<section class="more-reader"><button type="button" class="more-back" data-act="moreBack" data-key="' + k + '" data-section="' + section + '">‹ 返回日期概览</button><header class="more-reader-head"><p class="more-reader-date">' + k.slice(0, 4) + ' · ' + md(k) + ' · ' + wdOf(k) + '</p><h1 id="more-reader-heading" tabindex="-1">' + MORE_SECTIONS[section] + (count !== null ? '<small>共 ' + count + ' 条</small>' : '') + '</h1><p>' + notes[section] + '</p></header>'
+    + dayDetail(k, section)
+    + (actions[section] ? '<div class="row more-reader-tools"><button type="button" class="btn ghost sm" data-act="goDay" data-key="' + k + '" data-v="' + section + '">' + actions[section] + '</button></div>' : '') + '</section>';
+}
 function vMore(){
+  const panel = moreLocation();
+  if (panel.section) return vMoreSection(panel.day, panel.section);
   const t = dayKey(), ym = ui.moreMonth || t.slice(0, 7), ws = weekStart(t);
   let h = copyBox() + '<h1 class="h">更多</h1><div class="stack">';
   h += '<section class="card more-calendar"><div class="stage">日历<span class="right">点一天，看那天的全部记录</span></div>' + calendarHTML(ym, 'more') + '</section>';
-  if (ui.moreDay){
-    const k = ui.moreDay;
-    h += '<section class="card more-day"><div class="stage">' + md(k) + ' ' + wdOf(k) + '<span class="right"><button type="button" class="linkbtn" data-act="calPick" data-key="' + k + '" data-mode="more">收起</button></span></div>'
-      + '<div class="row"><button type="button" class="btn ghost sm" data-act="goDay" data-key="' + k + '" data-v="pred">这天的预测</button><button type="button" class="btn ghost sm" data-act="goDay" data-key="' + k + '" data-v="capture">随手记</button><button type="button" class="btn ghost sm" data-act="goDay" data-key="' + k + '" data-v="review">复盘</button></div>'
-      + (dayStatus(k, t) === 'none' || dayStatus(k, t) === 'future' ? '<p class="fine">这一天还没有记录。</p>' : dayDetail(k)) + '</section>';
-  }
+  if (ui.moreDay) h += moreDayOverview(ui.moreDay);
   h += '<section class="card"><div class="stage">周复盘</div><p class="muted">把一周落空的预测排在一起看，找同一个方向的错，再更新假设清单。</p><div class="row"><button type="button" class="btn sm" data-act="goWeek" data-key="' + ws + '">这周</button><button type="button" class="btn ghost sm" data-act="goWeek" data-key="' + addDays(ws, -7) + '">上周</button></div></section>';
   h += statsCard(t);
   h += syncCard() + dataCard();
@@ -1904,12 +1977,17 @@ function syncCard(){
   s += '<div class="row"><button type="button" class="btn sm" data-act="syncSetup"' + (ui.syncChecking ? ' disabled' : '') + '>' + (ui.syncChecking ? '正在检查…' : '连接并同步') + '</button>' + (syncCfg && syncCfg.token ? '<button type="button" class="btn ghost sm" data-act="syncEditCancel">算了</button>' : '') + '</div>';
   return s + '</section>';
 }
-function dayDetail(k){
+function dayDetail(k, section){
   const d = S.days[k] || newDay(k), e = d.evening;
-  let s = '<div class="detail">' + archivesOn(k).map(archiveHTML).join('');
-  if (d.preds && d.preds.length) s += predSummary(d.preds) + '<ul class="preds">' + d.preds.map(p => predRow(p, k, false)).join('') + '</ul>';
-  (d.caps || []).slice().sort((a, b) => a.at.localeCompare(b.at)).forEach(c => { s += capCardHTML(c, k); });
-  if (e){
+  let content = '';
+  if (section === 'archives') content = archivesOn(k).map(archiveHTML).join('');
+  if (section === 'pred' && (d.preds || []).length) content = predSummary(d.preds) + '<ul class="preds">' + d.preds.map(p => predRow(p, k, false)).join('') + '</ul>';
+  if (section === 'capture'){
+    const list = (d.caps || []).slice().sort((a, b) => b.at.localeCompare(a.at));
+    content = list.slice(0, 3).map(c => capCardHTML(c, k)).join('');
+    if (list.length > 3) content += captureFoldHTML('more-capture-older', '展开全部（共 ' + list.length + ' 条）', '收起（仅显示最近 3 条）', list.slice(3).map(c => capCardHTML(c, k)).join(''));
+  }
+  if (section === 'review' && e){
     const r = e.raw || {};
     const kv = [];
     if (e.mode === 'std'){
@@ -1919,12 +1997,13 @@ function dayDetail(k){
       const C = r.C || {}; if (C.fact) kv.push(['那一刻', C.fact]); if (C.quote) kv.push(['原话', C.quote]); if (C.care) kv.push(['在乎的', C.care]); if (C.third) kv.push(['第三人称', C.third]);
       const E = r.E || {}; if (E.watch) kv.push(['明天留意', E.watch]);
     } else { if (r.q1) kv.push(['不一样的', r.q1]); if (r.q2) kv.push(['在乎的', r.q2]); }
-    if (kv.length) s += '<dl class="kv">' + kv.map(x => '<dt>' + x[0] + '</dt><dd>' + esc(x[1]) + '</dd>').join('') + '</dl>';
-    if (e.D && e.D.line) s += '<div class="hyp">' + e.D.line + '</div>';
+    content = '<section class="card">' + (kv.length ? '<dl class="kv">' + kv.map(x => '<dt>' + x[0] + '</dt><dd>' + esc(x[1]) + '</dd>').join('') + '</dl>' : '<p class="muted">这一天的复盘已经收好。</p>');
+    if (e.D && e.D.line) content += '<div class="hyp">' + e.D.line + '</div>';
+    content += '</section>';
   }
-  eventsOn(k).forEach(ev => { s += eventCardHTML(ev); });
-  s += '<div class="row">' + (dlNs ? '<button type="button" class="btn sm" data-act="wordDay" data-key="' + k + '">保存为 Word</button>' : '') + '<button type="button" class="btn ghost sm" data-act="copy" data-key="' + k + '">复制给 Claude</button></div></div>';
-  return s;
+  if (section === 'events') content = eventsOn(k).map(eventCardHTML).join('');
+  if (!content) content = '<section class="card"><p class="muted">' + (section === 'review' && d.skip ? '这一天，你选择了放过自己。' : '这一天还没有' + MORE_SECTIONS[section] + '记录。') + '</p></section>';
+  return '<div class="more-content">' + content + '</div>';
 }
 
 /* ---------- render ---------- */
@@ -2212,6 +2291,18 @@ function capAt(k, time){
 function needReady(){ if (!ready){ toast('还在打开记录本，稍等几秒再存。'); return false; } return true; }
 function predSrc(k){ const t = dayKey(); if (k > t) return 'eve'; const h = new Date().getHours(); return (k === t && h >= 4 && h < 12) ? 'morning' : 'late'; }
 const A = {
+  moreOpen(el){
+    const k = el.dataset.key, section = el.dataset.section;
+    if (!validDate(k) || !Object.prototype.hasOwnProperty.call(MORE_SECTIONS, section)) return;
+    ui.moreReturn = { day:k, section, scroll:window.scrollY, month:ui.moreMonth };
+    history.replaceState(null, '', moreHash(k));
+    location.hash = moreHash(k, section);
+  },
+  moreBack(el){
+    const k = el.dataset.key, from = ui.moreReturn;
+    if (from && from.day === k && from.section === el.dataset.section) history.back();
+    else { history.replaceState(null, '', moreHash(k)); onHash(); }
+  },
   captureToggle(el){
     const panel = document.getElementById(el.getAttribute('aria-controls'));
     if (!panel) return;
@@ -2377,6 +2468,7 @@ const A = {
     if (el.dataset.mode === 'pick'){ sel = k; ui.cal = false; render(); return; }
     const previous = ui.moreDay || dayKey();
     ui.moreDay = ui.moreDay === k ? null : k;
+    history.replaceState(null, '', ui.moreDay ? moreHash(ui.moreDay) : '#more');
     render();
     const focus = $('.more-calendar [data-key="' + k + '"]');
     if (focus) focus.focus({ preventScroll:true });
@@ -2585,16 +2677,29 @@ document.addEventListener('input', e => {
   if (el.dataset.live === 'hyp'){ const w = $('#w-hyp'); if (w) w.textContent = hypWarn((form.data.D.sit || '') + (form.data.D.rea || '')); }
 });
 const ROUTE_ALIAS = { today:'pred', log:'more' };   // links and icons saved from older versions
-function resolveRoute(hash){ const r = (hash || '#review').slice(1), a = ROUTE_ALIAS[r] || r; return ['pred','capture','review','hyps','more','week'].includes(a) ? a : 'review'; }
+function resolveRoute(hash){ const r = (hash || '#review').slice(1).split('?')[0], a = ROUTE_ALIAS[r] || r; return ['pred','capture','review','hyps','more','week'].includes(a) ? a : 'review'; }
 function onHash(){
   route = resolveRoute(location.hash); ui.cal = false;
+  const panel = moreLocation(), returning = route === 'more' && !panel.section && panel.day && ui.moreReturn && ui.moreReturn.day === panel.day;
+  if (panel.day){ ui.moreDay = panel.day; ui.moreMonth = returning ? ui.moreReturn.month : panel.day.slice(0, 7); }
   if (form && form.dirty){ drafts[form.type + ':' + form.key] = form.data; saveDrafts(); }
   form = null; ui.hypOpen = null; ui.hypNew = false; ui.copy = null; ui.arcDel = null;
-  render(); window.scrollTo(0, 0);
+  render();
+  if (returning){
+    window.scrollTo(0, ui.moreReturn.scroll);
+    const entry = $('.day-entry[data-section="' + ui.moreReturn.section + '"]');
+    if (entry) entry.focus({ preventScroll:true });
+    animateMore('.more-day', -1);
+  } else {
+    window.scrollTo(0, 0);
+    if (panel.section){ const heading = $('#more-reader-heading'); if (heading) heading.focus({ preventScroll:true }); animateMore('.more-reader', 1); }
+  }
 }
 window.addEventListener('hashchange', onHash);
 document.addEventListener('change', e => { if (e.target && e.target.id === 'importFile' && e.target.files && e.target.files[0]) importFile(e.target.files[0]); });
 route = resolveRoute(location.hash);
+const initialMore = moreLocation();
+if (initialMore.day){ ui.moreDay = initialMore.day; ui.moreMonth = initialMore.day.slice(0, 7); }
 init();
 })();
 </script>
