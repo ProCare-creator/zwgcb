@@ -379,6 +379,11 @@ body{background-image:none;line-height:1.8}
 .journal-disclosure[open] summary::after{content:'−'}
 .journal-disclosure summary small{font:12px var(--f-body);color:var(--ink-3);margin-left:auto}
 .journal-disclosure>.card{box-shadow:none;padding:20px;border:1px solid var(--line);background:transparent}
+.capture-history .when-open{display:none}
+.capture-history[open] .when-open{display:inline}
+.capture-history[open] .when-closed{display:none}
+.more-calendar .cday.sel{background:var(--ink);color:var(--paper);border:1px solid var(--ink);outline:2px solid var(--ink);outline-offset:1px;box-shadow:inset 0 0 0 2px var(--paper);font-weight:700}
+.more-calendar .cday.sel .mk{box-shadow:0 0 0 1px var(--paper)}
 .journal-foot{border-top:1px solid var(--line);margin:40px 0 0;padding:22px 0;display:flex;justify-content:space-between;gap:15px;font-size:11px;letter-spacing:.08em;color:var(--ink-3)}
 h1.h{font-size:30px;line-height:1.6;margin-bottom:8px}h2.h2{font-size:20px}
 .lede{font-size:14px;line-height:1.9;margin-bottom:25px}
@@ -474,7 +479,7 @@ const VAGUE = ['充实','好好','努力','认真','尽量','高效','顺利','�
 const MOMENTS = ['情绪最强的一刻','最不像自己的一刻','最有劲的一刻','别的时刻'];
 const FORMAT = 'review-archive/v1';
 const OFFLINE_APP = true;
-const APP_VERSION = 'v6.0';
+const APP_VERSION = 'v6.1';
 const LS_KEY = 'zwgcb-data-v1', LS_DRAFT = 'zwgcb-drafts-v1';
 
 /* ---------- utils ---------- */
@@ -1286,10 +1291,10 @@ function vReview(){
 function vMore(){
   const t = dayKey(), ym = ui.moreMonth || t.slice(0, 7), ws = weekStart(t);
   let h = copyBox() + '<h1 class="h">更多</h1><div class="stack">';
-  h += '<section class="card"><div class="stage">日历<span class="right">点一天，看那天的全部记录</span></div>' + calendarHTML(ym, 'more') + '</section>';
+  h += '<section class="card more-calendar"><div class="stage">日历<span class="right">点一天，看那天的全部记录</span></div>' + calendarHTML(ym, 'more') + '</section>';
   if (ui.moreDay){
     const k = ui.moreDay;
-    h += '<section class="card"><div class="stage">' + md(k) + ' ' + wdOf(k) + '<span class="right"><button type="button" class="linkbtn" data-act="calPick" data-key="' + k + '" data-mode="more">收起</button></span></div>'
+    h += '<section class="card more-day"><div class="stage">' + md(k) + ' ' + wdOf(k) + '<span class="right"><button type="button" class="linkbtn" data-act="calPick" data-key="' + k + '" data-mode="more">收起</button></span></div>'
       + '<div class="row"><button type="button" class="btn ghost sm" data-act="goDay" data-key="' + k + '" data-v="pred">这天的预测</button><button type="button" class="btn ghost sm" data-act="goDay" data-key="' + k + '" data-v="capture">随手记</button><button type="button" class="btn ghost sm" data-act="goDay" data-key="' + k + '" data-v="review">复盘</button></div>'
       + (dayStatus(k, t) === 'none' || dayStatus(k, t) === 'future' ? '<p class="fine">这一天还没有记录。</p>' : dayDetail(k)) + '</section>';
   }
@@ -1317,10 +1322,19 @@ function calendarHTML(ym, modeName){
   for (let dd = 1; dd <= n; dd++){
     const k = y + '-' + pad(m) + '-' + pad(dd), st = dayStatus(k, t);
     const mk = (archivesOn(k).length ? '<i class="mk a"></i>' : '') + (eventsOn(k).length ? '<i class="mk e"></i>' : '');
-    s += '<button type="button" class="cday ' + st + (k === t ? ' today' : '') + (k === cur ? ' sel' : '') + '" data-act="calPick" data-key="' + k + '" data-mode="' + modeName + '"' + (k > maxK ? ' disabled' : '') + ' aria-label="' + md(k) + '"><span class="dn">' + dd + '</span>' + (mk ? '<span class="mks">' + mk + '</span>' : '') + '</button>';
+    s += '<button type="button" class="cday ' + st + (k === t ? ' today' : '') + (k === cur ? ' sel' : '') + '" data-act="calPick" data-key="' + k + '" data-mode="' + modeName + '"' + (k > maxK ? ' disabled' : '') + (modeName === 'more' ? ' aria-pressed="' + (k === cur) + '"' : '') + ' aria-label="' + md(k) + '"><span class="dn">' + dd + '</span>' + (mk ? '<span class="mks">' + mk + '</span>' : '') + '</button>';
   }
   s += '</div><div class="legend"><span><i class="std"></i>标准版</span><span><i class="min"></i>轻量版</span><span><i class="part"></i>有记录</span><span><i class="skip"></i>放过</span><span><i class="dot a"></i>对话存档</span><span><i class="dot e"></i>单件复盘</span></div>';
   return s;
+}
+function animateMore(selector, direction){
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  document.querySelectorAll(selector).forEach(el => {
+    if (el.animate) el.animate([
+      { opacity:0, transform:'translateX(' + (direction < 0 ? -24 : 24) + 'px)' },
+      { opacity:1, transform:'translateX(0)' }
+    ], { duration:200, easing:'ease-out' });
+  });
 }
 function predSummary(preds){
   if (!preds || !preds.length) return '';
@@ -1626,7 +1640,9 @@ function fCapture(){
     const d = S.days[k0];
     const list = d ? (d.caps || []).slice().sort((a, b) => b.at.localeCompare(a.at)) : [];
     h += '<h2 class="h2">' + (k0 === t ? '今天' : md(k0)) + ' · ' + list.length + ' 条</h2>';
-    h += list.length ? '<div class="stack">' + list.map(c => capCardHTML(c, k0)).join('') + '</div>' : '<p class="fine">' + (k0 === t ? '今天还没有记。存下的每一条会在这里排成一张卡片：时间、情绪和强度、原话、身体、在乎的东西。' : '这一天没有随手记。') + '</p>';
+    h += list.length ? '<div class="stack">' + list.slice(0, 3).map(c => capCardHTML(c, k0)).join('')
+      + (list.length > 3 ? '<details class="journal-disclosure capture-history"><summary><span class="when-closed">展开全部（共 ' + list.length + ' 条）</span><span class="when-open">收起（仅显示最近 3 条）</span></summary><div class="stack">' + list.slice(3).map(c => capCardHTML(c, k0)).join('') + '</div></details>' : '')
+      + '</div>' : '<p class="fine">' + (k0 === t ? '今天还没有记。存下的每一条会在这里排成一张卡片：时间、情绪和强度、原话、身体、在乎的东西。' : '这一天没有随手记。') + '</p>';
     const pend = [];
     if (k0 === t) for (let i = 1; i <= 14; i++){ const k = addDays(t, -i), dd = S.days[k]; if (dd) (dd.caps || []).forEach(c => { if (!c.done) pend.push([k, c]); }); }
     if (pend.length) h += '<h2 class="h2">还没理清的</h2><div class="stack">' + pend.map(p => capCardHTML(p[1], p[0], { date:true })).join('') + '</div>';
@@ -2334,8 +2350,25 @@ const A = {
   selDay(el){ const n = addDays(sel, +el.dataset.v); if (n > addDays(dayKey(), 1)) return; sel = n; ui.cal = false; render(); },
   selToday(){ sel = dayKey(); ui.cal = false; render(); },
   calToggle(){ ui.cal = !ui.cal; ui.calMonth = sel.slice(0, 7); render(); },
-  calMonth(el){ const n = +el.dataset.v; if (el.dataset.mode === 'pick') ui.calMonth = shiftYM(ui.calMonth || sel.slice(0, 7), n); else ui.moreMonth = shiftYM(ui.moreMonth || dayKey().slice(0, 7), n); render(); },
-  calPick(el){ const k = el.dataset.key; if (el.dataset.mode === 'pick'){ sel = k; ui.cal = false; } else ui.moreDay = ui.moreDay === k ? null : k; render(); },
+  calMonth(el){
+    const n = +el.dataset.v;
+    if (el.dataset.mode === 'pick'){ ui.calMonth = shiftYM(ui.calMonth || sel.slice(0, 7), n); render(); return; }
+    ui.moreMonth = shiftYM(ui.moreMonth || dayKey().slice(0, 7), n);
+    render();
+    const focus = $('.more-calendar [data-act="calMonth"][data-v="' + n + '"]:not([disabled])') || $('.more-calendar [data-act="calMonth"]:not([disabled])');
+    if (focus) focus.focus({ preventScroll:true });
+    animateMore('.more-calendar .cal, .more-calendar .calhead > span', n);
+  },
+  calPick(el){
+    const k = el.dataset.key;
+    if (el.dataset.mode === 'pick'){ sel = k; ui.cal = false; render(); return; }
+    const previous = ui.moreDay || dayKey();
+    ui.moreDay = ui.moreDay === k ? null : k;
+    render();
+    const focus = $('.more-calendar [data-key="' + k + '"]');
+    if (focus) focus.focus({ preventScroll:true });
+    if (ui.moreDay) animateMore('.more-day', k < previous ? -1 : 1);
+  },
   goDay(el){ const k = el.dataset.key; sel = k > addDays(dayKey(), 1) ? dayKey() : k; ui.cal = false; const r = '#' + el.dataset.v; if (location.hash === r) onHash(); else location.hash = r; },
   syncNowBtn(){ syncNow(); render(); },
   syncEdit(){ ui.syncEdit = true; ui.syncErr = null; render(); },
