@@ -14,6 +14,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="theme-color" content="#f4f1e9" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#17221e" media="(prefers-color-scheme: dark)">
+<script>try{const p=JSON.parse(localStorage.getItem('zwgcb-ui')||'{}');if(p&&(p.theme==='light'||p.theme==='dark'))document.documentElement.dataset.theme=p.theme;}catch(e){}</script>
 <style>
 /* Field journal: one semantic palette. Legacy geometry stays unchanged in batch 0.
    The new type scale and breakpoints are applied in subsequent layout batches. */
@@ -694,13 +695,119 @@ body.keyboard-open .capture-save{bottom:var(--s-2)}
   #week-scroller{scroll-behavior:auto!important}
 }
 
+/* Review calendar, non-modal day summary and local settings */
+.top-tools{display:flex;align-items:center;gap:var(--s-2);flex-shrink:0}
+.top-tools .sync{min-height:44px;text-decoration:none;display:flex;align-items:center}
+.icon-button{width:44px;min-width:44px;height:44px;padding:0;display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--line);border-radius:var(--r-md);background:transparent;color:var(--ink);text-decoration:none}
+.icon-button svg{width:20px;height:20px}
+#more-shell{max-width:680px;margin:0 auto var(--s-5)}
+.review-heading{display:flex;align-items:center;justify-content:space-between;gap:var(--s-3);margin:var(--s-4) 0}
+.review-heading h1{font:700 var(--fs-title)/1.4 var(--f-display);margin:0}
+.review-month-nav{display:flex;align-items:center;gap:var(--s-1);font-size:var(--fs-small);font-weight:600}
+.review-month-nav button{min-width:44px;min-height:44px}
+#calendar-frame{padding:var(--s-2);gap:var(--s-2);overflow:hidden}
+#day-picker{padding:var(--s-2)}
+#month-scroller{display:flex;align-items:flex-start;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;scrollbar-width:none;overscroll-behavior-x:contain;overflow-anchor:none}
+#month-scroller::-webkit-scrollbar{display:none}
+.month-page{flex:0 0 100%;min-width:0;padding:var(--s-1);scroll-snap-align:center;scroll-snap-stop:always}
+.calendar-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:var(--s-1);padding:var(--s-1)}
+.month-page .calendar-grid{padding:0}
+.calendar-grid .wd{text-align:center;color:var(--ink-3);font-size:var(--fs-cap);height:24px;line-height:24px}
+.calendar-grid .cday{border:0;border-radius:50%;background:transparent;box-shadow:none;outline:none;min-width:44px;min-height:44px;aspect-ratio:1;font-size:.875rem;color:var(--ink);position:relative}
+.calendar-grid .cday.std{background:var(--accent);color:var(--on-accent)}
+.calendar-grid .cday.min{background:var(--accent-soft);color:var(--accent)}
+.calendar-grid .cday.part::after{content:'';position:absolute;bottom:6px;left:calc(50% - 2px);width:4px;height:4px;border-radius:50%;background:var(--accent)}
+.calendar-grid .cday.skip{background:repeating-linear-gradient(135deg,var(--line) 0 1px,transparent 1px 5px)}
+.calendar-grid .cday.none,.calendar-grid .cday.future{color:var(--ink-3)}
+.calendar-grid .cday.future{opacity:.4}
+.calendar-grid .cday.today .dn{font-weight:700;color:var(--pen);border-bottom:2px solid var(--pen);line-height:1.4}
+.calendar-grid .cday.today.std .dn{background:var(--card);padding:0 4px;border-radius:var(--r-sm)}
+.calendar-grid .cday.sel{outline:2px solid var(--ink);outline-offset:2px}
+.calendar-grid .cday:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.calendar-grid .mks{bottom:auto;left:auto;right:2px;top:2px;gap:2px}
+.calendar-grid .mk.e{background:var(--accent)}
+.calendar-legend{display:flex;flex-wrap:wrap;gap:var(--s-2) var(--s-3);padding:var(--s-2);font-size:var(--fs-cap);color:var(--ink-2)}
+.calendar-legend span{display:flex;align-items:center;gap:var(--s-1)}
+.calendar-legend i{display:inline-block;width:12px;height:12px;border-radius:50%;background:var(--line)}
+.calendar-legend .std{background:var(--accent)}
+.calendar-legend .min{background:var(--accent-soft);border:1px solid var(--line-strong)}
+.calendar-legend .part{width:4px;height:4px;background:var(--accent)}
+.calendar-legend .skip{background:repeating-linear-gradient(135deg,var(--line-strong) 0 1px,transparent 1px 4px)}
+.calendar-legend .a,.calendar-legend .e{width:5px;height:5px;background:var(--pen)}
+.calendar-legend .e{background:var(--accent)}
+#calendar-legend-wrap .fold-toggle{padding-inline:var(--s-2);min-height:44px}
+.month-summary{padding:var(--s-4) 0;border-block:1px solid var(--line);margin-bottom:var(--s-5)}
+.month-totals{display:flex;flex-wrap:wrap;gap:var(--s-2);align-items:center;font-size:var(--fs-small)}
+.month-totals button{min-height:44px;padding:0 var(--s-1);border:0;background:none;color:var(--ink);text-decoration:underline;text-underline-offset:4px}
+.month-summary p{margin-top:var(--s-2)}
+#desktop-summary{display:none}
+#day-summary{position:fixed;inset:auto 0 0;margin:0 auto;width:100%;max-width:680px;height:55vh;height:55dvh;min-height:240px;max-height:none;padding:0;border:1px solid var(--line);border-bottom:0;border-radius:var(--r-sheet) var(--r-sheet) 0 0;background:var(--card);color:var(--ink);box-shadow:var(--sh-sheet);z-index:31;overflow:hidden}
+#day-summary[open]{display:flex}
+#summary-content{display:flex;flex-direction:column;min-width:0;min-height:0;width:100%;height:100%}
+.summary-head{display:flex;align-items:flex-start;gap:var(--s-2);padding:var(--s-4);border-bottom:1px solid var(--line);flex-shrink:0}
+.summary-head>div{flex:1;min-width:0}
+.summary-head h2{margin:0;font:700 var(--fs-date)/1.4 var(--f-display)}
+.summary-head h2 small{font:500 var(--fs-small)/1.4 var(--f-body);margin-left:var(--s-2)}
+.day-status{display:inline-block;padding:2px var(--s-2);border-radius:var(--r-pill);background:var(--accent-soft);color:var(--ink-2);font-size:var(--fs-cap);margin-top:var(--s-1)}
+.summary-body{flex:1;min-height:0;padding:var(--s-4);overflow:auto;overscroll-behavior-y:contain;display:flex;flex-direction:column;gap:var(--s-3)}
+.summary-counts{margin:0;color:var(--ink-2);font-size:var(--fs-small);line-height:1.8}
+.summary-excerpt{font:500 var(--fs-quote)/1.7 var(--f-display);display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;margin:0}
+.summary-section-title{font-size:var(--fs-small);font-weight:600;margin:var(--s-1) 0 0}
+.summary-body .cap-row{background:var(--field)}
+.summary-body .cap-row-actions{flex-wrap:wrap}
+.summary-body .cap-row .cap{padding:var(--s-3)}
+.summary-link{min-height:44px;text-align:left;padding:var(--s-2) 0;color:var(--ink);background:none;border:0;font-size:var(--fs-small);display:block}
+.summary-actions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr)) 44px;gap:var(--s-2);padding:var(--s-3) var(--s-4) calc(var(--s-3) + env(safe-area-inset-bottom,0px));border-top:1px solid var(--line);background:var(--card);flex-shrink:0}
+.summary-actions .btn{padding:var(--s-2) 4px;min-height:44px;font-size:var(--fs-small)}
+.summary-placeholder{padding:var(--s-6);color:var(--ink-3);font-size:var(--fs-small);text-align:center;margin:0}
+body.summary-open #app{padding-bottom:calc(55vh + 96px);padding-bottom:calc(55dvh + 96px)}
+#day-actions{padding:var(--s-5);width:calc(100% - 32px);max-width:360px;border:1px solid var(--line);border-radius:var(--r-lg);background:var(--card);color:var(--ink);z-index:41}
+#day-actions::backdrop{background:rgba(0,0,0,.3)}
+#day-actions h2{margin:0;font-size:var(--fs-h2)}
+#day-actions .row{justify-content:space-between;margin-bottom:var(--s-4)}
+#day-actions>.btn{width:100%;margin-top:var(--s-2);min-height:44px}
+#view[data-view="settings"]{max-width:680px}
+.settings-stack{display:flex;flex-direction:column;gap:var(--s-4)}
+.settings-stack .card{padding:var(--s-4);gap:var(--s-3)}
+.settings-stack .stage{font-size:var(--fs-h2);margin:0}
+.settings-stack .fine,.settings-stack .muted{font-size:var(--fs-small)}
+.settings-stack .btn{min-height:44px}
+.settings-stack .steps{font-size:var(--fs-small);padding-left:var(--s-5)}
+.settings-stack .steps li{margin:var(--s-2) 0}
+.settings-stack .theme-options{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--s-2)}
+.theme-options button{min-height:44px;padding:var(--s-2);border:1px solid var(--line-strong);border-radius:var(--r-md);background:var(--card);font-size:var(--fs-small)}
+.theme-options button[aria-pressed="true"]{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}
+.summary-transition #summary-body{view-transition-name:reviewday}
+.summary-transition #summary-date{view-transition-name:reviewdate}
+::view-transition-group(reviewday),::view-transition-group(reviewdate){animation-duration:0s}
+.summary-transition::view-transition-old(root),.summary-transition::view-transition-new(root){animation:none}
+.summary-transition::view-transition{pointer-events:none}
+html[data-dir="prev"]::view-transition-old(reviewday),html[data-dir="prev"]::view-transition-old(reviewdate){animation:day-out-prev 120ms var(--ease-in) both}
+html[data-dir="prev"]::view-transition-new(reviewday),html[data-dir="prev"]::view-transition-new(reviewdate){animation:day-in-prev 200ms var(--ease-out) both}
+html[data-dir="next"]::view-transition-old(reviewday),html[data-dir="next"]::view-transition-old(reviewdate){animation:day-out-next 120ms var(--ease-in) both}
+html[data-dir="next"]::view-transition-new(reviewday),html[data-dir="next"]::view-transition-new(reviewdate){animation:day-in-next 200ms var(--ease-out) both}
+::view-transition-old(reviewdate),::view-transition-new(reviewdate){--day-distance:12px}
+@media(min-width:1024px){
+  #more-shell{max-width:none}
+  .review-heading{max-width:420px}
+  .review-layout{display:grid;grid-template-columns:420px minmax(0,1fr);gap:40px;align-items:start}
+  #desktop-summary{display:block;min-width:0;min-height:280px;border:1px solid var(--line);border-radius:var(--r-lg);background:var(--card);position:sticky;top:var(--s-4);overflow:hidden}
+  #desktop-summary #summary-content{max-height:650px;height:auto}
+  #desktop-summary .summary-body{max-height:490px;flex:auto}
+  #app[data-route="more"] #view[data-view="more"]{max-width:none}
+  #calendar-frame{padding:var(--s-4)}
+  .summary-actions{padding-bottom:var(--s-3)}
+}
+@media(max-width:599px){.top-tools{gap:4px}.top-tools .sync{max-width:112px;white-space:normal;line-height:1.35;font-size:.75rem}.top-tools .sync::before{flex-shrink:0}.top{gap:4px}.brand{font-size:1rem}.brand-mark{margin-right:4px}}
+@media(prefers-reduced-motion:reduce){#month-scroller{scroll-behavior:auto!important}}
+
 </style>
 </head>
 <body>
 <div id="app">
   <header class="top">
     <a class="brand" href="#review" aria-label="自我观察本 · 回到复盘"><span class="brand-mark" aria-hidden="true">观</span><span>自我观察本<small>A LITTLE CLOSER TO YOURSELF</small></span></a>
-    <div class="sync" id="sync">连接中</div>
+    <div class="top-tools"><a class="sync" id="sync" href="#settings" aria-label="同步状态，打开设置">连接中</a><a class="icon-button" href="#settings" aria-label="打开设置"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 3h6l1 3 3 1 2 5-2 5-3 1-1 3H9l-1-3-3-1-2-5 2-5 3-1z"/><circle cx="12" cy="12" r="3"/></svg></a></div>
   </header>
   <div id="workspace">
     <section id="day-shell" aria-label="选择记录日期" hidden>
@@ -717,6 +824,7 @@ body.keyboard-open .capture-save{bottom:var(--s-2)}
       <div id="week-scroller" aria-label="左右滑动切换星期"></div>
       <div id="week-notes"></div>
     </aside>
+    <section id="more-shell" aria-label="回顾月历" hidden><div class="review-heading"><h1>回顾</h1><div class="review-month-nav"><button type="button" class="dnav" data-act="calMonth" data-v="-1" data-mode="more" aria-label="上个月">‹</button><span id="review-month"></span><button type="button" class="dnav" id="review-month-next" data-act="calMonth" data-v="1" data-mode="more" aria-label="下个月">›</button></div></div><div class="review-layout"><section class="card" id="calendar-frame"><div id="month-scroller" aria-label="左右滑动切换月份"></div><div id="calendar-legend-wrap"></div></section><aside id="desktop-summary" aria-label="当天摘要"><p class="summary-placeholder" id="summary-placeholder">点选月历中的一天，<br>看看那时留下了什么。</p></aside></div></section>
     <main tabindex="-1" id="view"></main>
   </div>
 </div>
@@ -726,11 +834,13 @@ body.keyboard-open .capture-save{bottom:var(--s-2)}
     <a href="#capture" data-r="capture"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></svg>随手记</a>
     <a href="#review" data-r="review"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 14.5A7.5 7.5 0 0 1 9.5 5a7.5 7.5 0 1 0 9.5 9.5z"/></svg>复盘</a>
     <a href="#hyps" data-r="hyps"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="6" width="18" height="13" rx="1.5"/><path d="M3 10h18M7 14h6"/></svg>假设</a>
-    <a href="#more" data-r="more"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 9h16M9 3v4M15 3v4"/></svg>更多</a>
+    <a href="#more" data-r="more"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 9h16M9 3v4M15 3v4"/></svg>回顾</a>
   </div>
 </nav>
 <div id="toast" role="status" aria-live="polite" hidden></div>
 <div id="undo-toast" role="status" aria-live="polite" hidden><span id="undo-text">已删除</span><button type="button" id="undo-cap" data-act="undoCap">撤销</button></div>
+<dialog id="day-summary" aria-labelledby="summary-date"><div id="summary-content"></div></dialog>
+<dialog id="day-actions" aria-labelledby="day-actions-title"><div class="row"><h2 id="day-actions-title">当天记录</h2><button type="button" class="icon-button" data-act="dayActionsClose" aria-label="关闭操作面板">×</button></div><button type="button" class="btn ghost" data-act="summaryWord">保存为 Word</button><button type="button" class="btn ghost" data-act="summaryCopy">复制给 Claude</button></dialog>
 <div id="view-status" class="sr-status" role="status" aria-live="polite" aria-atomic="true"></div>
 
 <script>
@@ -748,7 +858,7 @@ const VAGUE = ['充实','好好','努力','认真','尽量','高效','顺利','�
 const MOMENTS = ['情绪最强的一刻','最不像自己的一刻','最有劲的一刻','别的时刻'];
 const FORMAT = 'review-archive/v1';
 const OFFLINE_APP = true;
-const APP_VERSION = 'v6.6';
+const APP_VERSION = 'v6.7';
 const LS_KEY = 'zwgcb-data-v1', LS_DRAFT = 'zwgcb-drafts-v1';
 
 /* ---------- utils ---------- */
@@ -1034,8 +1144,9 @@ function syncLabel(){
   if (mode === 'cloud') { t = !ready ? '载入中' : slow ? '连接慢，可能不是最新' : '已同步 · 仅自己可见'; w = slow; }
   else if (mode === 'local'){
     if (OFFLINE_APP && syncCfg && syncCfg.token){ const at = syncState.at || syncCfg.lastAt; t = syncState.msg === '同步中…' ? '同步中…' : syncState.ok === false ? '同步失败' : at ? '已同步 ' + hm(new Date(at).toISOString()) : '等待同步'; w = syncState.ok === false; }
-    else { t = OFFLINE_APP ? '离线可用 · 本机保存' : '只存在这台设备'; w = !OFFLINE_APP; }
+    else { t = OFFLINE_APP ? '本机保存' : '只存在这台设备'; w = !OFFLINE_APP; }
   }
+  if(mode === 'local' && !navigator.onLine){t='离线 · 本机保存';w=false;}
   el.textContent = t; el.classList.toggle('warn', w);
 }
 function saveFile(filename, data){
@@ -1237,12 +1348,15 @@ function evTarget(i){
   if (!cur || JSON.stringify(cur) !== o.fp){ if (o){ o.ei = null; o.del = null; } render(); toast('这条证据刚被同步更新过，重新点「改」或「删」再试一次。'); return null; }
   return { o, h, cur };
 }
+function backupInfo(){
+  let date=null;try{date=localStorage.getItem('zwgcb-lastbackup');}catch(e){}
+  if(!validDate(date))date=null;const first=Object.keys(S.days).filter(validDate).sort()[0];
+  const age=date?Math.round((parse(dayKey())-parse(date))/864e5):first?Math.round((parse(dayKey())-parse(first))/864e5):0;
+  return {date,stale:age>14};
+}
 function backupLine(){
-  if (!OFFLINE_APP || Object.keys(S.days).length < 3) return '';
-  let lb = null; try { lb = localStorage.getItem('zwgcb-lastbackup'); } catch (e) {}
-  if (!lb) return '<p class="warn" style="margin:0">记录只存在这部手机里，还没做过全部数据导出。去「记录」页导出一份。</p>';
-  const n = Math.round((parse(dayKey()) - parse(lb)) / 864e5);
-  return n >= 7 ? '<p class="warn" style="margin:0">上次全部数据导出是 ' + n + ' 天前，去「记录」页再导一份。</p>' : '';
+  if(!OFFLINE_APP||(syncCfg&&syncCfg.token))return '';const b=backupInfo();
+  return b.stale?'<p class="warn" style="margin-top:24px">'+(b.date?'已经超过 14 天没导出备份。':'还没有导出过备份。')+'<a href="#settings">去设置里导出一份 ›</a></p>':'';
 }
 
 /* ---------- review-archive/v1: extract, validate, plan, revert ---------- */
@@ -1573,20 +1687,6 @@ function moreIcon(section){
   };
   return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + paths[section] + '</svg>';
 }
-function moreDayOverview(k){
-  const d = S.days[k] || newDay(k), preds = d.preds || [], caps = d.caps || [], events = eventsOn(k), archives = archivesOn(k);
-  const hit = preds.filter(p => p.result === 'hit').length, miss = preds.filter(p => p.result === 'miss').length;
-  const rows = [
-    ['pred', preds.length + ' 条', preds.length ? '对 ' + hit + ' · 落空 ' + miss + ' · 点开看对照' : '这一天的预期与实际'],
-    ['capture', caps.length + ' 条', '发生的事、情绪和当时的想法'],
-    ['review', d.evening ? '已完成' : d.skip ? '已放过' : '未填写', d.evening ? (d.evening.mode === 'std' ? '标准复盘 · 看看这一天的发现' : '轻量复盘 · 留给自己的两句话') : '留一点时间，回看这一天']
-  ];
-  if (events.length) rows.push(['events', events.length + ' 件', '单独梳理的一件事']);
-  if (archives.length) rows.push(['archives', archives.length + ' 份', '保存下来的对话与发现']);
-  return '<section class="card more-day"><div class="more-day-head"><div><h2>' + md(k) + '<small>' + k.slice(0, 4) + ' · ' + wdOf(k) + '</small></h2></div><button type="button" class="linkbtn" data-act="calPick" data-key="' + k + '" data-mode="more">收起</button></div>'
-    + '<div class="day-entries">' + rows.map(([section, count, note]) => '<button type="button" class="day-entry" data-act="moreOpen" data-key="' + k + '" data-section="' + section + '"><span class="day-entry-icon">' + moreIcon(section) + '</span><span><span class="day-entry-title">' + MORE_SECTIONS[section] + '</span><span class="day-entry-note">' + note + '</span></span><span class="day-entry-count">' + count + '</span><span class="day-entry-arrow" aria-hidden="true">›</span></button>').join('') + '</div>'
-    + '<div class="more-day-tools">' + (dlNs ? '<button type="button" class="linkbtn" data-act="wordDay" data-key="' + k + '">导出当天 Word</button>' : '') + '<button type="button" class="linkbtn" data-act="copy" data-key="' + k + '">复制当天记录</button></div></section>';
-}
 function vMoreSection(k, section){
   const d = S.days[k] || newDay(k), count = section === 'pred' ? (d.preds || []).length : section === 'capture' ? (d.caps || []).length : section === 'events' ? eventsOn(k).length : section === 'archives' ? archivesOn(k).length : null;
   const notes = { pred:'把当时的预期，和后来发生的事放在一起看。', capture:'一次看一个片段，慢慢回到当时。', review:'这一天写下的回看与发现。', events:'从一件具体的事，多认识自己一点。', archives:'已经收进本子里的对话。' };
@@ -1596,31 +1696,14 @@ function vMoreSection(k, section){
     + (actions[section] ? '<div class="row more-reader-tools"><button type="button" class="btn ghost sm" data-act="goDay" data-key="' + k + '" data-v="' + section + '">' + actions[section] + '</button></div>' : '') + '</section>';
 }
 function vMore(){
-  const panel = moreLocation();
-  if (panel.section) return vMoreSection(panel.day, panel.section);
-  const t = dayKey(), ym = ui.moreMonth || t.slice(0, 7), ws = weekStart(t);
-  let h = copyBox() + '<h1 class="h">更多</h1><div class="stack">';
-  h += '<section class="card more-calendar"><div class="stage">日历<span class="right">点一天，看那天的全部记录</span></div>' + calendarHTML(ym, 'more') + '</section>';
-  if (ui.moreDay) h += moreDayOverview(ui.moreDay);
-  h += '<section class="card"><div class="stage">周复盘</div><p class="muted">把一周落空的预测排在一起看，找同一个方向的错，再更新假设清单。</p><div class="row"><button type="button" class="btn sm" data-act="goWeek" data-key="' + ws + '">这周</button><button type="button" class="btn ghost sm" data-act="goWeek" data-key="' + addDays(ws, -7) + '">上周</button></div></section>';
-  h += statsCard(t);
-  h += syncCard() + dataCard();
-  return h + '</div>';
+  const panel=moreLocation();if(panel.section)return vMoreSection(panel.day,panel.section);
+  const ym=ui.moreMonth||dayKey().slice(0,7),ws=weekStart(dayKey());
+  return copyBox()+reviewMonthSummary(ym)+'<section class="card"><div class="stage">周复盘</div><p class="muted">把一周落空的预测排在一起看，找同一个方向的错，再更新假设清单。</p><div class="row"><button type="button" class="btn" data-act="goWeek" data-key="'+ws+'">这周</button><button type="button" class="btn ghost" data-act="goWeek" data-key="'+addDays(ws,-7)+'">上周</button></div></section>'+backupLine();
 }
 const shiftYM = (ym, n) => { const d = new Date(+ym.slice(0, 4), +ym.slice(5, 7) - 1 + n, 1); return d.getFullYear() + '-' + pad(d.getMonth() + 1); };
 function calendarHTML(ym, modeName){
-  const t = dayKey(), maxK = addDays(t, 1), y = +ym.slice(0, 4), m = +ym.slice(5, 7), lead = (new Date(y, m - 1, 1).getDay() + 6) % 7, n = new Date(y, m, 0).getDate();
-  const cur = modeName === 'pick' ? sel : ui.moreDay;
-  let s = '<div class="calhead"><button type="button" class="dnav sm" data-act="calMonth" data-v="-1" data-mode="' + modeName + '" aria-label="上个月">‹</button><span>' + y + '年' + m + '月</span><button type="button" class="dnav sm" data-act="calMonth" data-v="1" data-mode="' + modeName + '" aria-label="下个月"' + (ym >= maxK.slice(0, 7) ? ' disabled' : '') + '>›</button></div>';
-  s += '<div class="cal">' + '一二三四五六日'.split('').map(x => '<div class="wd">' + x + '</div>').join('');
-  for (let i = 0; i < lead; i++) s += '<div></div>';
-  for (let dd = 1; dd <= n; dd++){
-    const k = y + '-' + pad(m) + '-' + pad(dd), st = dayStatus(k, t);
-    const mk = (archivesOn(k).length ? '<i class="mk a"></i>' : '') + (eventsOn(k).length ? '<i class="mk e"></i>' : '');
-    s += '<button type="button" class="cday ' + st + (k === t ? ' today' : '') + (k === cur ? ' sel' : '') + '" data-act="calPick" data-key="' + k + '" data-mode="' + modeName + '"' + (k > maxK ? ' disabled' : '') + (modeName === 'more' ? ' aria-pressed="' + (k === cur) + '"' : '') + ' aria-label="' + md(k) + '"><span class="dn">' + dd + '</span>' + (mk ? '<span class="mks">' + mk + '</span>' : '') + '</button>';
-  }
-  s += '</div><div class="legend"><span><i class="std"></i>标准版</span><span><i class="min"></i>轻量版</span><span><i class="part"></i>有记录</span><span><i class="skip"></i>放过</span><span><i class="dot a"></i>对话存档</span><span><i class="dot e"></i>单件复盘</span></div>';
-  return s;
+  const max=addDays(dayKey(),1).slice(0,7);
+  return '<div class="calhead"><button type="button" class="dnav" data-act="calMonth" data-v="-1" data-mode="'+modeName+'" aria-label="上个月">‹</button><span>'+ym.slice(0,4)+'年'+(+ym.slice(5,7))+'月</span><button type="button" class="dnav" data-act="calMonth" data-v="1" data-mode="'+modeName+'" aria-label="下个月"'+(ym>=max?' disabled':'')+'>›</button></div>'+calendarGrid(ym,modeName)+calendarLegend();
 }
 function animateMore(selector, direction){
   if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
@@ -1664,21 +1747,6 @@ function yBanner(y){
   }
   s += '<p class="fine">更早的空白不用补：隔太久写出来的，多半是编的。</p></section>';
   return s;
-}
-function statsCard(t){
-  const ws = weekStart(t), start = addDays(ws, -28), w = weekData(ws);
-  let g = '<div class="grid5">' + '一二三四五六日'.split('').map(x => '<div class="wd">' + x + '</div>').join('');
-  for (let i = 0; i < 35; i++){ const k = addDays(start, i), st = dayStatus(k, t); g += '<div class="cell ' + st + (k === t ? ' today' : '') + '" title="' + md(k) + '"></div>'; }
-  g += '</div>';
-  const hs = Object.values(S.hyps), lr = lastRevision();
-  const solid = hs.filter(x => x.status === 'solid').length, test = hs.filter(x => x.status === 'test').length;
-  let lrLine;
-  if (lr){ const days = Math.round((parse(t) - parse(lr)) / 864e5); lrLine = '上一次重新认识自己：' + (days === 0 ? '今天' : days + ' 天前') + '，改写了一条假设。'; }
-  else lrLine = '每次发现都可以慢慢积累，不急着给自己下结论。';
-  return '<section class="card"><div class="stage">近五周<span class="right">本周 ' + mdShort(ws) + ' 起</span></div>' + g
-    + '<div class="legend"><span><i class="std"></i>标准版</span><span><i class="min"></i>轻量版</span><span><i class="part"></i>只有预测或随手记</span><span><i class="skip"></i>放过</span><span><i class="none"></i>空白</span></div>'
-    + '<div class="figs"><span>本周收尾<b>' + w.rec + '</b>/ 7 天</span><span class="redb">本周新信息<b>' + w.newInfo + '</b>条</span><span>清单<b>' + (test + solid) + '</b>条（较可信 ' + solid + '）</span></div>'
-    + '<p class="note">新信息 = 落空的预测 + 意外的反应 + 反例 + 改写。它们提示了值得再观察的地方，不必追求数量。' + lrLine + '</p>' + backupLine() + '</section>';
 }
 function predCard(k, d){
   const t = dayKey(), hr = new Date().getHours(), isNight = hr >= 18 || hr < 4;
@@ -1765,6 +1833,126 @@ function reviewArcCard(k){
 function copyBox(){
   if (!ui.copy) return '';
   return '<section class="card copybox" style="margin-bottom:12px"><div class="stage">复制没成功，手动全选复制</div><textarea id="copyArea" readonly>' + esc(ui.copy) + '</textarea><div class="row"><button type="button" class="btn ghost sm" data-act="closeCopy">关掉</button></div></section>';
+}
+
+/* ---------- review calendar and settings ---------- */
+const DAY_LABELS = {std:'标准版',min:'轻量版',part:'有记录',skip:'放过',none:'空白',future:'空白'};
+function saveUIPrefs(){ try { localStorage.setItem('zwgcb-ui',JSON.stringify(uiPrefs)); } catch (e) {} }
+function applyTheme(value){ if (value === 'light' || value === 'dark') document.documentElement.dataset.theme=value; else document.documentElement.removeAttribute('data-theme'); }
+function calendarGrid(ym,modeName){
+  const t=dayKey(), max=addDays(t,1), y=+ym.slice(0,4), m=+ym.slice(5,7), lead=(new Date(y,m-1,1).getDay()+6)%7, n=new Date(y,m,0).getDate(), cur=modeName==='pick'?sel:ui.moreDay;
+  let h='<div class="calendar-grid">'+'一二三四五六日'.split('').map(x=>'<div class="wd" aria-hidden="true">'+x+'</div>').join('');
+  for(let i=0;i<lead;i++)h+='<span></span>';
+  for(let d=1;d<=n;d++){
+    const k=ym+'-'+pad(d),st=dayStatus(k,t),a=archivesOn(k).length,e=eventsOn(k).length;
+    const label=md(k)+' '+wdOf(k)+'，'+(st==='future'?'未来':DAY_LABELS[st])+(k===t?'，今天':'')+(a?'，有对话存档':'')+(e?'，有单件复盘':'');
+    h+='<button type="button" class="cday '+st+(k===t?' today':'')+(k===cur?' sel':'')+'" data-act="calPick" data-key="'+k+'" data-mode="'+modeName+'" aria-label="'+label+'" aria-pressed="'+(k===cur)+'"'+(k===t?' aria-current="date"':'')+(k>max?' disabled':'')+'><span class="dn">'+d+'</span><span class="mks">'+(a?'<i class="mk a"></i>':'')+(e?'<i class="mk e"></i>':'')+'</span></button>';
+  }
+  for(let i=(lead+n)%7;i&&i<7;i++)h+='<span></span>';
+  return h+'</div>';
+}
+function calendarLegend(){return '<div class="calendar-legend"><span><i class="std"></i>标准版</span><span><i class="min"></i>轻量版</span><span><i class="part"></i>有记录</span><span><i class="skip"></i>放过</span><span><i class="a"></i>对话存档</span><span><i class="e"></i>单件复盘</span></div>';}
+function reviewMonthData(ym){
+  const t=dayKey(),inMonth=k=>String(k||'').slice(0,7)===ym&&String(k).slice(0,10)<=t;
+  let rec=0,info=0,any=false;
+  Object.entries(S.days).forEach(([k,d])=>{if(!inMonth(k))return;const ps=d.preds||[],cs=d.caps||[];if(d.evening||d.skip||ps.length||cs.length)any=true;if(d.evening)rec++;
+    info+=ps.filter(p=>p.result==='miss'||p.result==='half').length+(d.evening&&d.evening.surprise?1:0)+cs.filter(c=>(c.tags||[]).includes('不像自己')).length;});
+  Object.values(S.events).forEach(e=>{if(inMonth(e.date)){any=true;if(e.gap)info++;}});
+  Object.values(S.archives).forEach(a=>{if(inMonth(a.date))any=true;});
+  const hs=Object.values(S.hyps);
+  hs.forEach(h=>{info+=(h.ev||[]).filter(e=>inMonth(e.date)&&e.kind==='con').length+(h.history||[]).filter(v=>inMonth(v.to)).length;});
+  return {rec,info,any,count:hs.filter(h=>h.status==='test'||h.status==='solid').length,solid:hs.filter(h=>h.status==='solid').length};
+}
+function reviewMonthSummary(ym){
+  const m=reviewMonthData(ym),lr=lastRevision(),days=lr?Math.round((parse(dayKey())-parse(lr))/864e5):null;
+  return '<section class="month-summary" aria-label="本月小结">'+(!m.any?'<p class="fine">这个月还没有记录。</p>':'')+'<div class="month-totals"><span>收尾 '+m.rec+' 天</span><span>·</span><button type="button" data-act="monthInfo" aria-expanded="'+ui.open.has('month:info')+'" aria-controls="month-info">新信息 '+m.info+' 条</button><span>· 清单 '+m.count+' 条（较可信 '+m.solid+'）</span></div><p class="fine" id="month-info"'+(ui.open.has('month:info')?'':' hidden')+'>新信息 = 落空的预测 + 意外的反应 + 反例 + 改写。它们提示了值得再观察的地方，不必追求数量。</p><p class="fine">'+(lr?'上一次重新认识自己：'+(days===0?'今天':days+' 天前')+'，改写了一条假设。':'每次发现都可以慢慢积累，不急着给自己下结论。')+'</p></section>';
+}
+function summaryHTML(k){
+  const d=S.days[k]||newDay(k),ps=d.preds||[],caps=(d.caps||[]).filter(c=>captureVisible(k,c)).sort((a,b)=>Date.parse(b.at)-Date.parse(a.at)),arcs=archivesOn(k),evs=eventsOn(k),st=dayStatus(k,dayKey());
+  const raw=d.evening&&d.evening.raw||{},excerpt=raw.q1||(raw.C&&raw.C.fact)||(raw.A&&raw.A.self)||(d.evening&&d.evening.surprise)||'',statusLabel=st==='future'&&(ps.length||caps.length||arcs.length||evs.length)?'有记录':DAY_LABELS[st];
+  let body='<p class="summary-counts">预测 '+ps.length+'（落空 '+ps.filter(p=>p.result==='miss').length+'）· 随手记 '+caps.length+' · 复盘 '+(d.evening?'已写':d.skip?'放过':'未写')+'</p>';
+  if(!ps.length&&!caps.length&&!d.evening&&!d.skip&&!arcs.length&&!evs.length){body+='<p class="muted">这一天没有记录。</p>';if(k===addDays(dayKey(),-1))body+='<button type="button" class="btn ghost" data-act="open" data-type="min" data-key="'+k+'">补记昨天</button>';}
+  if(d.skip)body+='<p class="fine">这一天选择了放过自己。</p>';
+  if(d.evening)body+='<div><p class="summary-excerpt">'+esc(excerpt||'这一页已经收好。')+'</p><button type="button" class="summary-link" data-act="moreOpen" data-key="'+k+'" data-section="review">读完整复盘 ›</button></div>';
+  if(arcs.length)body+='<div><p class="summary-section-title">对话存档 · '+arcs.length+' 份</p>'+arcs.map(a=>'<button type="button" class="summary-link" data-act="moreOpen" data-key="'+k+'" data-section="archives">'+esc(a.data&&a.data.summary&&a.data.summary.headline||'对话复盘')+' ›</button>').join('')+'</div>';
+  if(caps.length)body+='<div><p class="summary-section-title">随手记 · 最近 '+Math.min(3,caps.length)+' 条</p>'+caps.slice(0,3).map(c=>compactCap(c,k)).join('')+(caps.length>3?'<button type="button" class="summary-link" data-act="moreOpen" data-key="'+k+'" data-section="capture">查看全部 '+caps.length+' 条 ›</button>':'')+'</div>';
+  if(evs.length)body+='<button type="button" class="summary-link" data-act="moreOpen" data-key="'+k+'" data-section="events">单件复盘 · '+evs.length+' 件 ›</button>';
+  return '<header class="summary-head"><div><h2 id="summary-date">'+md(k)+'<small>'+wdOf(k)+'</small></h2><span class="day-status">'+statusLabel+'</span></div><button type="button" class="icon-button" data-act="summaryClose" aria-label="关闭当天摘要">×</button></header><div class="summary-body" id="summary-body">'+body+'</div><footer class="summary-actions">'+[['pred','去预测'],['capture','去随手记'],['review','去复盘']].map(([r,label])=>'<button type="button" class="btn ghost" data-act="goDay" data-key="'+k+'" data-v="'+r+'">'+label+'</button>').join('')+'<button type="button" class="icon-button" id="summary-more" data-act="summaryMenu" aria-label="当天记录的更多操作" aria-haspopup="dialog">⋯</button></footer>';
+}
+let reviewTransition=null,reviewRun=0,monthBase=null,monthResetting=false,monthGesture=false,monthPointer=false,monthTimer=null;
+const reviewVisible=()=>route==='more'&&!form&&!moreLocation().section;
+const desktopReview=()=>window.matchMedia('(min-width:1024px)').matches;
+function cancelReviewMotion(){reviewRun++;if(reviewTransition){reviewTransition.skipTransition();reviewTransition=null;}document.documentElement.classList.remove('summary-transition');['#day-summary','#summary-body','#summary-date'].forEach(s=>{const el=$(s);if(el)el.getAnimations().forEach(a=>a.cancel());});}
+function paintMonthSelection(){document.querySelectorAll('#month-scroller .cday').forEach(b=>{const on=b.dataset.key===ui.moreDay;b.classList.toggle('sel',on);b.setAttribute('aria-pressed',String(on));});}
+function centerMonth(){
+  const sc=$('#month-scroller');if(!sc.clientWidth)return;monthResetting=true;sc.scrollTo({left:sc.clientWidth,behavior:'instant'});
+  [...sc.children].forEach((p,i)=>p.inert=i!==1);if(sc.children[1])sc.style.height=sc.children[1].scrollHeight+'px';
+  requestAnimationFrame(()=>requestAnimationFrame(()=>monthResetting=false));
+}
+function paintMonths(){
+  const ym=ui.moreMonth||dayKey().slice(0,7),sc=$('#month-scroller'),active=document.activeElement,key=active&&active.dataset.mode==='more'&&active.dataset.key;
+  if(!sc.children.length)sc.innerHTML='<div class="month-page"></div>'.repeat(3);
+  [...sc.children].forEach((p,i)=>{const html=calendarGrid(shiftYM(ym,i-1),'more');if(p.innerHTML!==html)p.innerHTML=html;});
+  $('#review-month').textContent=+ym.slice(0,4)+'年'+(+ym.slice(5,7))+'月';$('#review-month-next').disabled=ym>=addDays(dayKey(),1).slice(0,7);
+  if(monthBase!==ym){monthBase=ym;centerMonth();}else if(sc.children[1])sc.style.height=sc.children[1].scrollHeight+'px';
+  if(key){const b=sc.querySelector('[data-key="'+key+'"]');if(b&&!b.closest('[inert]'))b.focus({preventScroll:true});}
+}
+function renderSummary(){
+  const visible=reviewVisible()&&!!ui.moreDay,dialog=$('#day-summary'),content=$('#summary-content'),dock=$('#desktop-summary'),wide=desktopReview();
+  if(!visible){if(dialog.open)dialog.close();content.innerHTML='';content.dataset.day='';document.body.classList.remove('summary-open');$('#summary-placeholder').hidden=false;return;}
+  const parent=wide?dock:dialog;
+  if(content.parentElement!==parent){if(dialog.open)dialog.close();parent.appendChild(content);}
+  const same=content.dataset.day===ui.moreDay,prev=rememberView(content),scroll=same&&$('#summary-body')?$('#summary-body').scrollTop:0,html=summaryHTML(ui.moreDay);
+  if(content.innerHTML!==html){content.innerHTML=html;const focus=findControl(content,prev.focus);if(focus)focus.focus({preventScroll:true});}
+  content.dataset.day=ui.moreDay;if($('#summary-body'))$('#summary-body').scrollTop=scroll;
+  $('#summary-placeholder').hidden=true;document.body.classList.toggle('summary-open',!wide);
+  if(wide){if(dialog.open)dialog.close();}
+  else if(!dialog.open){const focus=document.activeElement;dialog.show();if(focus&&focus.isConnected)focus.focus({preventScroll:true});if(!reducedMotion())dialog.animate([{transform:'translateY(100%)'},{transform:'translateY(0)'}],{duration:280,easing:'cubic-bezier(.2,.8,.2,1)'});}
+}
+function revealSelectedWeek(){
+  if(desktopReview()||!$('#day-summary').open)return;
+  const button=$('#month-scroller .cday[data-key="'+ui.moreDay+'"]');if(!button||button.closest('[inert]'))return;
+  const rect=button.getBoundingClientRect(),limit=window.innerHeight-$('#day-summary').offsetHeight-12;
+  if(rect.bottom>limit)window.scrollBy({top:rect.bottom-limit,behavior:'instant'});else if(rect.top<8)window.scrollBy({top:rect.top-8,behavior:'instant'});
+}
+function updateReviewShell(){
+  const shell=$('#more-shell'),wasHidden=shell.hidden,visible=reviewVisible();shell.hidden=!visible;
+  if(!visible){renderSummary();return;}
+  if(!ui.disclosureSeen.has('calendar:legend')){setDisclosure('calendar:legend',!uiPrefs.legendSeen);uiPrefs.legendSeen=true;saveUIPrefs();}
+  const legend=foldHTML('calendar:legend','calendar-legend','图例',calendarLegend());
+  if($('#calendar-legend-wrap').innerHTML!==legend)$('#calendar-legend-wrap').innerHTML=legend;
+  paintMonths();if(wasHidden)centerMonth();renderSummary();
+}
+function chooseSummary(k){
+  if(!validDate(k)||k>addDays(dayKey(),1))return;if(k===ui.moreDay){closeSummary();return;}
+  const prev=ui.moreDay,dir=prev&&k<prev?-1:1;cancelReviewMotion();const run=reviewRun;
+  ui.moreDay=k;history.replaceState(null,'',moreHash(k));paintMonthSelection();
+  const update=()=>{if(run!==reviewRun)return;renderSummary();revealSelectedWeek();const b=$('#month-scroller .cday[data-key="'+k+'"]');if(b)b.focus({preventScroll:true});$('#view-status').textContent='已切换到 '+md(k)+' '+wdOf(k);};
+  document.documentElement.dataset.dir=dir<0?'prev':'next';
+  if(prev&&document.startViewTransition&&!reducedMotion()){
+    document.documentElement.classList.add('summary-transition');const tr=document.startViewTransition(update);reviewTransition=tr;tr.ready.catch(()=>{});tr.finished.catch(()=>{}).finally(()=>{if(run===reviewRun){reviewTransition=null;document.documentElement.classList.remove('summary-transition');}});
+  }else{update();if(prev){const body=$('#summary-body');if(body&&body.animate)body.animate(reducedMotion()?[{opacity:0},{opacity:1}]:[{opacity:0,transform:'translateX('+(dir*24)+'px)'},{opacity:1,transform:'translateX(0)'}],{duration:reducedMotion()?100:200,easing:'ease-out'});}}
+  const b=$('#month-scroller .cday[data-key="'+k+'"]');if(b&&!reducedMotion())b.animate([{transform:'scale(.85)'},{transform:'scale(1)'}],{duration:120,easing:'ease-out'});
+}
+function closeSummary(immediate=false,restore=true){
+  const k=ui.moreDay;if(!k)return;cancelReviewMotion();const run=reviewRun;ui.moreDay=null;if(route==='more'&&!moreLocation().section)history.replaceState(null,'','#more');paintMonthSelection();
+  const finish=()=>{if(run!==reviewRun)return;renderSummary();if(restore){const b=$('#month-scroller .cday[data-key="'+k+'"]');if(b)b.focus({preventScroll:true});}};
+  const dlg=$('#day-summary');if(!immediate&&!reducedMotion()&&dlg.open){const a=dlg.animate([{transform:'translateY(0)'},{transform:'translateY(100%)'}],{duration:200,easing:'cubic-bezier(.4,0,1,1)',fill:'forwards'});a.finished.then(()=>{a.cancel();finish();}).catch(()=>{});}else finish();
+}
+function changeReviewMonth(n){
+  const next=shiftYM(ui.moreMonth||dayKey().slice(0,7),n);if(next>addDays(dayKey(),1).slice(0,7)){centerMonth();return;}
+  closeSummary(true,false);monthGesture=false;ui.moreMonth=next;render();centerMonth();
+  [$('#month-scroller').children[1],$('#review-month')].forEach(el=>{if(el&&el.animate){el.getAnimations().forEach(a=>a.cancel());el.animate(reducedMotion()?[{opacity:0},{opacity:1}]:[{opacity:0,transform:'translateX('+(n<0?-32:32)+'px)'},{opacity:1,transform:'translateX(0)'}],{duration:reducedMotion()?100:180,easing:'ease-out'});}});
+  $('#view-status').textContent='已切换到 '+$('#review-month').textContent;
+}
+function finishMonthScroll(){
+  if(!reviewVisible()||monthResetting||monthPointer)return;const sc=$('#month-scroller'),page=Math.round(sc.scrollLeft/sc.clientWidth);
+  if(!monthGesture){if(page!==1)centerMonth();return;}monthGesture=false;if(page!==1)changeReviewMonth(page-1);
+}
+function closeDayActions(){const d=$('#day-actions');if(d.open)d.close();const b=$('#summary-more');if(b)b.focus({preventScroll:true});}
+function vSettings(){
+  const theme=['light','dark'].includes(uiPrefs.theme)?uiPrefs.theme:'system';
+  return copyBox()+'<h1 class="h">设置</h1><div class="settings-stack">'+syncCard()+dataCard()+'<section class="card" id="settings-ai"><h2 class="stage">AI</h2><p class="fine">AI 尚未接入</p></section><section class="card"><h2 class="stage">显示</h2><div class="theme-options" role="group" aria-label="主题">'+[['system','跟随系统'],['light','浅色'],['dark','深色']].map(([v,label])=>'<button type="button" data-act="theme" data-v="'+v+'" aria-pressed="'+(theme===v)+'">'+label+'</button>').join('')+'</div></section><section class="card"><h2 class="stage">关于</h2><p class="fine">自我观察本 · <span class="mono">'+APP_VERSION+'</span></p><p class="fine">记录默认只存在这台设备。开启云端同步后，会额外保存一份加密备份；本机草稿与显示偏好不进入同步。</p></section></div>';
 }
 
 /* ---------- forms ---------- */
@@ -2365,14 +2553,8 @@ function hypCard(x){
   return s + '</article>';
 }
 function dataCard(){
-  let h = '<section class="card"><div class="stage">数据</div>';
-  if (OFFLINE_APP) h += '<p class="muted">记录存在这部手机的这个应用里。没开云端同步时，不上传到任何地方；删掉桌面图标、清理浏览器数据或者换手机，记录会一起消失。</p>';
-  else if (mode === 'cloud') h += '<p class="muted">记录存在这个页面里只属于你的私人空间：别人即使拿到链接，也读不到你的内容。换设备打开同一个链接，记录还在。</p>';
-  else h += '<p class="muted">现在只存在这台设备的浏览器里。清理浏览器数据会把它们一起清掉，记得定期导出。</p>';
-  h += '<p class="fine">全部数据导出是一个 JSON 文件，用来备份，也可以在网页版和离线版之间搬家：在一边导出，在另一边导入。导入时这里已有的记录会跳过，不会被覆盖。要把某一天存成 Word，在上面的日历里点开那一天。</p>';
-  if (APP_VERSION) h += '<p class="fine">当前版本：<span class="mono">' + APP_VERSION + '</span></p>';
-  h += '<div class="row">' + (dlNs ? '<button type="button" class="btn ghost sm" data-act="export">全部数据导出</button>' : '') + '<button type="button" class="btn ghost sm" data-act="importPick">全部数据导入</button><button type="button" class="btn ghost sm" data-act="copyAll">复制全部为文字</button></div><input type="file" id="importFile" accept=".json,application/json" hidden></section>';
-  return h;
+  const b=backupInfo();
+  return '<section class="card" id="settings-data"><h2 class="stage">数据</h2><p class="'+(b.stale?'warn':'fine')+'">'+(b.date?'上次导出：'+b.date:'还没有导出过备份。')+'</p><p class="fine">导出 JSON 可以备份或迁移全部记录。导入会保留已有记录；本机草稿、访问口令和显示偏好不进入导出。保存某一天的 Word，可到回顾页点选日期后打开“⋯”。</p><div class="row">'+(dlNs?'<button type="button" class="btn ghost" data-act="export">全部数据导出</button>':'')+'<button type="button" class="btn ghost" data-act="importPick">全部数据导入</button><button type="button" class="btn ghost" data-act="copyAll">复制全部为文字</button></div><input type="file" id="importFile" accept=".json,application/json" hidden></section>';
 }
 function syncStatusText(){
   if (syncState.msg) return syncState.msg;
@@ -2381,22 +2563,24 @@ function syncStatusText(){
   const d = new Date(at), k = ymd(d);
   return '上次同步：' + (k === ymd(new Date()) ? '今天' : md(k)) + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
 }
+function syncHelp(){return foldHTML('settings:sync-help','sync-help','怎么设置？','<ol class="steps"><li>在 GitHub 新建一个仓库，名字比如 <span class="mono">zwgcb-data</span>，可见性选 Private。</li>'
+    + '<li>生成访问密钥：点 GitHub 页面最右上角的头像（不是仓库页面里的 Settings）→ Settings → 左边栏最底下的 Developer settings → Personal access tokens → Fine-grained tokens → Generate new token。也可以直接在地址栏打开 <span class="mono">github.com/settings/personal-access-tokens/new</span>。</li>'
+    + '<li>生成页面里：Expiration 可以选 No expiration（这个密钥只能碰这一个仓库，数据又是加密的；有期限的话，到期后同步会停）。Repository access 选 Only select repositories，只勾这个私有仓库。Permissions 点 Add permissions 加上 Contents，访问级别选 Read and write；自动带上的 Metadata 只读不用管。点 Generate token，马上复制那串 github_pat_ 开头的密钥，它只显示一次。</li>'
+    + '<li>回到这里，填下面三项。访问密钥和同步密码只存在这部手机里。</li></ol>');}
 function syncCard(){
   if (!OFFLINE_APP) return '';
-  let s = '<section class="card"><div class="stage">云端同步</div>';
+  let s = '<section class="card"><h2 class="stage">同步</h2>';
+  if(!(syncCfg&&syncCfg.token)&&!ui.syncEdit)return s+'<p class="fine">未开启云端同步。记录先保存在这台设备。</p><div class="row"><button type="button" class="btn ghost" data-act="syncEdit">设置同步</button></div>'+syncHelp()+'</section>';
   if (syncCfg && syncCfg.token && !ui.syncEdit){
     s += '<p class="muted">已连接私有仓库 <span class="mono">' + esc(syncCfg.repo) + '</span>。数据在这部手机上先加密再上传，没有同步密码谁也看不懂。联网时会自动同步。</p>';
     s += '<p class="' + (syncState.ok === false ? 'warn' : 'fine') + '" style="margin:0">' + esc(syncStatusText()) + '</p>';
     if (syncCfg.newPass && syncCfg.newPass !== syncCfg.pass) s += '<p class="warn" style="margin:0">新的同步密码还没生效。下次同步成功时，会用它把云端数据重新加密；在那之前用的还是原来的密码。</p>';
     s += '<div class="row"><button type="button" class="btn sm" data-act="syncNowBtn"' + (syncBusy ? ' disabled' : '') + '>立即同步</button><button type="button" class="btn ghost sm" data-act="syncEdit">修改设置</button>'
       + (ui.syncOff ? '<span class="warn">停止后不再上传，本机和云端的数据都保留。</span><button type="button" class="btn sm red" data-act="syncOff">确定停止</button><button type="button" class="btn ghost sm" data-act="syncOffNo">算了</button>' : '<button type="button" class="linkbtn" data-act="syncOffAsk">停止同步</button>') + '</div>';
-    return s + '</section>';
+    return s + syncHelp() + '</section>';
   }
   s += '<p class="muted">把这部手机里的记录加密后，存进一个只有你能看的 GitHub 私有仓库。换手机、清了浏览器数据，都能从云端拉回来；两台设备填同样的设置，就会互相同步。</p>';
-  s += '<ol class="steps"><li>在 GitHub 新建一个仓库，名字比如 <span class="mono">zwgcb-data</span>，可见性选 Private。</li>'
-    + '<li>生成访问密钥：点 GitHub 页面最右上角的头像（不是仓库页面里的 Settings）→ Settings → 左边栏最底下的 Developer settings → Personal access tokens → Fine-grained tokens → Generate new token。也可以直接在地址栏打开 <span class="mono">github.com/settings/personal-access-tokens/new</span>。</li>'
-    + '<li>生成页面里：Expiration 可以选 No expiration（这个密钥只能碰这一个仓库，数据又是加密的；有期限的话，到期后同步会停）。Repository access 选 Only select repositories，只勾这个私有仓库。Permissions 点 Add permissions 加上 Contents，访问级别选 Read and write；自动带上的 Metadata 只读不用管。点 Generate token，马上复制那串 github_pat_ 开头的密钥，它只显示一次。</li>'
-    + '<li>回到这里，填下面三项。访问密钥和同步密码只存在这部手机里。</li></ol>';
+  s += syncHelp();
   s += '<div class="f"><label for="sy-repo">仓库</label><input type="text" id="sy-repo" placeholder="用户名/仓库名，比如 ProCare-creator/zwgcb-data" value="' + esc((syncCfg && syncCfg.repo) || '') + '" autocapitalize="off" autocorrect="off" spellcheck="false"></div>';
   s += '<div class="f"><label for="sy-token">访问密钥</label><input type="password" id="sy-token" placeholder="' + (syncCfg && syncCfg.token ? '不改就留空' : 'github_pat_ 开头的一长串') + '" autocomplete="off"></div>';
   s += '<div class="f"><label for="sy-pass">同步密码</label><input type="password" id="sy-pass" placeholder="' + (syncCfg && syncCfg.pass ? '不改就留空' : '至少 6 位，自己定') + '" autocomplete="new-password"><div class="hint">' + (syncCfg && syncCfg.pass
@@ -2483,13 +2667,14 @@ function render(){
   if (!form && route === 'week'){ const k = ui.weekKey || weekStart(dayKey()); const w = S.weeks[k]; form = { type:'week', key:k, data:drafts['week:' + k] ? clone(drafts['week:' + k]) : (w ? clone(w) : { dir:'', said:['','',''], did:['','',''], was:'', saw:'' }), dirty:false }; }
   let html;
   if (form){ html = ({ morning:fMorning, evening:fEvening, min:fMin, capture:fCapture, week:fWeek, event:fEvent, import:fImport })[form.type](); }
-  else { const V = { pred:vPred, review:vReview, hyps:vHyps, more:vMore }; html = (V[route] || vPred)(); }
+  else { const V = { pred:vPred, review:vReview, hyps:vHyps, more:vMore, settings:vSettings }; html = (V[route] || vPred)(); }
   const context = { route, type:form ? form.type : '', form, date:route === 'more' ? (moreLocation().day || ui.moreDay || ui.moreMonth) : sel };
   const samePage = renderedView && renderedView.route === context.route && renderedView.type === context.type;
   view.dataset.view = form ? form.type : route;
   view.dataset.writing = String(!!form && !(form.type === 'capture' && form.key === 'new'));
   updateDateShell();
   view.innerHTML = html;
+  updateReviewShell();
   sizeCaptureInput();
   if (samePage){
     if (renderedView.form === form && renderedView.date === context.date) previous.inputs.forEach(saved => {
@@ -2781,6 +2966,13 @@ function capAt(k, time){
 function needReady(){ if (!ready){ toast('还在打开记录本，稍等几秒再存。'); return false; } return true; }
 function predSrc(k){ const t = dayKey(); return k > t ? 'eve' : k === t ? 'morning' : 'late'; }
 const A = {
+  theme(el){uiPrefs.theme=el.dataset.v;saveUIPrefs();applyTheme(uiPrefs.theme);render();},
+  monthInfo(el){const on=!ui.open.has('month:info');setDisclosure('month:info',on);el.setAttribute('aria-expanded',String(on));$('#month-info').hidden=!on;},
+  summaryClose(){closeSummary();},
+  summaryMenu(){if(!ui.moreDay)return;const d=$('#day-actions');d.dataset.key=ui.moreDay;d.showModal();},
+  dayActionsClose(){closeDayActions();},
+  summaryWord(){const k=$('#day-actions').dataset.key;closeDayActions();A.wordDay({dataset:{key:k}});},
+  summaryCopy(){const k=$('#day-actions').dataset.key;closeDayActions();closeSummary(true,false);A.copy({dataset:{key:k}});},
   moreOpen(el){
     const k = el.dataset.key, section = el.dataset.section;
     if (!validDate(k) || !Object.prototype.hasOwnProperty.call(MORE_SECTIONS, section)) return;
@@ -2968,23 +3160,13 @@ const A = {
   calToggle(){ ui.cal = !ui.cal; ui.calMonth = sel.slice(0, 7); render(); },
   calMonth(el){
     const n = +el.dataset.v;
-    if (el.dataset.mode === 'pick'){ ui.calMonth = shiftYM(ui.calMonth || sel.slice(0, 7), n); render(); const button = $('#day-picker [data-act="calMonth"][data-v="' + n + '"]'); if (button && !button.disabled) button.focus({preventScroll:true}); animateMore('#day-picker .cal, #day-picker .calhead > span',n); return; }
-    ui.moreMonth = shiftYM(ui.moreMonth || dayKey().slice(0, 7), n);
-    render();
-    const focus = $('.more-calendar [data-act="calMonth"][data-v="' + n + '"]:not([disabled])') || $('.more-calendar [data-act="calMonth"]:not([disabled])');
-    if (focus) focus.focus({ preventScroll:true });
-    animateMore('.more-calendar .cal, .more-calendar .calhead > span', n);
+    if (el.dataset.mode === 'pick'){ ui.calMonth = shiftYM(ui.calMonth || sel.slice(0, 7), n); render(); const button = $('#day-picker [data-act="calMonth"][data-v="' + n + '"]'); if (button && !button.disabled) button.focus({preventScroll:true}); animateMore('#day-picker .calendar-grid, #day-picker .calhead > span',n); return; }
+    changeReviewMonth(n);
   },
   calPick(el){
     const k = el.dataset.key;
     if (el.dataset.mode === 'pick'){ ui.cal = false; if (k === sel) render(); else changeDay(k); $('#day-label').focus({preventScroll:true}); return; }
-    const previous = ui.moreDay || dayKey();
-    ui.moreDay = ui.moreDay === k ? null : k;
-    history.replaceState(null, '', ui.moreDay ? moreHash(ui.moreDay) : '#more');
-    render();
-    const focus = $('.more-calendar [data-key="' + k + '"]');
-    if (focus) focus.focus({ preventScroll:true });
-    if (ui.moreDay) animateMore('.more-day', k < previous ? -1 : 1);
+    chooseSummary(k);
   },
   goDay(el){ const k = el.dataset.key; sel = k > addDays(dayKey(), 1) ? dayKey() : k; ui.cal = false; const r = '#' + el.dataset.v; if (location.hash === r) onHash(); else location.hash = r; },
   syncNowBtn(){ syncNow(); render(); },
@@ -3194,9 +3376,9 @@ document.addEventListener('input', e => {
   if (el.dataset.live === 'hyp'){ const w = $('#w-hyp'); if (w) w.textContent = hypWarn((form.data.D.sit || '') + (form.data.D.rea || '')); }
 });
 const ROUTE_ALIAS = { today:'pred', log:'more' };   // links and icons saved from older versions
-function resolveRoute(hash){ const r = (hash || '#review').slice(1).split('?')[0], a = ROUTE_ALIAS[r] || r; return ['pred','capture','review','hyps','more','week'].includes(a) ? a : 'review'; }
+function resolveRoute(hash){ const r = (hash || '#review').slice(1).split('?')[0], a = ROUTE_ALIAS[r] || r; return ['pred','capture','review','hyps','more','week','settings'].includes(a) ? a : 'review'; }
 function onHash(){
-  cancelDayMotion();
+  cancelDayMotion();cancelReviewMotion();if($('#day-actions').open)$('#day-actions').close();
   route = resolveRoute(location.hash); ui.cal = false;
   const panel = moreLocation(), returning = route === 'more' && !panel.section && panel.day && ui.moreReturn && ui.moreReturn.day === panel.day;
   if (panel.day){ ui.moreDay = panel.day; ui.moreMonth = returning ? ui.moreReturn.month : panel.day.slice(0, 7); }
@@ -3205,15 +3387,28 @@ function onHash(){
   render();
   if (returning){
     window.scrollTo(0, ui.moreReturn.scroll);
-    const entry = $('.day-entry[data-section="' + ui.moreReturn.section + '"]');
+    const entry = $('#summary-content [data-section="' + ui.moreReturn.section + '"]');
     if (entry) entry.focus({ preventScroll:true });
-    animateMore('.more-day', -1);
+    revealSelectedWeek();
   } else {
     window.scrollTo(0, 0);
+    if (route==='more' && !panel.section && ui.moreDay) revealSelectedWeek();
     if (panel.section){ const heading = $('#more-reader-heading'); if (heading) heading.focus({ preventScroll:true }); animateMore('.more-reader', 1); }
   }
 }
 window.addEventListener('hashchange', onHash);
+const monthScroller=$('#month-scroller');
+monthScroller.addEventListener('pointerdown',()=>{monthGesture=true;monthPointer=true;},{passive:true});
+window.addEventListener('pointerup',()=>{if(monthPointer){monthPointer=false;clearTimeout(monthTimer);monthTimer=setTimeout(finishMonthScroll,150);}},{passive:true});
+window.addEventListener('pointercancel',()=>{monthPointer=false;},{passive:true});
+monthScroller.addEventListener('wheel',()=>{monthGesture=true;},{passive:true});
+monthScroller.addEventListener('keydown',e=>{if(['ArrowLeft','ArrowRight','Home','End'].includes(e.key))monthGesture=true;});
+monthScroller.addEventListener('scrollend',finishMonthScroll);
+if(!('onscrollend' in monthScroller))monthScroller.addEventListener('scroll',()=>{clearTimeout(monthTimer);monthTimer=setTimeout(finishMonthScroll,150);},{passive:true});
+$('#day-actions').addEventListener('cancel',e=>{e.preventDefault();closeDayActions();});
+$('#day-summary').addEventListener('cancel',e=>{e.preventDefault();closeSummary();});
+window.addEventListener('resize',()=>requestAnimationFrame(()=>{if(reviewVisible()){centerMonth();renderSummary();revealSelectedWeek();}}));
+window.addEventListener('online',syncLabel);window.addEventListener('offline',syncLabel);
 const weekScroller = $('#week-scroller');
 let weekScrollTimer;
 weekScroller.addEventListener('pointerdown',() => { weekGesture = true; weekPointer = true; },{passive:true});
@@ -3226,7 +3421,10 @@ if (!('onscrollend' in weekScroller)) weekScroller.addEventListener('scroll',() 
 let resizeFrame = null;
 window.addEventListener('resize',() => { cancelAnimationFrame(resizeFrame); resizeFrame=requestAnimationFrame(() => { if (!$('#week-shell').hidden) centerWeek(weekStart(sel)); sizeCaptureInput(); }); });
 document.addEventListener('keydown',e => {
+  if(e.key==='Tab' && $('#day-actions').open){const buttons=Array.from($('#day-actions').querySelectorAll('button:not([disabled])')),first=buttons[0],last=buttons[buttons.length-1];if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}}
   if ((e.ctrlKey || e.metaKey) && e.key === 'Enter' && !e.isComposing && form && form.type === 'capture'){ e.preventDefault(); A.saveCap(); }
+  if(e.key==='Escape' && $('#day-actions').open){e.preventDefault();closeDayActions();return;}
+  if(e.key==='Escape' && reviewVisible() && ui.moreDay){e.preventDefault();closeSummary();return;}
   if (e.key === 'Escape' && ui.cal){ ui.cal=false; updateDateShell(); $('#day-label').focus({preventScroll:true}); }
 });
 document.addEventListener('focusin',e => { if (e.target.id === 'f-fact') requestAnimationFrame(keepCaptureSaveVisible); });
