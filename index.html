@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,interactive-widget=resizes-content">
 <title>自我观察本</title>
 <meta name="description" content="每天的预测、随手记、复盘和自我假设清单，离线可用。">
 <link rel="manifest" href="manifest.webmanifest">
@@ -252,9 +252,9 @@ details.cv ul,details.drafts ul,details.hist ol{ margin:var(--s-2) 0 0; padding-
 .pv-row{ display:flex; gap:var(--s-2); align-items:flex-start; font-size:14px; }
 .mono-in{ font-family:var(--f-mono); }
 .pen.half{ color:var(--ink-2); }
-.dnav.sm{ width:32px; height:32px; font-size:18px; }
-.dnav[disabled]{ opacity:.35; cursor:default; }
-.dlabel .date{ font-size:26px; }
+{ width:32px; height:32px; font-size:18px; }
+{ opacity:.35; cursor:default; }
+{ font-size:26px; }
 .caret{ font-size:12px; color:var(--accent); }
 .calhead{ display:flex; align-items:center; justify-content:space-between; font-weight:700; font-size:15px; }
 .cal{ display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:5px; }
@@ -336,15 +336,15 @@ body{ margin:0; -webkit-tap-highlight-color:transparent; overscroll-behavior-y:n
 .tabs a{ display:flex; align-items:center; text-decoration:none; color:var(--ink-3); flex-direction:row; gap:9px; padding:var(--s-3) 7px 15px; font-size:14px; position:relative; }
 .tabs a svg{ width:19px; height:19px; }
 .tabs a.on::after{ content:''; position:absolute; height:2px; left:4px; right:4px; bottom:-1px; background:var(--accent); }
-.tabs a[data-r="review"]{ order:-1; }
+{ order:-1; }
 #view{ max-width:760px; margin:auto; }
 #view[data-view="review"]{ max-width:none; }
-.datebar{ display:flex; align-items:center; justify-content:space-between; gap:var(--s-2); margin-bottom:var(--s-3); max-width:410px; margin:0 auto 30px; }
-.datebar .date{ font:19px var(--f-display); }
-.dnav{ flex:none; border-radius:50%; border:1px solid var(--line); font-size:22px; line-height:1; color:var(--ink); display:grid; place-items:center; padding:0 0 3px; background:transparent; border-color:transparent; width:44px; height:44px; }
-.dlabel{ flex:1; min-width:0; border:0; background:none; display:flex; justify-content:center; gap:var(--s-2); padding:var(--s-1) 0; color:var(--ink); min-height:44px; align-items:center; }
-.dwd{ color:var(--ink-2); white-space:nowrap; font-size:12px; font-weight:400; }
-.dnav:hover{ background:var(--accent-soft); }
+{ display:flex; align-items:center; justify-content:space-between; gap:var(--s-2); margin-bottom:var(--s-3); max-width:410px; margin:0 auto 30px; }
+{ font:19px var(--f-display); }
+{ flex:none; border-radius:50%; border:1px solid var(--line); font-size:22px; line-height:1; color:var(--ink); display:grid; place-items:center; padding:0 0 3px; background:transparent; border-color:transparent; width:44px; height:44px; }
+{ flex:1; min-width:0; border:0; background:none; display:flex; justify-content:center; gap:var(--s-2); padding:var(--s-1) 0; color:var(--ink); min-height:44px; align-items:center; }
+{ color:var(--ink-2); white-space:nowrap; font-size:12px; font-weight:400; }
+{ background:var(--accent-soft); }
 .calpop{ margin-bottom:var(--s-3); max-width:460px; margin:0 auto 26px; }
 .journal-hero{ display:grid; grid-template-columns:1fr 300px; gap:25px; align-items:center; padding:var(--s-2) 28px 34px var(--s-1); }
 .eyebrow{ font:11px var(--f-mono); letter-spacing:.17em; color:var(--ink-3); margin:0 0 19px; }
@@ -455,7 +455,7 @@ textarea{ font:inherit; color:inherit; width:100%; border:1px solid var(--line-s
 .saved-reflection{ font:18px/1.9 var(--f-display); border-left:2px solid var(--pen); padding-left:18px; margin:0; white-space:pre-wrap; overflow-wrap:anywhere; }
 .banner{ background:var(--accent-soft); border-color:var(--line); }
 .banner .stage{ color:var(--ink); }
-.top:has(+main[data-writing="true"]){ margin-bottom:90px; }
+{ margin-bottom:90px; }
 #toast{ position:fixed; left:50%; transform:translateX(-50%); background:var(--ink); color:var(--paper); border-radius:var(--r-md); font-size:14px; z-index:9; max-width:calc(100% - 32px); bottom:30px; box-shadow:0 8px 30px #0002; padding:13px 20px; line-height:1.7; }
 .qbtn{ flex:none; border-radius:5px; border:1px solid var(--line); background:var(--card); font-size:12px; line-height:1; padding:0; color:var(--ink-3); width:32px; height:32px; }
 .x{ position:absolute; right:6px; top:6px; border:0; background:none; color:var(--ink-3); font-size:18px; line-height:1; padding:var(--s-1) 6px; min-width:32px; min-height:32px; }
@@ -464,15 +464,15 @@ textarea{ font:inherit; color:inherit; width:100%; border:1px solid var(--line-s
 .fine{ color:var(--ink-3); font-size:12.5px; margin:0; line-height:1.8; }
 .hint{ line-height:1.8; }
 .f input::placeholder,.f textarea::placeholder{ color:var(--ink-3); opacity:1; }
-@media (min-width:850px){
+@media (min-width:1024px){
   #view[data-writing="true"]{ max-width:720px; }
   #view[data-writing="true"]>.card{ padding:35px 42px; }
   .journal-main .card>.row{ gap:var(--s-3); }
 }
-@media (max-width:849px){
+@media (max-width:1023px){
   #app{ padding:23px var(--s-5) 115px; }
   .top{ margin-bottom:30px; padding-bottom:19px; }
-  .top:has(+main[data-writing="true"]){ margin-bottom:30px; }
+  { margin-bottom:30px; }
   .tabs{ position:fixed; left:0; right:0; top:auto; bottom:0; transform:none; width:100%; background:var(--card); border-bottom:0; border-top:1px solid var(--line); padding:var(--s-2) 10px max(var(--s-2),env(safe-area-inset-bottom,0px)); z-index:5; }
   .tabs .in{ display:grid; grid-template-columns:repeat(5,1fr); gap:var(--s-1); max-width:600px; }
   .tabs a{ font-size:11px; flex-direction:column; gap:var(--s-1); padding:7px 3px; border-radius:var(--r-md); }
@@ -487,13 +487,13 @@ textarea{ font:inherit; color:inherit; width:100%; border:1px solid var(--line-s
   #toast{ bottom:100px; }
   .brand{ font-size:20px; }
 }
-@media (max-width:620px){
+@media (max-width:599px){
   #app{ padding:20px 21px 100px; }
   .brand small{ font-size:8px; }
   .sync{ font-size:10px; max-width:135px; white-space:normal; text-align:right; }
-  .datebar{ margin-bottom:var(--s-3); max-width:none; }
-  .datebar .date{ font-size:17px; }
-  .dlabel{ gap:6px; }
+  { margin-bottom:var(--s-3); max-width:none; }
+  { font-size:17px; }
+  { gap:6px; }
   .journal-hero{ grid-template-columns:minmax(0,1fr) 88px; padding:var(--s-4) 0 28px; gap:0; position:relative; }
   .journal-hero h1{ font-size:29px; letter-spacing:.025em; line-height:1.65; margin-bottom:var(--s-3); white-space:nowrap; }
   .journal-hero .intro{ font-size:12px; }
@@ -525,9 +525,9 @@ textarea{ font:inherit; color:inherit; width:100%; border:1px solid var(--line-s
   *,*::before,*::after{ animation:none !important; transition:none !important; scroll-behavior:auto !important; }
   .btn:hover:not([disabled]){ transform:none; }
 }
-@media (min-width:850px){
+@media (min-width:1024px){
   .top{ margin-bottom:70px; }
-  .datebar{ margin-bottom:15px; }
+  { margin-bottom:15px; }
   .journal-hero{ padding-top:0; padding-bottom:27px; }
   .journal-hero h1{ font-size:40px; line-height:1.4; }
   .botanical{ height:200px; }
@@ -538,6 +538,162 @@ textarea{ font:inherit; color:inherit; width:100%; border:1px solid var(--line-s
   .botanical{ width:90px; }
 }
 .sr-status{ position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap; border:0; }
+
+/* Persistent date/week shell; the main page is the only replaced region. */
+#workspace{position:relative;min-width:0}
+#day-shell{position:sticky;top:env(safe-area-inset-top,0px);z-index:10;background:var(--paper);margin:0 auto var(--s-3);max-width:680px}
+.datebar{display:grid;grid-template-columns:44px minmax(0,1fr) 44px auto;align-items:center;gap:var(--s-1);height:48px;width:100%;margin:0}
+.dnav{display:grid;place-items:center;width:44px;height:44px;flex:none;border:0;border-radius:var(--r-md);padding:0;background:none;color:var(--ink);font-size:1.5rem;line-height:1}
+.dnav.sm{width:44px;height:44px;font-size:1.25rem}
+.dnav:hover{background:var(--accent-soft)}
+.dnav:disabled{opacity:.35;cursor:default}
+.dlabel{display:flex;justify-content:center;align-items:center;gap:6px;min-width:0;min-height:44px;background:none;border:0;padding:0;color:var(--ink)}
+.dlabel .date{font:700 var(--fs-date)/1.3 var(--f-display);letter-spacing:0;white-space:nowrap}
+.dwd{font:400 var(--fs-small)/1.6 var(--f-body);white-space:nowrap;color:var(--ink-2)}
+.day-relative{padding:2px 6px;border-radius:var(--r-pill);background:var(--accent-soft);font:500 var(--fs-cap)/1.4 var(--f-body);color:var(--accent)}
+.today-return{font:500 var(--fs-cap)/1.4 var(--f-body);min-width:44px;min-height:44px;border:0;background:none;color:var(--accent);padding:0 var(--s-1)}
+#day-picker{margin:var(--s-2) 0 0;max-height:65dvh;overflow:auto;padding:var(--s-4);box-shadow:var(--sh-card)}
+#day-picker .cday.sel{background:var(--accent);color:var(--on-accent);outline:2px solid var(--accent);outline-offset:1px}
+#day-picker .legend{margin-top:var(--s-3)}
+#week-shell{min-width:0;margin:0 auto var(--s-4);width:100%;max-width:680px}
+.week-controls{display:none;align-items:center;justify-content:space-between;font:500 var(--fs-cap)/1.4 var(--f-mono);color:var(--ink-2)}
+#week-scroller{display:flex;width:100%;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;overscroll-behavior-x:contain;touch-action:pan-x pan-y;overflow-anchor:none}
+#week-scroller::-webkit-scrollbar{display:none}
+.week-page{position:relative;display:grid;grid-template-columns:repeat(7,minmax(0,1fr));flex:0 0 100%;scroll-snap-align:center;scroll-snap-stop:always;height:56px;isolation:isolate}
+.week-day{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-width:0;min-height:44px;position:relative;border:0;background:none;color:var(--ink-2);padding:0;z-index:1}
+.week-wd{font:500 var(--fs-cap)/1.4 var(--f-body)}
+.week-day b{display:grid;place-items:center;width:30px;height:30px;border-radius:var(--r-pill);font:500 .875rem/1 var(--f-mono);color:var(--ink)}
+.week-day.today b{outline:1px solid var(--pen);outline-offset:1px}
+.week-day.selected b{color:var(--on-accent)}
+.week-day:disabled{opacity:.35;cursor:default}
+.week-day i{position:absolute;bottom:2px;width:3px;height:3px;border-radius:50%;background:transparent}
+.week-day.recorded i{background:var(--accent)}
+.week-day.selected i{background:var(--on-accent)}
+.week-selection{position:absolute;left:0;bottom:5px;width:calc(100% / 7);height:30px;transform:translateX(calc(var(--i)*100%));transition:transform var(--t-base) var(--ease-out);pointer-events:none}
+.week-selection::before{content:'';display:block;margin:auto;width:30px;height:30px;border-radius:var(--r-pill);background:var(--accent)}
+#week-notes{display:none}
+#view{scroll-margin-top:64px}
+#view[data-view="review"] .journal-main{min-width:0}
+.day-transition{view-transition-name:none}
+.day-transition #view{view-transition-name:dayview}
+.day-transition #day-label{view-transition-name:daylabel}
+::view-transition{pointer-events:none}
+::view-transition-group(dayview),::view-transition-group(daylabel){animation-duration:0s}
+::view-transition-old(dayview),::view-transition-new(dayview),::view-transition-old(daylabel),::view-transition-new(daylabel){mix-blend-mode:normal}
+::view-transition-old(daylabel),::view-transition-new(daylabel){--day-distance:12px}
+html[data-dir="prev"]::view-transition-old(dayview),html[data-dir="prev"]::view-transition-old(daylabel){animation:day-out-prev var(--t-fast) var(--ease-in) both}
+html[data-dir="next"]::view-transition-old(dayview),html[data-dir="next"]::view-transition-old(daylabel){animation:day-out-next var(--t-fast) var(--ease-in) both}
+html[data-dir="prev"]::view-transition-new(dayview),html[data-dir="prev"]::view-transition-new(daylabel){animation:day-in-prev var(--t-base) var(--ease-out) both}
+html[data-dir="next"]::view-transition-new(dayview),html[data-dir="next"]::view-transition-new(daylabel){animation:day-in-next var(--t-base) var(--ease-out) both}
+.enter-prev{animation:day-in-prev var(--t-base) var(--ease-out) both}
+.enter-next{animation:day-in-next var(--t-base) var(--ease-out) both}
+#day-label{--day-distance:12px}
+@keyframes day-out-prev{to{opacity:0;transform:translateX(var(--day-distance,24px))}}
+@keyframes day-out-next{to{opacity:0;transform:translateX(calc(-1 * var(--day-distance,24px)))}}
+@keyframes day-in-prev{from{opacity:0;transform:translateX(calc(-1 * var(--day-distance,24px)))}to{opacity:1;transform:translateX(0)}}
+@keyframes day-in-next{from{opacity:0;transform:translateX(var(--day-distance,24px))}to{opacity:1;transform:translateX(0)}}
+
+/* Capture composer: one fact, with optional details behind explicit buttons. */
+#view[data-view="capture"]{max-width:680px}
+.capture-composer{padding:var(--s-4);gap:var(--s-3);border-radius:var(--r-lg);background:var(--card)}
+.capture-composer .f{gap:var(--s-2);margin:0}
+.capture-composer .lab,.capture-composer .f>label{font:600 .875rem/1.5 var(--f-body)}
+.capture-composer textarea{background-image:none;padding:var(--s-2) var(--s-3);border-radius:var(--r-md);font:400 var(--fs-input)/1.7 var(--f-body);min-height:72px}
+.capture-composer #f-fact{resize:none;max-height:190px;overflow-y:hidden}
+.capture-moods{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:var(--s-1) var(--s-2);align-items:center}
+.capture-moods>.lab{display:flex;align-items:center;min-height:44px}
+.capture-composer .chip{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:6px var(--s-2);font-size:.8125rem;line-height:1.5;border-color:var(--line-strong)}
+.capture-composer .chip.on{border-color:var(--accent)}
+.capture-emotion .fold-inner>.chips{padding-top:var(--s-2)}
+.capture-emotion[data-expanded="true"] .selected-extra{display:none}
+.capture-intensity{display:flex;align-items:center;gap:var(--s-4);min-height:44px}
+.capture-intensity .seg{flex:1;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));height:44px;border-color:var(--line-strong)}
+.capture-intensity .seg button{min-width:0;min-height:42px;padding:0;font-size:.875rem;border-right-color:var(--line-strong)}
+.capture-optionals{border-top:1px solid var(--line)}
+.fold-toggle{display:flex;align-items:center;justify-content:space-between;gap:var(--s-2);width:100%;min-height:44px;padding:var(--s-2) 0;background:none;border:0;text-align:left;color:var(--ink-2);font-size:var(--fs-small);line-height:1.6}
+.capture-optionals>.ui-fold{border-bottom:1px solid var(--line)}
+.fold-chevron{display:inline-block;flex:none;transition:transform var(--t-base) var(--ease-out);font:400 1.25rem/1 var(--f-body);color:var(--ink-3)}
+[aria-expanded="true"] .fold-chevron{transform:rotate(90deg)}
+.fold-grid{display:grid;grid-template-rows:0fr;transition:grid-template-rows var(--t-base) var(--ease-out)}
+.fold-grid.is-open{grid-template-rows:1fr}
+.fold-inner{min-height:0;overflow:hidden}
+.fold-grid:not(.is-open)>.fold-inner{visibility:hidden}
+.capture-optionals .fold-grid.is-open>.fold-inner{display:flex;flex-direction:column;gap:var(--s-3);padding-bottom:var(--s-3)}
+.capture-save{position:sticky;bottom:calc(76px + env(safe-area-inset-bottom,0px));z-index:4;background:var(--card);display:flex;align-items:center;gap:var(--s-3);padding:0;border-radius:var(--r-md)}
+.capture-save>.btn{width:100%;height:48px;font-size:.9375rem;border-radius:var(--r-md);padding:0 var(--s-4);box-shadow:0 0 0 8px var(--card)}
+.capture-save>.btn:hover:not([disabled]){transform:none}
+.capture-tip,.capture-context{font:400 var(--fs-small)/1.6 var(--f-body);color:var(--ink-3);margin:var(--s-2) 0 0}
+.capture-context{margin:0 0 var(--s-3)}
+.capture-list-title{font:600 var(--fs-h2)/1.5 var(--f-display);margin:var(--s-5) 0 var(--s-3)}
+.capture-list{border:1px solid var(--line);background:var(--card);border-radius:var(--r-lg);overflow:hidden}
+.cap-row-shell{display:grid;grid-template-rows:1fr;opacity:1;transition:grid-template-rows var(--t-base) var(--ease-out),opacity var(--t-base) var(--ease-out)}
+.cap-row-shell.is-removing{grid-template-rows:0fr;opacity:0}
+.cap-row-clip{min-height:0;overflow:hidden}
+.cap-row{border-bottom:1px solid var(--line)}
+.cap-row-shell:last-child .cap-row{border-bottom:0}
+.cap-compact{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:var(--s-3);align-items:center;width:100%;height:56px;padding:0 var(--s-3);border:0;background:none;text-align:left;color:var(--ink)}
+.cap-compact:hover,.cap-compact[aria-expanded="true"]{background:var(--accent-soft)}
+.cap-time{font:500 var(--fs-cap)/1.4 var(--f-mono);color:var(--ink-3)}
+.cap-excerpt{min-width:0;display:flex;flex-direction:column;gap:2px}
+.cap-feeling{display:flex;gap:var(--s-2);align-items:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font:500 var(--fs-cap)/1.4 var(--f-body);color:var(--ink-2)}
+.cap-first-line{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font:400 .875rem/1.5 var(--f-body)}
+.cap-mark{display:flex;align-items:center;gap:var(--s-1)}
+.pending-dot{width:4px;height:4px;display:block;border-radius:50%;background:var(--pen)}
+.cap-row .cap{background:none;border:0;border-radius:0;padding:var(--s-4);gap:var(--s-3)}
+.cap-row .kv{grid-template-columns:minmax(0,1fr);gap:var(--s-1)}
+.cap-row .kv dt{font-size:var(--fs-cap)}
+.cap-row .kv dd{font-size:var(--fs-body);line-height:1.7}
+.cap-row .kv dd+dt{margin-top:var(--s-2)}
+.cap-row-actions{display:flex;align-items:center;gap:var(--s-4);flex-wrap:wrap;padding:0 var(--s-4) var(--s-3)}
+.cap-row-actions .linkbtn{min-height:44px;font-size:var(--fs-small)}
+.cap-delete{color:var(--pen);margin-left:auto}
+.capture-rest>.fold-toggle{padding:var(--s-3);border-top:1px solid var(--line)}
+.capture-pending{margin-top:var(--s-4);border-top:1px solid var(--line)}
+.pending-date{font:500 var(--fs-small)/1.6 var(--f-body);color:var(--ink-3);margin:var(--s-4) 0 var(--s-2)}
+.just-saved{animation:cap-saved 1.5s var(--ease-out)}
+@keyframes cap-saved{from{background:var(--accent-soft)}to{background:transparent}}
+#undo-toast{position:fixed;left:50%;bottom:calc(76px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:40;display:flex;align-items:center;gap:var(--s-4);min-height:48px;max-width:calc(100% - 32px);padding:0 var(--s-4);background:var(--ink);color:var(--paper);border-radius:var(--r-md);font-size:var(--fs-small);box-shadow:var(--sh-sheet)}
+#undo-cap{border:0;background:none;color:inherit;text-decoration:underline;min-width:44px;min-height:44px;padding:0}
+body.keyboard-open .tabs{display:none}
+body.keyboard-open .capture-save{bottom:var(--s-2)}
+@media(min-width:1024px){
+  #workspace.has-week{display:grid;grid-template-columns:minmax(0,680px) 280px;column-gap:40px;align-items:start}
+  .has-week #day-shell{grid-column:1;grid-row:1;width:100%}
+  .has-week #view{grid-column:1;grid-row:2;width:100%;max-width:680px}
+  .has-week #week-shell{grid-column:2;grid-row:2;margin:0}
+  .week-controls{display:flex}
+  #week-notes{display:block;padding-top:var(--s-5)}
+  #view[data-view="review"] .journal-hero{grid-template-columns:minmax(0,1fr) 150px;padding:var(--s-2) 0 var(--s-5)}
+  #view[data-view="review"] .journal-hero h1{font-size:2rem}
+  #view[data-view="review"] .journal-main>.card{padding:var(--s-5)}
+  .capture-composer{padding:var(--s-5)}
+  .capture-moods{grid-template-columns:repeat(8,minmax(0,1fr))}
+  .capture-save{bottom:var(--s-3)}
+  #undo-toast{bottom:var(--s-5)}
+}
+@media(max-width:1023px){
+  #app{padding:var(--s-4) var(--s-4) calc(88px + env(safe-area-inset-bottom,0px))}
+  .top{height:52px;min-height:52px;padding-bottom:0;margin-bottom:var(--s-3)}
+  .top:has(+ #workspace){margin-bottom:var(--s-3)}
+  .brand{font-size:1.0625rem;gap:var(--s-2)}
+  .brand small{display:none}
+  .brand-mark{width:28px;height:28px;font-size:1rem}
+  .sync{font-size:.75rem;max-width:140px}
+  .tabs{padding:0 var(--s-2) env(safe-area-inset-bottom,0px);z-index:20}
+  .tabs .in{height:56px;gap:0}
+  .tabs a{padding:6px 2px;font-size:.75rem;line-height:1.4;border-radius:0}
+  .tabs a.on{background:none}
+  .tabs a.on::after{display:block;top:0;bottom:auto;left:20%;right:20%;height:3px}
+  .tabs a svg{width:20px;height:20px}
+  .capture-save{bottom:calc(68px + env(safe-area-inset-bottom,0px))}
+}
+@media(min-width:600px) and (max-width:1023px){#app{padding-left:var(--s-5);padding-right:var(--s-5)}#view{max-width:680px}}
+@media(prefers-reduced-motion:reduce){
+  ::view-transition-group(*),::view-transition-old(*),::view-transition-new(*){animation:none!important}
+  .fold-grid,.fold-chevron,.week-selection,.cap-row-shell{transition:none!important}
+  #week-scroller{scroll-behavior:auto!important}
+}
+
 </style>
 </head>
 <body>
@@ -546,7 +702,23 @@ textarea{ font:inherit; color:inherit; width:100%; border:1px solid var(--line-s
     <a class="brand" href="#review" aria-label="自我观察本 · 回到复盘"><span class="brand-mark" aria-hidden="true">观</span><span>自我观察本<small>A LITTLE CLOSER TO YOURSELF</small></span></a>
     <div class="sync" id="sync">连接中</div>
   </header>
-  <main tabindex="-1" id="view"></main>
+  <div id="workspace">
+    <section id="day-shell" aria-label="选择记录日期" hidden>
+      <div class="datebar">
+        <button type="button" class="dnav" data-act="selDay" data-v="-1" aria-label="前一天">‹</button>
+        <button type="button" class="dlabel" id="day-label" data-act="calToggle" aria-expanded="false" aria-controls="day-picker"><span class="date" id="day-number"></span><span class="dwd" id="day-weekday"></span><span class="day-relative" id="day-relative"></span><span class="caret" aria-hidden="true">▾</span></button>
+        <button type="button" class="dnav" id="day-next" data-act="selDay" data-v="1" aria-label="后一天">›</button>
+        <button type="button" class="today-return" id="day-today" data-act="selToday" aria-label="回到今天" hidden>今天</button>
+      </div>
+      <div class="card" id="day-picker" hidden></div>
+    </section>
+    <aside id="week-shell" aria-label="按周选择日期" hidden>
+      <div class="week-controls"><button type="button" class="dnav" data-act="weekMove" data-v="-1" aria-label="上一周">‹</button><span id="week-range"></span><button type="button" class="dnav" id="week-next" data-act="weekMove" data-v="1" aria-label="下一周">›</button></div>
+      <div id="week-scroller" aria-label="左右滑动切换星期"></div>
+      <div id="week-notes"></div>
+    </aside>
+    <main tabindex="-1" id="view"></main>
+  </div>
 </div>
 <nav class="tabs" aria-label="页面">
   <div class="in">
@@ -558,6 +730,7 @@ textarea{ font:inherit; color:inherit; width:100%; border:1px solid var(--line-s
   </div>
 </nav>
 <div id="toast" role="status" aria-live="polite" hidden></div>
+<div id="undo-toast" role="status" aria-live="polite" hidden><span id="undo-text">已删除</span><button type="button" id="undo-cap" data-act="undoCap">撤销</button></div>
 <div id="view-status" class="sr-status" role="status" aria-live="polite" aria-atomic="true"></div>
 
 <script>
@@ -575,7 +748,7 @@ const VAGUE = ['充实','好好','努力','认真','尽量','高效','顺利','�
 const MOMENTS = ['情绪最强的一刻','最不像自己的一刻','最有劲的一刻','别的时刻'];
 const FORMAT = 'review-archive/v1';
 const OFFLINE_APP = true;
-const APP_VERSION = 'v6.4';
+const APP_VERSION = 'v6.5';
 const LS_KEY = 'zwgcb-data-v1', LS_DRAFT = 'zwgcb-drafts-v1';
 
 /* ---------- utils ---------- */
@@ -1248,6 +1421,7 @@ function predRow(p, k, removable){
     + '</li>';
 }
 function capCardHTML(c, k, opts){
+  if (pendingCaps.has(capRef(k,c.id))) return '';
   opts = opts || {};
   const emo = (c.emos || []).join(' · ');
   const kv = [];
@@ -1323,7 +1497,7 @@ function archiveHTML(rec){
 /* ---------- views ---------- */
 function vPred(){
   const t = dayKey(), k = sel, d = S.days[k] || newDay(k), y = addDays(t, -1), yd = S.days[y], f = firstDay();
-  let h = dateBar() + copyBox() + '<div class="stack">';
+  let h = copyBox() + '<div class="stack">';
   h += pinCard(t);
   if (k === t){
     if (ready && fuseOn()) h += '<section class="card fuse"><div class="stage">最近三次写完都觉得更沉了</div><p class="muted">这通常说明在反复咀嚼，而不是在看清自己。接下来几天只做轻量版，并且用第三人称写。持续一周以上的话，找一个信任的人当面聊聊。</p></section>';
@@ -1358,30 +1532,26 @@ function journalArt(){
   </svg>`;
 }
 function journalAside(k){
-  const t = dayKey(), ws = weekStart(k);
-  let recorded = 0, trail = '';
-  for (let i = 0; i < 7; i++){
-    const date = addDays(ws, i), st = dayStatus(date, t), has = ['std','min','part'].includes(st);
-    if (has) recorded++;
-    trail += '<button type="button" class="trail-day' + (has ? ' recorded' : '') + (date === k ? ' current' : '') + '" data-act="goDay" data-key="' + date + '" data-v="review" aria-label="' + md(date) + (has ? '，有记录' : '，未记录') + '"' + (date > t ? ' disabled' : '') + '><span>' + '一二三四五六日'[i] + '</span><b>' + (has ? '·' : date.slice(8).replace(/^0/,'')) + '</b></button>';
-  }
-  return '<aside class="journal-aside" aria-label="观察手记"><section class="margin-note"><h2>这一周，留下的足迹</h2><div class="week-trail">' + trail + '</div><p><span class="count-note">' + recorded + '</span> 天有记录 · 留白也没有关系</p></section>'
+  const ws = weekStart(k), t = dayKey();
+  let recorded = 0;
+  for (let i = 0; i < 7; i++) if (['std','min','part'].includes(dayStatus(addDays(ws,i),t))) recorded++;
+  return '<section class="margin-note"><p><span class="count-note">' + recorded + '</span> 天有记录 · 留白也没有关系</p></section>'
     + '<section class="margin-note"><h2>换个角度想一想</h2><p class="prompt-note">如果是朋友经历了今天，<br>你会怎样看待他？</p><p>把同样的耐心，也留一点给自己。</p></section>'
-    + '<button class="quiet-link" type="button" data-act="goWeek" data-key="' + ws + '">把这一周连起来看 <span aria-hidden="true">↗</span></button><a class="quiet-link" href="#hyps">看看我对自己的新发现 <span aria-hidden="true">↗</span></a></aside>';
+    + '<button class="quiet-link" type="button" data-act="goWeek" data-key="' + ws + '">把这一周连起来看 <span aria-hidden="true">↗</span></button><a class="quiet-link" href="#hyps">看看我对自己的新发现 <span aria-hidden="true">↗</span></a>';
 }
 function vReview(){
   const t = dayKey(), k = sel, d = S.days[k] || newDay(k);
-  let h = dateBar() + copyBox();
+  let h = copyBox();
   if (k > t) return h + '<section class="card"><h1 class="h">明天，留给明天。</h1><p class="muted">可以先为还没发生的事，写下一个小预测。</p><a class="btn" href="#pred">写明天的预测</a></section>';
   const done = !!d.evening;
   h += '<section class="journal-hero"><div><p class="eyebrow">THE FIELD NOTES / 日常观察手记</p><h1>' + (done ? '又多认识了自己<br><em>一点。</em>' : '把今天，<br>轻轻<em>翻一页。</em>') + '</h1><p class="intro">' + (done ? '这一页已经收好。下次回来，再从这里继续。' : '不用写得完整，也不用急着找到答案。<br>从一个留在心里的瞬间开始。') + '</p></div>' + journalArt() + '</section>';
-  h += '<div class="journal-layout"><div class="journal-main">' + eveCard(k, d);
+  h += '<div class="journal-main">' + eveCard(k, d);
   const caps = d.caps || [];
   if (caps.length) h += '<details class="journal-disclosure"' + disclosureAttrs('day:' + k + ':caps') + '><summary>今天已经留下的片段 <small>' + caps.length + ' 条随手记</small></summary><div class="stack">' + caps.map(c => capCardHTML(c, k)).join('') + '</div></details>';
   h += '<details class="journal-disclosure"' + disclosureAttrs('day:' + k + ':events') + '><summary>有一件事，想再想一想 <small>单件复盘</small></summary>' + reviewEventCard(k) + '</details>';
   h += '<details class="journal-disclosure"' + disclosureAttrs('day:' + k + ':archives', !!archivesOn(k).length) + '><summary>聊过的，也收进本子里 <small>对话复盘</small></summary>' + reviewArcCard(k) + '</details>';
   if (k === t && ready && fuseOn()) h += '<section class="card fuse"><div class="stage">最近三次写完都觉得更沉了</div><p class="muted">可以先停一停，或只记事实，不急着分析原因。</p></section>';
-  h += '</div>' + journalAside(k) + '</div><footer class="journal-foot"><span>慢慢观察，慢慢认识自己。</span><span>自我观察本 · PRIVATE FIELD NOTES</span></footer>';
+  h += '</div><footer class="journal-foot"><span>慢慢观察，慢慢认识自己。</span><span>自我观察本 · PRIVATE FIELD NOTES</span></footer>';
   return h;
 }
 const MORE_SECTIONS = { pred:'预测', capture:'随手记', review:'复盘', events:'单件复盘', archives:'对话存档' };
@@ -1435,15 +1605,6 @@ function vMore(){
   h += statsCard(t);
   h += syncCard() + dataCard();
   return h + '</div>';
-}
-function dateBar(){
-  const t = dayKey(), rel = sel === t ? '今天' : sel === addDays(t, -1) ? '昨天' : sel === addDays(t, 1) ? '明天' : '';
-  let s = '<div class="datebar"><button type="button" class="dnav" data-act="selDay" data-v="-1" aria-label="前一天">‹</button>'
-    + '<button type="button" class="dlabel" data-act="calToggle" aria-expanded="' + !!ui.cal + '" aria-label="选日期"><span class="date">' + md(sel) + '</span><span class="dwd">' + wdOf(sel) + (rel ? ' · ' + rel : '') + '</span><span class="caret" aria-hidden="true">▾</span></button>'
-    + '<button type="button" class="dnav" data-act="selDay" data-v="1" aria-label="后一天"' + (sel >= addDays(t, 1) ? ' disabled' : '') + '>›</button></div>';
-  if (sel !== t) s += '<div class="row backrow"><button type="button" class="linkbtn" data-act="selToday">回到今天</button></div>';
-  if (ui.cal) s += '<div class="card calpop">' + calendarHTML(ui.calMonth || sel.slice(0, 7), 'pick') + '</div>';
-  return s;
 }
 const shiftYM = (ym, n) => { const d = new Date(+ym.slice(0, 4), +ym.slice(5, 7) - 1 + n, 1); return d.getFullYear() + '-' + pad(d.getMonth() + 1); };
 function calendarHTML(ym, modeName){
@@ -1747,45 +1908,251 @@ function captureFoldHTML(id, openLabel, closeLabel, content){
   const key = route + ':' + (route === 'more' ? (moreLocation().day || ui.moreDay) : sel) + ':' + id, open = ui.open.has(key);
   return '<div class="capture-fold"><button type="button" class="capture-toggle" data-act="captureToggle" data-ui-open="' + esc(key) + '" data-open-label="' + esc(openLabel) + '" data-close-label="' + esc(closeLabel) + '" aria-expanded="' + open + '" aria-controls="' + id + '"><span class="capture-label">' + esc(open ? closeLabel : openLabel) + '</span><span class="capture-sign" aria-hidden="true">' + (open ? '−' : '＋') + '</span></button><div class="stack capture-overflow" id="' + id + '"' + (open ? '' : ' hidden') + '>' + content + '</div></div>';
 }
+/* ---------- persistent date and week shell ---------- */
+let dayTransition = null, dayRun = 0, weekBase = null, weekPending = null, weekResetting = false, weekGesture = false, weekPointer = false;
+const reducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const motionTime = name => parseFloat(getComputedStyle(document.documentElement).getPropertyValue(name)) || 200;
+function dayShellVisible(){ return ['pred','review','capture'].includes(route) && (!form || (form.type === 'capture' && form.key === 'new')); }
+function cancelDayMotion(){
+  ++dayRun;
+  if (dayTransition){ dayTransition.skipTransition(); dayTransition = null; }
+  document.documentElement.classList.remove('day-transition');
+  [$('#view'), $('#day-label')].forEach(el => { el.classList.remove('enter-prev','enter-next'); el.getAnimations().forEach(a => a.cancel()); });
+}
+function enterDay(direction){
+  const cls = direction < 0 ? 'enter-prev' : 'enter-next';
+  [$('#view'), $('#day-label')].forEach(el => {
+    el.classList.remove('enter-prev','enter-next');
+    if (reducedMotion()){ if (el.animate) el.animate([{opacity:0},{opacity:1}], {duration:100}); }
+    else { void el.offsetWidth; el.classList.add(cls); }
+  });
+}
+function changeDay(k, fromWeek = false){
+  if (!validDate(k) || k > addDays(dayKey(), 1) || k === sel) return;
+  const direction = k < sel ? -1 : 1;
+  cancelDayMotion(); const run = dayRun;
+  sel = k; ui.cal = false;
+  const top = $('#workspace').getBoundingClientRect().top + window.scrollY;
+  if (window.scrollY > top) window.scrollTo({ top, behavior:'instant' });
+  document.documentElement.dataset.dir = direction < 0 ? 'prev' : 'next';
+  const update = () => { if (run !== dayRun) return; ui.weekFromScroll = fromWeek; render(); ui.weekFromScroll = false; };
+  if (document.startViewTransition && !reducedMotion()){
+    document.documentElement.classList.add('day-transition');
+    const transition = document.startViewTransition(update); dayTransition = transition;
+    transition.ready.catch(() => {});
+    transition.finished.catch(() => {}).finally(() => {
+      if (run === dayRun){ dayTransition = null; document.documentElement.classList.remove('day-transition'); }
+    });
+  } else { update(); enterDay(direction); }
+}
+function weekPanelHTML(){
+  return '<div class="week-page"><span class="week-selection" aria-hidden="true"></span>' + Array.from({length:7}, () => '<button type="button" class="week-day" data-act="weekPick"><span class="week-wd"></span><b></b><i aria-hidden="true"></i></button>').join('') + '</div>';
+}
+function paintWeekPage(page, start){
+  const t = dayKey(), last = addDays(t, 1), index = Math.round((parse(sel) - parse(start)) / 864e5);
+  const indicator = page.querySelector('.week-selection');
+  indicator.hidden = index < 0 || index > 6; indicator.style.setProperty('--i', index);
+  page.querySelectorAll('.week-day').forEach((button,i) => {
+    const k = addDays(start,i), state = dayStatus(k,t), current = k === sel;
+    button.dataset.key = k; button.disabled = k > last;
+    button.classList.toggle('selected',current); button.classList.toggle('today', k === t);
+    button.classList.toggle('recorded',['std','min','part'].includes(state));
+    button.setAttribute('aria-pressed',String(current));
+    if (k === t) button.setAttribute('aria-current','date'); else button.removeAttribute('aria-current');
+    button.setAttribute('aria-label',md(k) + ' ' + wdOf(k) + (current ? '，已选中' : '') + (['std','min','part'].includes(state) ? '，有记录' : ''));
+    button.querySelector('.week-wd').textContent = '一二三四五六日'[i];
+    button.querySelector('b').textContent = +k.slice(8);
+  });
+}
+function centerWeek(base){
+  const scroller = $('#week-scroller'); weekBase = base; weekPending = null; weekResetting = true;
+  [...scroller.children].forEach((page,i) => { paintWeekPage(page,addDays(base,(i-1)*7)); page.inert = i !== 1; });
+  scroller.scrollTo({left:scroller.clientWidth,behavior:'instant'});
+  requestAnimationFrame(() => { weekResetting = false; });
+}
+function updateWeek(){
+  const shell = $('#week-shell'), scroller = $('#week-scroller'), base = weekStart(sel);
+  if (!scroller.children.length) scroller.innerHTML = weekPanelHTML().repeat(3);
+  if (shell.hidden) return;
+  if (weekPending){ centerWeek(weekPending.base); }
+  if (!weekBase || ui.weekFromScroll || reducedMotion()) centerWeek(base);
+  else if (base !== weekBase){
+    const index = base < weekBase ? 0 : 2;
+    paintWeekPage(scroller.children[index],base);
+    weekPending = {base};
+    scroller.scrollTo({left:index*scroller.clientWidth,behavior:'smooth'});
+  } else [...scroller.children].forEach((page,i) => paintWeekPage(page,addDays(base,(i-1)*7)));
+  $('#week-range').textContent = mdShort(base) + ' – ' + mdShort(addDays(base,6));
+  $('#week-next').disabled = base >= weekStart(addDays(dayKey(),1));
+}
+function finishWeekScroll(){
+  const scroller = $('#week-scroller');
+  if (weekResetting || weekPointer || $('#week-shell').hidden || !scroller.clientWidth) return;
+  if (weekPending){ centerWeek(weekPending.base); return; }
+  // Layout, focus and browser screenshots can scroll overflow containers too.
+  // Only a deliberate gesture or week-arrow command is allowed to change dates.
+  if (!weekGesture){ if (Math.abs(scroller.scrollLeft-scroller.clientWidth) > 1) centerWeek(weekStart(sel)); return; }
+  weekGesture = false;
+  const page = Math.round(scroller.scrollLeft / scroller.clientWidth);
+  if (page !== 1){ const next = addDays(sel,(page-1)*7), max = addDays(dayKey(),1); changeDay(next > max ? max : next,true); if (next === sel) centerWeek(weekStart(sel)); }
+}
+function moveWeek(n){
+  const scroller = $('#week-scroller');
+  if (weekPending) centerWeek(weekPending.base);
+  const next = addDays(sel,n*7), max = addDays(dayKey(),1);
+  if (n > 0 && weekStart(sel) >= weekStart(max)) return;
+  if (reducedMotion()) changeDay(next > max ? max : next,true);
+  else { weekGesture = true; scroller.scrollTo({left:(n < 0 ? 0 : 2)*scroller.clientWidth,behavior:'smooth'}); }
+}
+function updateDateShell(){
+  const visible = dayShellVisible(), week = visible && route !== 'capture', shell = $('#day-shell');
+  const weekWasHidden = $('#week-shell').hidden;
+  shell.hidden = !visible; $('#week-shell').hidden = !week;
+  if (week && weekWasHidden) weekBase = null;
+  $('#workspace').classList.toggle('has-week',week);
+  $('#app').dataset.route = route;
+  if (!visible) return;
+  const t = dayKey(), relative = sel === t ? '今天' : sel === addDays(t,-1) ? '昨天' : sel === addDays(t,1) ? '明天' : '';
+  $('#day-number').textContent = md(sel); $('#day-weekday').textContent = wdOf(sel);
+  $('#day-relative').textContent = relative; $('#day-relative').hidden = !relative;
+  $('#day-next').disabled = sel >= addDays(t,1); $('#day-today').hidden = sel === t;
+  $('#day-label').setAttribute('aria-expanded',String(!!ui.cal));
+  $('#day-label').setAttribute('aria-label',md(sel) + ' ' + wdOf(sel) + '，选择日期');
+  const picker = $('#day-picker'); picker.hidden = !ui.cal;
+  if (ui.cal){ const html = calendarHTML(ui.calMonth || sel.slice(0,7),'pick'); if (picker.innerHTML !== html) picker.innerHTML = html; }
+  if (week){
+    updateWeek();
+    const notes = route === 'review' ? journalAside(sel) : '';
+    if ($('#week-notes').innerHTML !== notes) $('#week-notes').innerHTML = notes;
+  }
+}
+
+/* ---------- capture: compact rows and optional fields ---------- */
+let uiPrefs = {};
+try { uiPrefs = JSON.parse(localStorage.getItem('zwgcb-ui') || '{}') || {}; } catch (e) {}
+if (typeof uiPrefs !== 'object' || Array.isArray(uiPrefs)) uiPrefs = {};
+function countCaptureUse(){
+  uiPrefs.captureUses = Math.min(3,(+uiPrefs.captureUses || 0) + 1);
+  try { localStorage.setItem('zwgcb-ui',JSON.stringify(uiPrefs)); } catch (e) {}
+}
+function foldHTML(key, id, label, content, options = {}){
+  if (!ui.disclosureSeen.has(key)) setDisclosure(key,!!options.open);
+  const open = ui.open.has(key), close = options.close || label;
+  return '<div class="ui-fold ' + (options.className || '') + '"><button type="button" class="fold-toggle" data-act="fold" data-ui-open="' + esc(key) + '" data-open-label="' + esc(label) + '" data-close-label="' + esc(close) + '" aria-expanded="' + open + '" aria-controls="' + id + '"><span class="fold-label">' + esc(open ? close : label) + '</span><span class="fold-chevron" aria-hidden="true">›</span></button><div class="fold-grid' + (open ? ' is-open' : '') + '" id="' + id + '" aria-hidden="' + !open + '"><div class="fold-inner"' + (open ? '' : ' inert') + '>' + content + '</div></div></div>';
+}
+function setFold(button,open){
+  const panel = document.getElementById(button.getAttribute('aria-controls'));
+  if (!panel) return;
+  setDisclosure(button.dataset.uiOpen,open);
+  button.setAttribute('aria-expanded',String(open)); panel.classList.toggle('is-open',open);
+  if (panel.id === 'capture-moods-more') panel.parentElement.dataset.expanded = String(open);
+  panel.setAttribute('aria-hidden',String(!open)); panel.firstElementChild.inert = !open;
+  const label = button.querySelector('.fold-label'); if (label) label.textContent = open ? button.dataset.closeLabel : button.dataset.openLabel;
+  if (open) setTimeout(() => { if (panel.isConnected && panel.classList.contains('is-open') && panel.getBoundingClientRect().top > window.innerHeight - 100) button.scrollIntoView({block:'nearest',behavior:'auto'}); },reducedMotion() ? 0 : motionTime('--t-base'));
+}
+function capRef(k,id){ return k + '|' + id; }
+const pendingCaps = new Map();
+function captureVisible(k,c){ return !pendingCaps.has(capRef(k,c.id)); }
+function compactCap(c,k){
+  if (!captureVisible(k,c)) return '';
+  const key = 'cap:' + capRef(k,c.id), open = ui.open.has(key), id = 'cap-panel-' + encodeURIComponent(capRef(k,c.id));
+  const text = c.fact || c.quote || '留下了一点感受', emo = (c.emos || []).join(' · ');
+  return '<div class="cap-row-shell" data-cap-ref="' + esc(capRef(k,c.id)) + '"><div class="cap-row-clip"><article class="cap-row' + (ui.fresh === c.id ? ' just-saved' : '') + '"><button type="button" class="cap-compact" data-act="capExpand" data-ui-open="' + esc(key) + '" data-key="' + k + '" data-id="' + esc(c.id) + '" aria-expanded="' + open + '" aria-controls="' + id + '"><time class="cap-time">' + hm(c.at) + '</time><span class="cap-excerpt"><span class="cap-feeling">' + esc(emo || '未标情绪') + bars(c.inten || 0) + '</span><span class="cap-first-line">' + esc(text.split('\n')[0]) + '</span></span><span class="cap-mark">' + (!c.done ? '<i class="pending-dot" aria-label="还没理清"></i>' : '') + '<span class="fold-chevron" aria-hidden="true">›</span></span></button><div class="fold-grid' + (open ? ' is-open' : '') + '" id="' + id + '" aria-hidden="' + !open + '"><div class="fold-inner"' + (open ? '' : ' inert') + '>' + capCardHTML(c,k,{actions:false}) + '<div class="cap-row-actions"><button type="button" class="linkbtn" data-act="editCap" data-key="' + k + '" data-id="' + esc(c.id) + '">接着理清</button>' + evLink(k,c) + '<button type="button" class="linkbtn cap-delete" data-act="deleteCap" data-key="' + k + '" data-id="' + esc(c.id) + '">删除</button></div></div></div></article></div></div>';
+}
+function captureFields(x){
+  return fieldTA('quote','那一刻脑子里的原话，逐字','比如：反正也来不及了','',1)
+    + '<div class="f"><div class="lab">身体的感觉</div>' + chipsHTML('body',BODY,true) + '</div>'
+    + fieldTA('did','我做了什么','','',1) + fieldTA('wanted','想做但没做的','','',1)
+    + fieldTA('care','它碰到了我在乎的什么','被否定？被打断？被认可？失去掌控？','',1)
+    + '<div class="f"><div class="lab">标记（方便晚上和周复盘找到它）</div>' + chipsHTML('tags',TAGS,true) + '</div>';
+}
 function fCapture(){
-  const x = form.data, editing = form.key !== 'new', t = dayKey(), k0 = sel > t ? t : sel, back = !editing && k0 !== t;
-  let h = dateBar() + (sel > t ? '<p class="fine">明天还没到，随手记会记在今天。</p>' : '') + (back ? '<p class="lede">给 ' + md(k0) + ' 补一条随手记。隔得越久越容易记成故事，记不清的就空着。</p>' : '<p class="lede">当场记一句就行，理清可以晚点。顺序是刻意的：先事实，再名字，再身体，最后才问它碰到了什么。</p>');
-  if (editing) h = formHead('接着理清这一条', '补上原话、身体感觉和它碰到了什么。', '');
-  h += '<div class="card">';
+  const x = form.data, editing = form.key !== 'new', t = dayKey(), k0 = editing ? form.key.split('|')[0] : sel > t ? t : sel, back = !editing && k0 !== t;
+  const formKey = 'capture-form:' + form.key;
+  let h = editing ? formHead('接着理清这一条','补上原话、身体感觉和它碰到了什么。',md(k0)) : '';
+  if (!editing && sel > t) h += '<p class="capture-context">明天还没到，随手记会记在今天。</p>';
+  if (back) h += '<p class="capture-context">补记 ' + md(k0) + ' · 记不清的地方可以空着。</p>';
+  h += '<section class="card capture-composer" aria-label="写一条随手记">';
   if (back) h += '<div class="f"><label for="f-time">大概几点</label><input type="time" id="f-time" data-f="time" value="' + esc(x.time || '12:00') + '"></div>';
-  h += fieldTA('fact', back ? '那时发生了什么' : '刚刚发生了什么', '一句话，像摄像机拍到的那样');
-  h += '<div class="f"><div class="lab">是什么情绪</div>' + chipsHTML('emos', EMOS, true) + '<div class="hint">给情绪起个准确的名字，通常就能让它降下来一点。</div></div>';
-  h += '<div class="f"><div class="lab">有多强</div>' + segHTML('inten', [[1,'1'],[2,'2'],[3,'3'],[4,'4'],[5,'5']].map(a => [a[0], a[1]])) + '</div>';
-  const chs = openHyps().slice().sort((a, b) => (a.no || 0) - (b.no || 0));
+  h += fieldTA('fact',back ? '那时发生了什么' : '刚刚发生了什么','一句话，像摄像机拍到的那样');
+  const selected = x.emos || [], tail = EMOS.slice(6), moodOpen = ui.open.has(formKey + ':moods');
+  const extra = chipsHTML('emos',tail.filter(e => selected.includes(e)),true,'selected-extra').replace(/^<div class="chips">/,'').replace(/<\/div>$/,'');
+  h += '<div class="capture-emotion" data-expanded="' + moodOpen + '" role="group" aria-label="情绪"><div class="capture-moods"><span class="lab">情绪</span>' + chipsHTML('emos',EMOS.slice(0,6),true).replace(/^<div class="chips">/,'').replace(/<\/div>$/,'') + '<button type="button" class="chip mood-more" data-act="fold" data-ui-open="' + esc(formKey + ':moods') + '" aria-expanded="' + moodOpen + '" aria-controls="capture-moods-more">更多 <span class="fold-chevron" aria-hidden="true">›</span></button>' + extra + '</div><div class="fold-grid' + (moodOpen ? ' is-open' : '') + '" id="capture-moods-more" aria-hidden="' + !moodOpen + '"><div class="fold-inner"' + (moodOpen ? '' : ' inert') + '>' + chipsHTML('emos',tail,true) + '</div></div></div>';
+  h += '<div class="capture-intensity" role="group" aria-label="情绪强度"><span class="lab">强度</span>' + segHTML('inten',[[1,'1'],[2,'2'],[3,'3'],[4,'4'],[5,'5']]) + '</div>';
+  const chs = openHyps().slice().sort((a,b) => (a.no || 0)-(b.no || 0));
   if (x.hyp && !S.hyps[x.hyp]) x.hyp = null;
   if (x.hyp && !x.hypKind) x.hypKind = 'sup';
-  if (chs.length) h += '<div class="f"><div class="lab">关联一条假设（可选）</div><div class="chips">' + chs.map(h2 => '<button type="button" class="chip' + (x.hyp === h2.id ? ' on' : '') + '" data-act="pick" data-f="hyp" data-v="' + h2.id + '">' + hypNo(h2) + ' · ' + esc(trunc(hypText(h2), 20)) + '</button>').join('') + '</div>'
-    + (x.hyp ? '<div class="lab">这件事对它来说是</div>' + segHTML('hypKind', [['sup','支持'],['con','反例']]) + '<div class="hint">存下时会给它记一条强证据，日期是这条随手记的那天。</div>' : '') + '</div>';
-  if (!x.more){
-    h += '<div class="row"><button type="button" class="btn" data-act="saveCap">先存下</button><button type="button" class="btn ghost" data-act="more">继续理清</button></div>';
-  } else {
-    h += fieldTA('quote', '那一刻脑子里的原话，逐字', '比如：反正也来不及了', '', 1);
-    h += '<div class="f"><div class="lab">身体的感觉</div>' + chipsHTML('body', BODY, true) + '</div>';
-    h += fieldTA('did', '我做了什么', '', '', 1);
-    h += fieldTA('wanted', '想做但没做的', '', '', 1);
-    h += fieldTA('care', '它碰到了我在乎的什么', '被否定？被打断？被认可？失去掌控？', '', 1);
-    h += '<div class="f"><div class="lab">标记（方便晚上和周复盘找到它）</div>' + chipsHTML('tags', TAGS, true) + '</div>';
-    h += '<div class="row"><button type="button" class="btn" data-act="saveCap">' + (editing ? '存好' : '存下') + '</button>' + (editing ? '<button type="button" class="btn ghost" data-act="delCap">删掉这条</button>' : '') + '</div>';
-  }
-  h += '</div>';
-  if (!editing){
-    const d = S.days[k0];
-    const list = d ? (d.caps || []).slice().sort((a, b) => b.at.localeCompare(a.at)) : [];
-    h += '<h2 class="h2">' + (k0 === t ? '今天' : md(k0)) + ' · ' + list.length + ' 条</h2>';
-    h += list.length ? '<div class="stack">' + list.slice(0, 3).map(c => capCardHTML(c, k0)).join('')
-      + (list.length > 3 ? captureFoldHTML('capture-older', '展开全部（共 ' + list.length + ' 条）', '收起（仅显示最近 3 条）', list.slice(3).map(c => capCardHTML(c, k0)).join('')) : '')
-      + '</div>' : '<p class="fine">' + (k0 === t ? '今天还没有记。存下的每一条会在这里排成一张卡片：时间、情绪和强度、原话、身体、在乎的东西。' : '这一天没有随手记。') + '</p>';
-    const pend = [];
-    if (k0 === t) for (let i = 1; i <= 14; i++){ const k = addDays(t, -i), dd = S.days[k]; if (dd) (dd.caps || []).forEach(c => { if (!c.done) pend.push([k, c]); }); }
-    if (pend.length) h += '<h2 class="h2">还没理清的</h2>' + captureFoldHTML('capture-pending', '展开往日未完成（共 ' + pend.length + ' 条）', '收起往日未完成（共 ' + pend.length + ' 条）', pend.map(p => capCardHTML(p[1], p[0], { date:true })).join(''));
+  let hypotheses = chs.length ? '<div class="chips">' + chs.map(h2 => '<button type="button" class="chip' + (x.hyp === h2.id ? ' on' : '') + '" data-act="pick" data-f="hyp" data-v="' + h2.id + '">' + hypNo(h2) + ' · ' + esc(trunc(hypText(h2),16)) + '</button>').join('') + '</div>' : '<p class="fine">清单里还没有假设，这一项可以空着。</p>';
+  if (x.hyp) hypotheses += '<div class="lab">这件事对它来说是</div>' + segHTML('hypKind',[['sup','支持'],['con','反例']]) + '<p class="fine">存下时会给它记一条强证据。</p>';
+  h += '<div class="capture-optionals">' + foldHTML(formKey + ':hyp','capture-hyp','关联一条假设（可选）',hypotheses,{open:!!x.hyp})
+    + foldHTML(formKey + ':extra','capture-extra','补充原话、身体、在乎的（可选）',captureFields(x),{open:editing || !!x.more}) + '</div>';
+  h += '<div class="capture-save"><button type="button" class="btn" data-act="saveCap"' + (ui.capSaving ? ' disabled' : '') + '>' + (ui.capSaving ? '正在保存…' : ui.capSaved ? '已存下 ✓' : editing ? '存好' : '先存下') + '</button>' + (editing ? '<button type="button" class="linkbtn cap-delete" data-act="delCap">删掉这条</button>' : '') + '</div></section>';
+  if (!editing && (+uiPrefs.captureUses || 0) < 3) h += '<p class="capture-tip">先记事实，理清可以晚点。</p>';
+  if (editing) return h;
+  const d = S.days[k0], list = d ? (d.caps || []).filter(c => captureVisible(k0,c)).slice().sort((a,b) => (Date.parse(b.at) || 0) - (Date.parse(a.at) || 0)) : [];
+  h += '<h2 class="h2 capture-list-title">' + (k0 === t ? '今天' : md(k0)) + ' · ' + list.length + ' 条</h2>';
+  h += list.length ? '<div class="capture-list">' + list.slice(0,3).map(c => compactCap(c,k0)).join('')
+    + (list.length > 3 ? foldHTML('capture:' + k0 + ':older','capture-older','展开全部（共 ' + list.length + ' 条）',list.slice(3).map(c => compactCap(c,k0)).join(''),{close:'收起（仅显示最近 3 条）',className:'capture-rest'}) : '') + '</div>' : '<p class="fine">' + (k0 === t ? '今天还没有记。' : '这一天没有随手记。') + '</p>';
+  const pending = [];
+  if (k0 === t) for (let i=1;i<=14;i++){ const k=addDays(t,-i), day=S.days[k]; if (day) (day.caps || []).filter(c => !c.done && captureVisible(k,c)).forEach(c => pending.push([k,c])); }
+  if (pending.length){
+    let grouped = '', last = null;
+    pending.sort((a,b) => b[0].localeCompare(a[0]) || (Date.parse(b[1].at) || 0) - (Date.parse(a[1].at) || 0)).forEach(([k,c]) => { if (k !== last){ if (last) grouped += '</div>'; grouped += '<h3 class="pending-date">' + md(k) + ' ' + wdOf(k) + '</h3><div class="capture-list">'; last=k; } grouped += compactCap(c,k); });
+    grouped += '</div>';
+    h += foldHTML('capture:pending','capture-pending','过去 14 天还有 ' + pending.length + ' 条没理清',grouped,{className:'capture-pending',close:'收起往日未完成（共 ' + pending.length + ' 条）'});
   }
   return h;
 }
+function sizeCaptureInput(){
+  if (!form || form.type !== 'capture') return;
+  const input = $('#f-fact'); if (!input) return;
+  const style = getComputedStyle(input), line = parseFloat(style.lineHeight), padding = parseFloat(style.paddingTop) + parseFloat(style.paddingBottom) + 2;
+  input.style.height = '0px'; input.style.height = Math.min(line*6+padding,Math.max(line*2+padding,input.scrollHeight+2)) + 'px';
+  input.style.overflowY = input.scrollHeight > line*6+padding ? 'auto' : 'hidden';
+}
+function keepCaptureSaveVisible(){
+  const button = $('.capture-save'); if (!button) return;
+  const viewport = window.visualViewport, bottom = viewport ? viewport.height + viewport.offsetTop : window.innerHeight;
+  if (button.getBoundingClientRect().bottom > bottom - 8) button.scrollIntoView({block:'nearest',behavior:'auto'});
+}
+let capSavedTimer = null, capFreshTimer = null;
+function captureSaved(){
+  ui.capSaved = true; clearTimeout(capSavedTimer); clearTimeout(capFreshTimer);
+  capSavedTimer = setTimeout(() => { ui.capSaved = false; const button = $('[data-act="saveCap"]'); if (button && !ui.capSaving) button.textContent = form && form.key === 'new' ? '先存下' : '存好'; },1200);
+  capFreshTimer = setTimeout(() => { ui.fresh = null; document.querySelectorAll('.just-saved').forEach(el => el.classList.remove('just-saved')); },1500);
+}
+function updateUndo(){
+  const toast = $('#undo-toast'); toast.hidden = !pendingCaps.size;
+  $('#undo-text').textContent = pendingCaps.size > 1 ? '已删除 ' + pendingCaps.size + ' 条' : '已删除';
+}
+function scheduleCapDelete(k,id){
+  if (!needReady() || pendingCaps.has(capRef(k,id))) return;
+  const ref = capRef(k,id), day = S.days[k]; if (!day || !(day.caps || []).some(c => c.id === id)) return;
+  const job = {k,id,timer:setTimeout(() => commitCapDelete(ref),5000)}; pendingCaps.set(ref,job);
+  document.querySelectorAll('[data-cap-ref]').forEach(el => { if (el.dataset.capRef === ref){ el.classList.add('is-removing'); el.inert = true; } });
+  if (form && form.type === 'capture' && form.key === ref){ form = null; render(); }
+  else setTimeout(() => { if (pendingCaps.has(ref)) render(); },reducedMotion() ? 0 : motionTime('--t-base'));
+  updateUndo(); $('#undo-cap').focus({preventScroll:true});
+}
+async function commitCapDelete(ref){
+  const job = pendingCaps.get(ref); if (!job) return;
+  // Once the deadline passes, revoke Undo before starting any asynchronous save.
+  pendingCaps.delete(ref); updateUndo();
+  const d = getDay(job.k), old = (d.caps || []).find(c => c.id === job.id);
+  try {
+    if (old){
+      const ops = capEvidenceOps(job.k,{id:job.id,hyp:null},old); d.caps = d.caps.filter(c => c.id !== job.id);
+      await put('days',job.k,d); await Promise.all(ops.map(f => f()));
+      delete drafts['capture:' + ref]; saveDrafts();
+    }
+  } catch (e){ toast('这次没删成功，请稍后重试。'); }
+  render();
+}
+function undoCapDelete(){
+  pendingCaps.forEach(job => clearTimeout(job.timer)); pendingCaps.clear(); updateUndo(); render(); toast('已撤销删除。');
+  const row = $('.cap-compact'); if (row) row.focus({preventScroll:true});
+}
+
 function fWeek(){
   const ws = form.key, we = addDays(ws, 6), w = weekData(ws), x = form.data, t = dayKey();
   const total = Object.keys(S.days).filter(k => { const s = dayStatus(k, t); return s === 'std' || s === 'min'; }).length;
@@ -2088,7 +2455,8 @@ function findControl(view, identity){
   const matches = Array.from(view.querySelectorAll(identity.tag)).filter(el => identity.disclosure
     ? el.parentElement.dataset.uiOpen === identity.disclosure
     : identity.attrs.every(([k,v]) => el.getAttribute(k) === v));
-  return matches.length === 1 ? matches[0] : null;
+  const visible = matches.filter(el => el.getClientRects().length && getComputedStyle(el).visibility !== 'hidden');
+  return matches.length === 1 ? matches[0] : visible.length === 1 ? visible[0] : null;
 }
 let renderedView = null;
 function rememberView(view){
@@ -2117,8 +2485,10 @@ function render(){
   const context = { route, type:form ? form.type : '', form, date:route === 'more' ? (moreLocation().day || ui.moreDay || ui.moreMonth) : sel };
   const samePage = renderedView && renderedView.route === context.route && renderedView.type === context.type;
   view.dataset.view = form ? form.type : route;
-  view.dataset.writing = String(!!form);
+  view.dataset.writing = String(!!form && !(form.type === 'capture' && form.key === 'new'));
+  updateDateShell();
   view.innerHTML = html;
+  sizeCaptureInput();
   if (samePage){
     if (renderedView.form === form && renderedView.date === context.date) previous.inputs.forEach(saved => {
       const el = findControl(view, saved.identity);
@@ -2421,6 +2791,17 @@ const A = {
     if (from && from.day === k && from.section === el.dataset.section) history.back();
     else { history.replaceState(null, '', moreHash(k)); onHash(); }
   },
+  fold(el){ setFold(el, el.getAttribute('aria-expanded') !== 'true'); },
+  capExpand(el){
+    const open = el.getAttribute('aria-expanded') !== 'true';
+    document.querySelectorAll('[data-act="capExpand"]').forEach(button => { if (button !== el && button.getAttribute('aria-expanded') === 'true') setFold(button,false); });
+    Array.from(ui.open).filter(k => k.startsWith('cap:')).forEach(k => ui.open.delete(k));
+    setFold(el,open);
+  },
+  deleteCap(el){ scheduleCapDelete(el.dataset.key,el.dataset.id); },
+  undoCap(){ undoCapDelete(); },
+  weekPick(el){ weekGesture = false; changeDay(el.dataset.key); },
+  weekMove(el){ moveWeek(+el.dataset.v); },
   captureToggle(el){
     const panel = document.getElementById(el.getAttribute('aria-controls'));
     if (!panel) return;
@@ -2482,7 +2863,7 @@ const A = {
   skipOpen(){ ui.skipOpen = !ui.skipOpen; render(); },
   async skip(el){ if (!needReady()) return; const d = getDay(el.dataset.key); d.skip = { reason:el.dataset.v, at:new Date().toISOString() }; ui.skipOpen = false; render(); try { await put('days', el.dataset.key, d); toast('留白也收好了。下次想写时再来。'); } catch (e) {} },
   async saveCap(){
-    if (!needReady()) return;
+    if (!needReady() || !form || form.type !== 'capture' || ui.capSaving) return;
     const x = clone(form.data);
     if (!(x.fact || '').trim() && !(x.quote || '').trim() && !(x.emos || []).length){ toast('至少写一句发生了什么，或者点一个情绪。'); return; }
     const editing = form.key !== 'new';
@@ -2492,14 +2873,24 @@ const A = {
     c.done = !!(c.quote || c.care);
     d.caps = old ? d.caps.map(c2 => c2.id === id ? c : c2) : d.caps.concat([c]);
     const evOps = capEvidenceOps(k, c, old);
-    delete drafts[form.type + ':' + form.key]; saveDrafts();
-    form = null; ui.fresh = id; route = 'capture'; if (location.hash !== '#capture') history.replaceState(null, '', '#capture');
-    render(); window.scrollTo(0, 0);
-    try { await put('days', k, d); await Promise.all(evOps.map(f => f())); toast((c.hyp ? '记下了，也给 ' + hypNo(S.hyps[c.hyp]) + ' 记了一条' + (c.hypKind === 'con' ? '反例' : '支持') + '。' : '') || (c.done ? '记下了，也理清了。' : '记下了。晚上或者有空时再理清。')); } catch (e) {}
-    setTimeout(() => { ui.fresh = null; }, 4000);
+    const savedForm = form;
+    ui.capSaving = true; const saveButton = $('[data-act="saveCap"]'); if (saveButton){ saveButton.disabled = true; saveButton.textContent = '正在保存…'; }
+    try {
+      await put('days',k,d); await Promise.all(evOps.map(f => f()));
+      delete drafts[savedForm.type + ':' + savedForm.key]; saveDrafts();
+      if (!editing) countCaptureUse();
+      ui.capSaving = false;
+      if (form === savedForm){
+        form = null; ui.fresh = id; route = 'capture'; sel = k;
+        if (location.hash !== '#capture') history.replaceState(null,'','#capture');
+        captureSaved(); render();
+        const input = $('#f-fact'); if (input){ input.focus({preventScroll:true}); keepCaptureSaveVisible(); }
+      }
+      toast(c.hyp ? '记下了，也给 ' + hypNo(S.hyps[c.hyp]) + ' 记了一条' + (c.hypKind === 'con' ? '反例' : '支持') + '。' : '记下了。');
+    } catch (e){ ui.capSaving = false; if (form === savedForm) render(); toast('这次没存好，内容还在，请稍后再试。'); }
   },
   editCap(el){ const k = el.dataset.key, d = S.days[k], c = d && d.caps.find(c2 => c2.id === el.dataset.id); if (!c) return; form = null; route = 'capture'; if (location.hash !== '#capture') history.replaceState(null, '', '#capture'); const id = 'capture:' + k + '|' + c.id; form = { type:'capture', key:k + '|' + c.id, data:drafts[id] ? clone(drafts[id]) : Object.assign(clone(c), { more:true }), dirty:false }; render(); window.scrollTo(0, 0); },
-  async delCap(){ if (!needReady()) return; const p = form.key.split('|'), d = getDay(p[0]), oldC = d.caps.find(c => c.id === p[1]), evOps = capEvidenceOps(p[0], { id:p[1], hyp:null }, oldC); d.caps = d.caps.filter(c => c.id !== p[1]); delete drafts['capture:' + form.key]; saveDrafts(); form = null; render(); try { await put('days', p[0], d); await Promise.all(evOps.map(f => f())); toast('删掉了。'); } catch (e) {} },
+  delCap(){ if (!form || form.type !== 'capture' || form.key === 'new') return; const p = form.key.split('|'); scheduleCapDelete(p[0],p[1]); },
   async saveWeek(){ if (!needReady()) return; const k = form.key, data = clone(form.data); data.at = new Date().toISOString(); delete drafts['week:' + k]; saveDrafts(); form.dirty = false; try { await put('weeks', k, data); toast('周复盘存好了。去清单里更新一下假设。'); } catch (e) {} render(); },
   weekNav(el){ const k = addDays(form.key, +el.dataset.v); ui.weekKey = k; form = null; render(); },
   goWeek(el){ ui.weekKey = el.dataset.key; form = null; if (location.hash === '#week'){ route = 'week'; render(); } else location.hash = '#week'; },
@@ -2570,12 +2961,12 @@ const A = {
   copyAll(){ const ks = allDayKeys().filter(k => k <= dayKey()).sort(); copyText(ks.map(dayText).filter(Boolean).join('\n\n') + '\n\n' + hypListText()); },
   closeCopy(){ ui.copy = null; render(); },
   newEvent(){ openForm('event', 'new'); if (form && form.type === 'event' && !S.events[form.key] && !form.data.capRef && sel <= dayKey()){ form.data.date = sel; render(); } },
-  selDay(el){ const n = addDays(sel, +el.dataset.v); if (n > addDays(dayKey(), 1)) return; sel = n; ui.cal = false; render(); },
-  selToday(){ sel = dayKey(); ui.cal = false; render(); },
+  selDay(el){ changeDay(addDays(sel,+el.dataset.v)); },
+  selToday(){ changeDay(dayKey()); },
   calToggle(){ ui.cal = !ui.cal; ui.calMonth = sel.slice(0, 7); render(); },
   calMonth(el){
     const n = +el.dataset.v;
-    if (el.dataset.mode === 'pick'){ ui.calMonth = shiftYM(ui.calMonth || sel.slice(0, 7), n); render(); return; }
+    if (el.dataset.mode === 'pick'){ ui.calMonth = shiftYM(ui.calMonth || sel.slice(0, 7), n); render(); const button = $('#day-picker [data-act="calMonth"][data-v="' + n + '"]'); if (button && !button.disabled) button.focus({preventScroll:true}); animateMore('#day-picker .cal, #day-picker .calhead > span',n); return; }
     ui.moreMonth = shiftYM(ui.moreMonth || dayKey().slice(0, 7), n);
     render();
     const focus = $('.more-calendar [data-act="calMonth"][data-v="' + n + '"]:not([disabled])') || $('.more-calendar [data-act="calMonth"]:not([disabled])');
@@ -2584,7 +2975,7 @@ const A = {
   },
   calPick(el){
     const k = el.dataset.key;
-    if (el.dataset.mode === 'pick'){ sel = k; ui.cal = false; render(); return; }
+    if (el.dataset.mode === 'pick'){ ui.cal = false; if (k === sel) render(); else changeDay(k); $('#day-label').focus({preventScroll:true}); return; }
     const previous = ui.moreDay || dayKey();
     ui.moreDay = ui.moreDay === k ? null : k;
     history.replaceState(null, '', ui.moreDay ? moreHash(ui.moreDay) : '#more');
@@ -2794,6 +3185,7 @@ document.addEventListener('click', e => {
 document.addEventListener('input', e => {
   const el = e.target; if (!form || !el.dataset || !el.dataset.f) return;
   setPath(form.data, el.dataset.f, el.value); form.dirty = true;
+  if (el.id === 'f-fact') sizeCaptureInput();
   drafts[form.type + ':' + form.key] = form.data; draftLater();
   if (el.dataset.f === 'specific'){ const w = $('#w-specific'); if (w) w.textContent = vagueWarn(el.value); }
   if (el.dataset.f === 'E.tmr'){ const w = $('#w-tmr'); if (w) w.textContent = vagueWarn(el.value); }
@@ -2802,6 +3194,7 @@ document.addEventListener('input', e => {
 const ROUTE_ALIAS = { today:'pred', log:'more' };   // links and icons saved from older versions
 function resolveRoute(hash){ const r = (hash || '#review').slice(1).split('?')[0], a = ROUTE_ALIAS[r] || r; return ['pred','capture','review','hyps','more','week'].includes(a) ? a : 'review'; }
 function onHash(){
+  cancelDayMotion();
   route = resolveRoute(location.hash); ui.cal = false;
   const panel = moreLocation(), returning = route === 'more' && !panel.section && panel.day && ui.moreReturn && ui.moreReturn.day === panel.day;
   if (panel.day){ ui.moreDay = panel.day; ui.moreMonth = returning ? ui.moreReturn.month : panel.day.slice(0, 7); }
@@ -2819,6 +3212,34 @@ function onHash(){
   }
 }
 window.addEventListener('hashchange', onHash);
+const weekScroller = $('#week-scroller');
+let weekScrollTimer;
+weekScroller.addEventListener('pointerdown',() => { weekGesture = true; weekPointer = true; },{passive:true});
+window.addEventListener('pointerup',() => { if (weekPointer){ weekPointer = false; clearTimeout(weekScrollTimer); weekScrollTimer = setTimeout(finishWeekScroll,150); } },{passive:true});
+window.addEventListener('pointercancel',() => { weekPointer = false; },{passive:true});
+weekScroller.addEventListener('wheel',() => { weekGesture = true; },{passive:true});
+weekScroller.addEventListener('keydown',e => { if (['ArrowLeft','ArrowRight','Home','End'].includes(e.key)) weekGesture = true; });
+weekScroller.addEventListener('scrollend',finishWeekScroll);
+if (!('onscrollend' in weekScroller)) weekScroller.addEventListener('scroll',() => { clearTimeout(weekScrollTimer); weekScrollTimer=setTimeout(finishWeekScroll,150); },{passive:true});
+let resizeFrame = null;
+window.addEventListener('resize',() => { cancelAnimationFrame(resizeFrame); resizeFrame=requestAnimationFrame(() => { if (!$('#week-shell').hidden) centerWeek(weekStart(sel)); sizeCaptureInput(); }); });
+document.addEventListener('keydown',e => {
+  if ((e.ctrlKey || e.metaKey) && e.key === 'Enter' && !e.isComposing && form && form.type === 'capture'){ e.preventDefault(); A.saveCap(); }
+  if (e.key === 'Escape' && ui.cal){ ui.cal=false; updateDateShell(); $('#day-label').focus({preventScroll:true}); }
+});
+document.addEventListener('focusin',e => { if (e.target.id === 'f-fact') requestAnimationFrame(keepCaptureSaveVisible); });
+let fullViewportHeight = window.innerHeight;
+function updateKeyboard(){
+  const input = document.activeElement, typing = input && /^(INPUT|TEXTAREA)$/.test(input.tagName), viewport = window.visualViewport;
+  if (!typing) fullViewportHeight=window.innerHeight;
+  const keyboard = !!typing && (fullViewportHeight-window.innerHeight > 150 || (viewport && window.innerHeight-viewport.height > 150));
+  document.body.classList.toggle('keyboard-open',keyboard);
+  if (keyboard && form && form.type === 'capture') requestAnimationFrame(keepCaptureSaveVisible);
+}
+if (window.visualViewport) window.visualViewport.addEventListener('resize',updateKeyboard);
+window.addEventListener('resize',updateKeyboard);
+document.addEventListener('focusout',() => setTimeout(updateKeyboard,0));
+
 document.addEventListener('change', e => { if (e.target && e.target.id === 'importFile' && e.target.files && e.target.files[0]) importFile(e.target.files[0]); });
 route = resolveRoute(location.hash);
 const initialMore = moreLocation();
