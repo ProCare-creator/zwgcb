@@ -162,7 +162,7 @@ textarea:focus,input[type=text]:focus,input[type=date]:focus,input[type=time]:fo
 .seg button.on{ background:var(--accent); color:var(--on-accent); font-weight:600; }
 .sec-h .t{ margin-left:auto; font-family:var(--f-mono); font-size:11.5px; color:var(--ink-3); font-weight:400; }
 .preds{ list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:10px; }
-.pred{ position:relative; padding:var(--s-2) 34px var(--s-2) var(--s-3); border-left:2px solid var(--accent); background:var(--accent-soft); border-radius:0 var(--r-md) var(--r-md) 0; }
+.pred{ position:relative; padding:var(--s-2) 34px var(--s-2) var(--s-3); border-left:3px solid var(--accent); background:var(--accent-soft); border-radius:0 var(--r-md) var(--r-md) 0; }
 .pred.r-miss,.pred.r-half{ border-left-color:var(--pen); background:var(--pen-soft); }
 .pk{ font-size:12px; color:var(--ink-3); display:flex; gap:var(--s-2); flex-wrap:wrap; }
 .pt{ font-size:15px; }
@@ -253,9 +253,6 @@ details.cv ul,details.drafts ul,details.hist ol{ margin:var(--s-2) 0 0; padding-
 .pv-row{ display:flex; gap:var(--s-2); align-items:flex-start; font-size:14px; }
 .mono-in{ font-family:var(--f-mono); }
 .pen.half{ color:var(--ink-2); }
-{ width:32px; height:32px; font-size:18px; }
-{ opacity:.35; cursor:default; }
-{ font-size:26px; }
 .caret{ font-size:12px; color:var(--accent); }
 .calhead{ display:flex; align-items:center; justify-content:space-between; font-weight:700; font-size:15px; }
 .cal{ display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:5px; }
@@ -337,29 +334,9 @@ body{ margin:0; -webkit-tap-highlight-color:transparent; overscroll-behavior-y:n
 .tabs a{ display:flex; align-items:center; text-decoration:none; color:var(--ink-3); flex-direction:row; gap:9px; padding:var(--s-3) 7px 15px; font-size:14px; position:relative; }
 .tabs a svg{ width:19px; height:19px; }
 .tabs a.on::after{ content:''; position:absolute; height:2px; left:4px; right:4px; bottom:-1px; background:var(--accent); }
-{ order:-1; }
 #view{ max-width:760px; margin:auto; }
 #view[data-view="review"]{ max-width:none; }
-{ display:flex; align-items:center; justify-content:space-between; gap:var(--s-2); margin-bottom:var(--s-3); max-width:410px; margin:0 auto 30px; }
-{ font:19px var(--f-display); }
-{ flex:none; border-radius:50%; border:1px solid var(--line); font-size:22px; line-height:1; color:var(--ink); display:grid; place-items:center; padding:0 0 3px; background:transparent; border-color:transparent; width:44px; height:44px; }
-{ flex:1; min-width:0; border:0; background:none; display:flex; justify-content:center; gap:var(--s-2); padding:var(--s-1) 0; color:var(--ink); min-height:44px; align-items:center; }
-{ color:var(--ink-2); white-space:nowrap; font-size:12px; font-weight:400; }
-{ background:var(--accent-soft); }
-.calpop{ margin-bottom:var(--s-3); max-width:460px; margin:0 auto 26px; }
-.journal-hero{ display:grid; grid-template-columns:1fr 300px; gap:25px; align-items:center; padding:var(--s-2) 28px 34px var(--s-1); }
-.eyebrow{ font:11px var(--f-mono); letter-spacing:.17em; color:var(--ink-3); margin:0 0 19px; }
-.journal-hero h1{ font:500 clamp(30px,3.5vw,44px)/1.6 var(--f-display); letter-spacing:.09em; margin:0 0 15px; }
-.journal-hero h1 em{ font-style:normal; color:var(--pen); }
-.journal-hero .intro{ font-size:14px; color:var(--ink-2); margin:0; line-height:2; }
-.botanical{ width:100%; height:225px; color:var(--accent); overflow:visible; }
-.journal-layout{ display:grid; grid-template-columns:minmax(0,1fr) 285px; gap:36px; align-items:start; }
 .journal-main{ display:flex; flex-direction:column; gap:22px; min-width:0; }
-.journal-main>.card{ padding:30px var(--s-6); border-radius:3px var(--r-sheet) var(--r-sheet) 3px; box-shadow:-5px 0 0 var(--accent),0 8px 30px #233d3510; border-color:transparent; gap:20px; position:relative; }
-.journal-main>.card::after{ content:''; position:absolute; top:0; right:25px; width:19px; height:32px; background:var(--pen); clip-path:polygon(0 0,100% 0,100% 100%,50% 80%,0 100%); }
-.journal-main .stage{ font:600 22px var(--f-display); padding-right:25px; }
-.journal-main .stage .tag{ font:10px var(--f-mono); letter-spacing:.1em; color:var(--pen); border:1px solid var(--line); padding:var(--s-1) 6px; }
-.journal-main .muted{ font-size:14px; }
 .card,.arc{ background:var(--card); border:1px solid var(--line); display:flex; flex-direction:column; min-width:0; border-radius:var(--r-lg); padding:23px 25px; gap:var(--s-4); }
 .cap{ border:1px solid var(--line); background:var(--card); display:flex; flex-direction:column; min-width:0; border-radius:var(--r-lg); padding:23px 25px; gap:var(--s-4); }
 .stack{ display:flex; flex-direction:column; gap:18px; }
@@ -369,17 +346,9 @@ body{ margin:0; -webkit-tap-highlight-color:transparent; overscroll-behavior-y:n
 .btn.ghost{ color:var(--ink); border-color:var(--line); font-weight:500; background:var(--card); }
 .linkbtn{ border:0; background:none; padding:0; color:var(--accent); font-size:13.5px; text-underline-offset:3px; min-height:36px; text-decoration:none; border-bottom:1px solid transparent; }
 .linkbtn:hover{ border-bottom-color:currentColor; }
-.journal-aside{ padding:2px 0; min-width:0; }
 .margin-note{ padding:0 0 23px; margin:0 0 25px; border-bottom:1px solid var(--line); }
 .margin-note h2{ font:600 15px var(--f-display); letter-spacing:.04em; margin:0 0 14px; }
 .margin-note p{ font-size:13px; line-height:1.9; color:var(--ink-2); margin:var(--s-3) 0 0; }
-.week-trail{ display:grid; grid-template-columns:repeat(7,1fr); gap:5px; }
-.trail-day{ border:0; display:flex; flex-direction:column; align-items:center; gap:var(--s-2); background:none; padding:5px 0; color:var(--ink-3); font-size:10px; min-height:48px; }
-.trail-day b{ width:25px; height:25px; border-radius:50%; border:1px solid var(--line); display:grid; place-items:center; font:11px var(--f-mono); color:var(--ink-2); }
-.trail-day.recorded b{ background:var(--accent-soft); border-color:var(--accent); color:var(--accent); }
-.trail-day.current b{ outline:1px solid var(--pen); outline-offset:3px; color:var(--pen); }
-.trail-day:disabled{ opacity:.45; cursor:default; }
-.count-note{ font:32px var(--f-display); color:var(--accent); margin-right:var(--s-1); }
 .prompt-note{ font:18px/1.9 var(--f-display) !important; color:var(--ink) !important; }
 .quiet-link{ display:flex; align-items:center; justify-content:space-between; width:100%; background:none; border:0; border-top:1px solid var(--line); color:var(--ink-2); padding:14px 0; text-decoration:none; text-align:left; font-size:13px; min-height:48px; }
 .quiet-link:hover{ color:var(--pen); }
@@ -438,7 +407,6 @@ body{ margin:0; -webkit-tap-highlight-color:transparent; overscroll-behavior-y:n
   .day-entry-note{ font-size:11px; }
   .more-reader .cap,.more-reader .arc,.more-reader .pred{ padding:18px; }
 }
-.journal-foot{ border-top:1px solid var(--line); margin:40px 0 0; padding:22px 0; display:flex; justify-content:space-between; gap:15px; font-size:11px; letter-spacing:.08em; color:var(--ink-3); }
 h1.h{ font-family:var(--f-display); font-weight:700; margin:0 0 var(--s-1); text-wrap:balance; letter-spacing:.02em; font-size:30px; line-height:1.6; margin-bottom:var(--s-2); }
 h2.h2{ font-family:var(--f-display); font-weight:600; margin:26px 0 10px; font-size:20px; }
 .lede{ color:var(--ink-2); margin:0 0 var(--s-4); font-size:14px; line-height:1.9; margin-bottom:25px; }
@@ -456,7 +424,6 @@ textarea{ font:inherit; color:inherit; width:100%; border:1px solid var(--line-s
 .saved-reflection{ font:18px/1.9 var(--f-display); border-left:2px solid var(--pen); padding-left:18px; margin:0; white-space:pre-wrap; overflow-wrap:anywhere; }
 .banner{ background:var(--accent-soft); border-color:var(--line); }
 .banner .stage{ color:var(--ink); }
-{ margin-bottom:90px; }
 #toast{ position:fixed; left:50%; transform:translateX(-50%); background:var(--ink); color:var(--paper); border-radius:var(--r-md); font-size:14px; z-index:9; max-width:calc(100% - 32px); bottom:30px; box-shadow:0 8px 30px #0002; padding:13px 20px; line-height:1.7; }
 .qbtn{ flex:none; border-radius:5px; border:1px solid var(--line); background:var(--card); font-size:12px; line-height:1; padding:0; color:var(--ink-3); width:32px; height:32px; }
 .x{ position:absolute; right:6px; top:6px; border:0; background:none; color:var(--ink-3); font-size:18px; line-height:1; padding:var(--s-1) 6px; min-width:32px; min-height:32px; }
@@ -468,23 +435,16 @@ textarea{ font:inherit; color:inherit; width:100%; border:1px solid var(--line-s
 @media (min-width:1024px){
   #view[data-writing="true"]{ max-width:720px; }
   #view[data-writing="true"]>.card{ padding:35px 42px; }
-  .journal-main .card>.row{ gap:var(--s-3); }
 }
 @media (max-width:1023px){
   #app{ padding:23px var(--s-5) 115px; }
   .top{ margin-bottom:30px; padding-bottom:19px; }
-  { margin-bottom:30px; }
   .tabs{ position:fixed; left:0; right:0; top:auto; bottom:0; transform:none; width:100%; background:var(--card); border-bottom:0; border-top:1px solid var(--line); padding:var(--s-2) 10px max(var(--s-2),env(safe-area-inset-bottom,0px)); z-index:5; }
   .tabs .in{ display:grid; grid-template-columns:repeat(5,1fr); gap:var(--s-1); max-width:600px; }
   .tabs a{ font-size:11px; flex-direction:column; gap:var(--s-1); padding:7px 3px; border-radius:var(--r-md); }
   .tabs a.on{ background:var(--accent-soft); }
   .tabs a.on::after{ display:none; }
   .tabs a svg{ width:21px; height:21px; }
-  .journal-hero{ grid-template-columns:1fr 170px; padding-right:0; gap:var(--s-2); }
-  .botanical{ height:180px; }
-  .journal-layout{ grid-template-columns:minmax(0,1fr) 220px; gap:25px; }
-  .journal-main>.card{ padding:25px; }
-  .journal-main .stage{ font-size:20px; }
   #toast{ bottom:100px; }
   .brand{ font-size:20px; }
 }
@@ -492,27 +452,8 @@ textarea{ font:inherit; color:inherit; width:100%; border:1px solid var(--line-s
   #app{ padding:20px 21px 100px; }
   .brand small{ font-size:8px; }
   .sync{ font-size:10px; max-width:135px; white-space:normal; text-align:right; }
-  { margin-bottom:var(--s-3); max-width:none; }
-  { font-size:17px; }
-  { gap:6px; }
-  .journal-hero{ grid-template-columns:minmax(0,1fr) 88px; padding:var(--s-4) 0 28px; gap:0; position:relative; }
-  .journal-hero h1{ font-size:29px; letter-spacing:.025em; line-height:1.65; margin-bottom:var(--s-3); white-space:nowrap; }
-  .journal-hero .intro{ font-size:12px; }
-  .eyebrow{ font-size:9px; letter-spacing:.1em; margin-bottom:var(--s-4); }
-  .botanical{ width:110px; height:145px; margin-left:-13px; opacity:.65; }
-  .journal-layout{ grid-template-columns:1fr; gap:30px; }
   .journal-main{ gap:var(--s-3); }
-  .journal-main>.card{ padding:25px 22px; gap:18px; }
-  .journal-main .stage{ font-size:21px; }
-  .journal-main>.card>.row .btn{ flex:1; white-space:nowrap; padding:11px var(--s-3); font-size:13px; }
-  .journal-main>.card .linkbtn{ font-size:12px; text-align:left; }
-  .journal-aside{ display:grid; grid-template-columns:1fr; gap:0; }
   .margin-note{ margin-bottom:20px; padding-bottom:21px; }
-  .week-trail{ gap:10px; }
-  .trail-day b{ width:30px; height:30px; }
-  .trail-day{ gap:var(--s-2); }
-  .journal-foot{ margin-top:20px; font-size:10px; }
-  .journal-foot span:last-child{ display:none; }
   .card,.cap,.arc{ padding:20px 18px; }
   .stage{ flex-wrap:wrap; }
   .stage .right{ font-size:11px; }
@@ -528,15 +469,6 @@ textarea{ font:inherit; color:inherit; width:100%; border:1px solid var(--line-s
 }
 @media (min-width:1024px){
   .top{ margin-bottom:70px; }
-  { margin-bottom:15px; }
-  .journal-hero{ padding-top:0; padding-bottom:27px; }
-  .journal-hero h1{ font-size:40px; line-height:1.4; }
-  .botanical{ height:200px; }
-}
-@media (max-width:360px){
-  .journal-hero h1{ font-size:25px; }
-  .journal-hero{ grid-template-columns:minmax(0,1fr) 68px; }
-  .botanical{ width:90px; }
 }
 .sr-status{ position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap; border:0; }
 
@@ -664,9 +596,6 @@ body.keyboard-open .capture-save{bottom:var(--s-2)}
   .has-week #week-shell{grid-column:2;grid-row:2;margin:0}
   .week-controls{display:flex}
   #week-notes{display:block;padding-top:var(--s-5)}
-  #view[data-view="review"] .journal-hero{grid-template-columns:minmax(0,1fr) 150px;padding:var(--s-2) 0 var(--s-5)}
-  #view[data-view="review"] .journal-hero h1{font-size:2rem}
-  #view[data-view="review"] .journal-main>.card{padding:var(--s-5)}
   .capture-composer{padding:var(--s-5)}
   .capture-moods{grid-template-columns:repeat(8,minmax(0,1fr))}
   .capture-save{bottom:var(--s-3)}
@@ -802,6 +731,63 @@ html[data-dir="next"]::view-transition-new(reviewday),html[data-dir="next"]::vie
 @media(max-width:599px){.top-tools{gap:4px}.top-tools .sync{max-width:112px;white-space:normal;line-height:1.35;font-size:.75rem}.top-tools .sync::before{flex-shrink:0}.top{gap:4px}.brand{font-size:1rem}.brand-mark{margin-right:4px}}
 @media(prefers-reduced-motion:reduce){#month-scroller{scroll-behavior:auto!important}}
 
+
+/* Review, prediction and hypothesis pages — batch 3 */
+#view[data-view="review"] .journal-main{gap:var(--s-4)}
+#view[data-view="review"] .today-card{padding:var(--s-5);border:1px solid var(--line);border-left:4px solid var(--accent);border-radius:var(--r-lg);box-shadow:var(--sh-card);gap:var(--s-4)}
+#view[data-view="review"] .today-card::after{display:none}
+.today-card h1{font:600 var(--fs-h2)/1.6 var(--f-display);margin:0;overflow-wrap:anywhere}
+.today-card .row{gap:var(--s-2)}
+.today-card .fine{margin:0;font-size:var(--fs-small)}
+.today-card .saved-reflection{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:4;overflow:hidden;font-size:1rem;line-height:1.8}
+.today-card .saved-reflection.expanded{display:block;overflow:visible}
+.today-card .excerpt-toggle{align-self:flex-start;min-height:44px}
+.review-hyp-line{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:var(--fs-small);color:var(--ink-2);overflow-wrap:anywhere}
+.review-materials>.h2{font-size:var(--fs-small);color:var(--ink-2);margin:var(--s-2) 0}
+.material-row{border-bottom:1px solid var(--line)}
+.material-row>summary{min-height:56px;display:flex;align-items:center;gap:var(--s-2);cursor:pointer;list-style:none;font-size:var(--fs-small)}
+.material-row>summary::-webkit-details-marker,.material-item>summary::-webkit-details-marker{display:none}
+.material-row>summary>small{margin-left:auto;font-size:var(--fs-cap);color:var(--ink-2)}
+.material-row.is-empty>summary,.material-row.is-empty>summary>small{color:var(--ink-3)}
+.material-row[open]>summary>.fold-chevron,.material-item[open]>summary>.fold-chevron{transform:rotate(90deg)}
+.material-body{padding:0 0 var(--s-4);display:flex;flex-direction:column;gap:var(--s-2);min-width:0}
+.material-body>.btn{align-self:flex-start}
+.material-item>summary,.compact-open{display:flex;gap:var(--s-3);align-items:center;min-height:56px;padding:var(--s-1) var(--s-2);list-style:none;cursor:pointer;border-bottom:1px solid var(--line);width:100%;text-align:left;background:none;color:var(--ink)}
+.material-item time,.compact-open time{font:12px var(--f-mono);color:var(--ink-3);flex:none;min-width:36px}
+.material-excerpt{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.material-excerpt b,.material-excerpt small,.compact-open>span:first-of-type{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.material-excerpt b{font-size:var(--fs-small);font-weight:500}.material-excerpt small{font-size:var(--fs-cap);color:var(--ink-3)}
+.material-detail{padding:var(--s-3) 0}.material-detail .card{box-shadow:none}
+.review-fuse,.pred-reminder{padding:var(--s-3);background:var(--pen-soft);border-radius:var(--r-md);font-size:var(--fs-small);color:var(--ink-2)}
+.review-fuse p,.pred-reminder p{margin:0}
+.pred-reminder{display:flex;gap:var(--s-2);align-items:flex-start}.pred-reminder>div{flex:1;min-width:0}
+.pred-reminder .row{gap:var(--s-4)}.pred-reminder .linkbtn{min-height:44px}
+.testing-hyps .pins li{display:flex;align-items:center;gap:var(--s-3)}
+.testing-hyps .pin-t{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;font-size:var(--fs-small)}
+.testing-hyps>.linkbtn{align-self:flex-start;min-height:44px;display:flex;align-items:center}
+.friend-hint{margin-top:calc(-1 * var(--s-2));margin-bottom:var(--s-4)}
+.hyp-heading{display:flex;align-items:center;justify-content:space-between;gap:var(--s-2)}
+.hyp-heading .h{margin:0;font-size:var(--fs-h2)}.hyp-heading .btn{flex:none;padding:var(--s-2);font-size:var(--fs-cap);min-height:44px}
+.hyp-intro{font-size:var(--fs-cap);color:var(--ink-2);margin:var(--s-2) 0 var(--s-4)}
+.hyp-filter{display:flex;width:100%;margin-bottom:var(--s-4)}.hyp-filter button{flex:1;min-width:0;min-height:44px;white-space:nowrap}
+.hyp-new{margin-bottom:var(--s-4)}
+#view[data-view="hyps"] .hyp{background-image:none;padding:var(--s-4);gap:var(--s-3);border-radius:var(--r-md)}
+.hyp .hmeta{font-size:12px;gap:var(--s-2)}.hyp .hs{font-size:16px;line-height:1.65}
+.hyp-primary{gap:var(--s-2)}.hyp-primary .icon-button{margin-left:auto}
+.hyp .suggest{margin:0}.hyp .all-evidence>summary,.hyp .hist>summary{min-height:44px;display:flex;align-items:center;cursor:pointer;font-size:var(--fs-cap);color:var(--ink-2)}
+.all-evidence[open]+.suggest{margin-top:var(--s-2)}
+#hyp-actions{padding:var(--s-5);max-width:420px;width:calc(100% - 32px);max-height:85dvh;overflow:auto;border:1px solid var(--line);border-radius:var(--r-lg);background:var(--card);color:var(--ink)}
+#hyp-actions::backdrop{background:rgba(0,0,0,.3)}
+#hyp-actions .row{justify-content:space-between;margin-bottom:var(--s-3)}#hyp-actions h2{font-size:var(--fs-h2);margin:0}
+#hyp-actions>.btn{display:block;width:100%;min-height:48px;margin-top:var(--s-2);text-align:left}
+#hyp-actions .danger{color:var(--pen);border-color:var(--pen)}
+@media(max-width:767px){
+ #hyp-actions{inset:auto 0 0;margin:0;width:100%;max-width:none;border-radius:var(--r-sheet) var(--r-sheet) 0 0;padding-bottom:calc(var(--s-5) + env(safe-area-inset-bottom));animation:hyp-sheet-in 200ms ease-out}
+ .today-card .review-primary{display:grid;grid-template-columns:1fr auto}.today-card .review-primary .btn{min-height:48px}
+}
+@keyframes hyp-sheet-in{from{transform:translateY(24px);opacity:0}to{transform:translateY(0);opacity:1}}
+@media(prefers-reduced-motion:reduce){#hyp-actions{animation:none}}
+
 </style>
 </head>
 <body>
@@ -841,6 +827,7 @@ html[data-dir="next"]::view-transition-new(reviewday),html[data-dir="next"]::vie
 <div id="toast" role="status" aria-live="polite" hidden></div>
 <div id="undo-toast" role="status" aria-live="polite" hidden><span id="undo-text">已删除</span><button type="button" id="undo-cap" data-act="undoCap">撤销</button></div>
 <dialog id="day-summary" aria-labelledby="summary-date"><div id="summary-content"></div></dialog>
+<dialog id="hyp-actions" aria-labelledby="hyp-actions-title"></dialog>
 <dialog id="day-actions" aria-labelledby="day-actions-title"><div class="row"><h2 id="day-actions-title">当天记录</h2><button type="button" class="icon-button" data-act="dayActionsClose" aria-label="关闭操作面板">×</button></div><button type="button" class="btn ghost" data-act="summaryWord">保存为 Word</button><button type="button" class="btn ghost" data-act="summaryCopy">复制给 Claude</button></dialog>
 <div id="view-status" class="sr-status" role="status" aria-live="polite" aria-atomic="true"></div>
 
@@ -859,7 +846,7 @@ const VAGUE = ['充实','好好','努力','认真','尽量','高效','顺利','�
 const MOMENTS = ['情绪最强的一刻','最不像自己的一刻','最有劲的一刻','别的时刻'];
 const FORMAT = 'review-archive/v1';
 const OFFLINE_APP = true;
-const APP_VERSION = 'v6.8';
+const APP_VERSION = 'v6.9';
 const LS_KEY = 'zwgcb-data-v1', LS_DRAFT = 'zwgcb-drafts-v1';
 
 /* ---------- utils ---------- */
@@ -1561,16 +1548,9 @@ function hypLines(h){
   if (h.sit && h.rea && hypText(h) === composeHyp(h.sit, h.rea)) return '<div class="hs"><span class="pre">在</span>' + esc(sitOf(h)) + '<span class="pre">时，</span><br><span class="pre">我可能会</span>' + esc(reaOf(h)) + '</div>';
   return '<div class="hs">' + esc(hypText(h)) + '</div>';
 }
-function pinCard(t){
-  const list = Object.values(S.hyps).filter(h => h.status === 'test').sort((a, b) => String(b.updated || '').localeCompare(String(a.updated || '')));
-  let s = '<section class="card"><div class="stage">在测的假设' + (list.length > 3 ? '<span class="right">共 ' + list.length + ' 条，显示最近 3 条</span>' : '') + '</div>';
-  if (!list.length) s += '<p class="muted">还没有在测的假设。晚上复盘写下一条，或者导入一次对话复盘，它就会出现在这里。</p>';
-  else s += '<ul class="pins">' + list.slice(0, 3).map(h => {
-    let lr = '还没改写过';
-    if (h.revisedOn){ const n = Math.round((parse(t) - parse(h.revisedOn)) / 864e5); lr = n <= 0 ? '今天改写过' : '上次改写 ' + n + ' 天前'; }
-    return '<li><span class="hno">' + hypNo(h) + '</span><div class="pin-b"><div class="pin-t">' + esc(hypText(h)) + '</div><div class="hmeta"><span>支持 <b class="mono">' + evCount(h, 'sup') + '</b></span><span class="c">反例 <b class="mono">' + evCount(h, 'con') + '</b></span><span>' + lr + '</span></div></div></li>';
-  }).join('') + '</ul>';
-  return s + '<div class="row"><a class="linkbtn" href="#hyps">打开假设清单</a></div></section>';
+function pinCard(){
+  const list=Object.values(S.hyps).filter(h=>h.status==='test').sort((a,b)=>String(b.updated||'').localeCompare(String(a.updated||'')));
+  return '<section class="card testing-hyps"><div class="stage">在测的假设</div>'+(list.length?'<ul class="pins">'+list.slice(0,3).map(h=>'<li><span class="hno">'+hypNo(h)+'</span><span class="pin-t">'+esc(hypText(h))+'</span></li>').join('')+'</ul>':'<p class="fine">还没有在测的假设。可以从一条具体的观察开始。</p>')+'<a class="linkbtn" href="#hyps">打开假设清单 ›</a></section>';
 }
 function appliedHTML(it, archiveId){
   const lab = { new:'新增', update:'改写', evidence:'加证据' }[it.kind] || '';
@@ -1611,65 +1591,52 @@ function archiveHTML(rec){
 }
 
 /* ---------- views ---------- */
+function predReminder(t){
+  if(!ready)return '';
+  const dismissed=uiPrefs.predDismiss&&uiPrefs.predDismiss.date===t?uiPrefs.predDismiss.types:[],hidden=type=>Array.isArray(dismissed)&&dismissed.includes(type),y=addDays(t,-1),yd=S.days[y],f=firstDay(),dow=parse(t).getDay();
+  let type='',text='',actions='';
+  if(fuseOn()&&!hidden('fuse')){type='fuse';text='最近三次写完都更沉了。可以先停一停，或只记事实。';}
+  else if(f&&f<=y&&!(yd&&(yd.evening||yd.skip))&&!hidden('yesterday')){type='yesterday';text='昨天没有收尾，想起了什么可以补记。';actions='<button type="button" class="linkbtn" data-act="open" data-type="min" data-key="'+y+'">补记昨天</button><button type="button" class="linkbtn" data-act="skipOpen">放过它</button>';}
+  else if((dow===0||dow===1)&&!hidden('week')){const ws=dow===0?weekStart(t):addDays(weekStart(t),-7);if(!S.weeks[ws]){type='week';text='把这一周连起来看，找找新的线索。';actions='<button type="button" class="linkbtn" data-act="goWeek" data-key="'+ws+'">写周复盘</button>';}}
+  if(!type)return '';
+  return '<aside class="pred-reminder" aria-label="提醒"><div><p>'+text+'</p>'+(actions?'<div class="row">'+actions+'</div>':'')+(type==='yesterday'&&ui.skipOpen?'<div class="chips">'+SKIPR.map(r=>'<button type="button" class="chip" data-act="skip" data-key="'+y+'" data-v="'+r+'">'+r+'</button>').join('')+'</div>':'')+'</div><button type="button" class="icon-button" data-act="dismissReminder" data-v="'+type+'" aria-label="今天不再显示这条提醒">×</button></aside>';
+}
 function vPred(){
-  const t = dayKey(), k = sel, d = S.days[k] || newDay(k), y = addDays(t, -1), yd = S.days[y], f = firstDay();
-  let h = copyBox() + '<div class="stack">';
-  h += pinCard(t);
-  if (k === t){
-    if (ready && fuseOn()) h += '<section class="card fuse"><div class="stage">最近三次写完都觉得更沉了</div><p class="muted">这通常说明在反复咀嚼，而不是在看清自己。接下来几天只做轻量版，并且用第三人称写。持续一周以上的话，找一个信任的人当面聊聊。</p></section>';
-    if (ready && f && f <= y && !(yd && (yd.evening || yd.skip))) h += yBanner(y);
-    const dow = parse(t).getDay();
-    if (ready && (dow === 0 || dow === 1)){
-      const ws = dow === 0 ? weekStart(t) : addDays(weekStart(t), -7);
-      if (!S.weeks[ws]) h += '<section class="card"><div class="stage">周复盘<span class="right">' + mdShort(ws) + '–' + mdShort(addDays(ws, 6)) + '</span></div><p class="muted">把这周落空的预测排在一起看：有没有同一个方向的错？20 分钟。</p><div class="row"><button type="button" class="btn sm" data-act="goWeek" data-key="' + ws + '">开始周复盘</button></div></section>';
-    }
-  }
-  h += predCard(k, d);
-  archivesOn(k).forEach(r => {
-    const ps = (r.data && r.data.predictions) || [];
-    if (ps.length) h += '<section class="card"><div class="stage"><span class="tag">对话</span>对话复盘里的预测对照' + (r.time ? '<span class="right">' + esc(r.time) + '</span>' : '') + '</div>' + arcPredSummary(ps) + arcPredList(ps) + '</section>';
-  });
-  return h + '</div>';
+  const t=dayKey(),k=sel,d=S.days[k]||newDay(k);
+  let h=copyBox()+'<div class="stack">'+(k===t?predReminder(t):'')+predCard(k,d)+pinCard();
+  archivesOn(k).forEach(r=>{const ps=(r.data&&r.data.predictions)||[];if(ps.length)h+='<section class="card"><div class="stage"><span class="tag">对话</span>对话复盘里的预测对照'+(r.time?'<span class="right">'+esc(r.time)+'</span>':'')+'</div>'+arcPredSummary(ps)+arcPredList(ps)+'</section>';});
+  return h+'</div>';
 }
+
 // The home view is derived entirely from existing records; no new storage format.
-function journalArt(){
-  return `<svg class="botanical" viewBox="0 0 300 240" fill="none" aria-hidden="true">
-    <circle cx="156" cy="117" r="91" fill="var(--blue-soft)"/>
-    <path d="M50 201h215M68 210h170" stroke="var(--line)"/>
-    <path d="M158 204c-6-44-4-92 16-157M158 172c-28-10-44-27-55-52M160 144c25-12 47-33 61-54M164 114c-15-13-27-31-32-51" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
-    <path d="M155 171c-36 4-57-15-63-44 29-3 53 12 63 44Z" fill="var(--blue)" opacity=".8"/>
-    <path d="M161 144c35 2 60-24 65-58-33 5-58 24-65 58Z" fill="var(--blue)" opacity=".7"/>
-    <path d="M164 113c-27-4-39-27-35-54 25 11 37 30 35 54Z" fill="var(--blue)" opacity=".9"/>
-    <path d="M170 79c26-6 35-27 32-51-25 9-35 27-32 51Z" fill="var(--blue)" opacity=".55"/>
-    <path d="m103 138 45 28m67-66-47 37m-32-65 24 33m36-65-22 32" stroke="var(--card)" stroke-width=".8" opacity=".6"/>
-    <circle cx="71" cy="76" r="9" stroke="var(--red)"/><path d="M71 60v-5m0 42v-5M55 76h-5m42 0h-5" stroke="var(--red)"/>
-    <path d="M243 173c-5 2-7 6-7 11 6-2 9-6 7-11Z" fill="var(--red)"/>
-    <text x="190" y="230" fill="var(--ink-3)" font-size="9" letter-spacing="2" font-family="serif">DAY BY DAY</text>
-  </svg>`;
-}
+
 function journalAside(k){
-  const ws = weekStart(k), t = dayKey();
-  let recorded = 0;
-  for (let i = 0; i < 7; i++) if (['std','min','part'].includes(dayStatus(addDays(ws,i),t))) recorded++;
-  return '<section class="margin-note"><p><span class="count-note">' + recorded + '</span> 天有记录 · 留白也没有关系</p></section>'
-    + '<section class="margin-note"><h2>换个角度想一想</h2><p class="prompt-note">如果是朋友经历了今天，<br>你会怎样看待他？</p><p>把同样的耐心，也留一点给自己。</p></section>'
-    + '<button class="quiet-link" type="button" data-act="goWeek" data-key="' + ws + '">把这一周连起来看 <span aria-hidden="true">↗</span></button><a class="quiet-link" href="#hyps">看看我对自己的新发现 <span aria-hidden="true">↗</span></a>';
+  const ws=weekStart(k),w=weekData(ws);
+  return '<section class="margin-note"><h2>本周小结</h2><p>收尾 <span class="mono">'+w.rec+'</span> 天 · 新信息 <span class="mono">'+w.newInfo+'</span> 条</p></section><section class="margin-note"><h2>换个角度想一想</h2><p class="prompt-note">如果是朋友经历了今天，<br>你会怎样看待他？</p><p>把同样的耐心，也留一点给自己。</p></section><button class="quiet-link" type="button" data-act="goWeek" data-key="'+ws+'">把这一周连起来看 <span aria-hidden="true">↗</span></button><a class="quiet-link" href="#hyps">看看我对自己的新发现 <span aria-hidden="true">↗</span></a>';
+}
+function materialRow(k,type,label,count,empty,body){
+  return '<details class="material-row'+(empty?' is-empty':'')+'"'+disclosureAttrs('material:'+k+':'+type)+'><summary><span>'+label+'</span><small>'+count+'</small><span class="fold-chevron" aria-hidden="true">›</span></summary><div class="material-body">'+body+'</div></details>';
+}
+function compactMaterial(key,time,title,meta,content){
+  return '<details class="material-item"'+disclosureAttrs(key)+'><summary><time>'+esc(time)+'</time><span class="material-excerpt"><b>'+esc(title)+'</b><small>'+esc(meta)+'</small></span><span class="fold-chevron" aria-hidden="true">›</span></summary><div class="material-detail">'+content+'</div></details>';
 }
 function vReview(){
-  const t = dayKey(), k = sel, d = S.days[k] || newDay(k);
-  let h = copyBox();
-  if (k > t) return h + '<section class="card"><h1 class="h">明天，留给明天。</h1><p class="muted">可以先为还没发生的事，写下一个小预测。</p><a class="btn" href="#pred">写明天的预测</a></section>';
-  const done = !!d.evening;
-  h += '<section class="journal-hero"><div><p class="eyebrow">THE FIELD NOTES / 日常观察手记</p><h1>' + (done ? '又多认识了自己<br><em>一点。</em>' : '把今天，<br>轻轻<em>翻一页。</em>') + '</h1><p class="intro">' + (done ? '这一页已经收好。下次回来，再从这里继续。' : '不用写得完整，也不用急着找到答案。<br>从一个留在心里的瞬间开始。') + '</p></div>' + journalArt() + '</section>';
-  h += '<div class="journal-main">' + eveCard(k, d);
-  const caps = d.caps || [];
-  if (caps.length) h += '<details class="journal-disclosure"' + disclosureAttrs('day:' + k + ':caps') + '><summary>今天已经留下的片段 <small>' + caps.length + ' 条随手记</small></summary><div class="stack">' + caps.map(c => capCardHTML(c, k)).join('') + '</div></details>';
-  h += '<details class="journal-disclosure"' + disclosureAttrs('day:' + k + ':events') + '><summary>有一件事，想再想一想 <small>单件复盘</small></summary>' + reviewEventCard(k) + '</details>';
-  h += '<details class="journal-disclosure"' + disclosureAttrs('day:' + k + ':archives', !!archivesOn(k).length) + '><summary>聊过的，也收进本子里 <small>对话复盘</small></summary>' + reviewArcCard(k) + '</details>';
-  if (k === t && ready && fuseOn()) h += '<section class="card fuse"><div class="stage">最近三次写完都觉得更沉了</div><p class="muted">可以先停一停，或只记事实，不急着分析原因。</p></section>';
-  h += '</div><footer class="journal-foot"><span>慢慢观察，慢慢认识自己。</span><span>自我观察本 · PRIVATE FIELD NOTES</span></footer>';
-  return h;
+  const t=dayKey(),k=sel,d=S.days[k]||newDay(k),ps=d.preds||[],caps=(d.caps||[]).filter(c=>captureVisible(k,c)).slice().sort((a,b)=>String(b.at).localeCompare(String(a.at))),evs=eventsOn(k),arcs=archivesOn(k);
+  let h=copyBox()+'<div class="journal-main">'+eveCard(k,d);
+  if(k>t)return h+'</div>';
+  if(k===t&&ready&&fuseOn())h+='<aside class="review-fuse"><p>最近三次写完都觉得更沉了。可以先停一停，或只记事实，不急着分析原因。</p></aside>';
+  h+='<section class="review-materials" aria-label="今天的材料"><h2 class="h2">'+(k===t?'今天':'这一天')+'的材料</h2>';
+  h+=materialRow(k,'pred','预测',ps.length+' 条 · 对 '+ps.filter(p=>p.result==='hit').length+' · 落空 '+ps.filter(p=>p.result==='miss').length,!ps.length,ps.length?ps.map(p=>compactMaterial('material-pred:'+k+':'+p.id,hm(p.at),p.text,(KINDS[p.kind]||'预测')+' · '+(RES[p.result]||'待判'),'<ul class="preds">'+predRow(p,k,false)+'</ul>')).join(''):'<p class="fine">这一天没有预测。</p><a class="linkbtn" href="#pred">打开预测页 ›</a>');
+  const capBody=caps.slice(0,3).map(c=>compactCap(c,k)).join('')+(caps.length>3?captureFoldHTML('review-capture-older','展开全部（共 '+caps.length+' 条）','收起（仅显示最近 3 条）',caps.slice(3).map(c=>compactCap(c,k)).join('')):'');
+  h+=materialRow(k,'caps','随手记',caps.length+' 条 · '+caps.filter(c=>!c.done).length+' 条没理清',!caps.length,capBody||'<p class="fine">这一天没有随手记。</p><a class="linkbtn" href="#capture">记一个片段 ›</a>');
+  let evBody=evs.map(e=>compactMaterial('material-event:'+e.id,e.created?hm(e.created):'',e.title||'一件事',e.done?'已收好':'没写完',eventCardHTML(e))).join('');
+  if(k===t){const open=Object.values(S.events).filter(e=>!e.done&&e.date!==k&&e.date>=addDays(t,-14));if(open.length)evBody+='<p class="fine">别的日子还没写完的</p>'+open.slice(0,5).map(e=>'<button type="button" class="compact-open" data-act="editEvent" data-id="'+esc(e.id)+'"><time>'+mdShort(e.date)+'</time><span>'+esc(e.title)+'</span><span aria-hidden="true">›</span></button>').join('');}
+  h+=materialRow(k,'events','单件复盘',evs.length+' 件',!evs.length,evBody+'<button type="button" class="btn ghost sm" data-act="newEvent">复盘一件事</button>');
+  const arcBody=arcs.map(a=>compactMaterial('material-archive:'+a.id,a.time||'',a.data&&a.data.summary&&a.data.summary.headline||'对话复盘','已存档',archiveHTML(a))).join('');
+  h+=materialRow(k,'archives','对话复盘',arcs.length+' 份',!arcs.length,arcBody+'<div class="row"><button type="button" class="btn ghost sm" data-act="impOpen">导入对话复盘</button><button type="button" class="linkbtn" data-act="copy" data-key="'+k+'">复制材料给 Claude</button></div>');
+  return h+'</section></div>';
 }
+
 const MORE_SECTIONS = { pred:'预测', capture:'随手记', review:'复盘', events:'单件复盘', archives:'对话存档' };
 function moreLocation(hash = location.hash){
   if (!/^#more(?:\?|$)/.test(hash || '')) return { day:null, section:null };
@@ -1735,20 +1702,9 @@ function arcPredSummary(ps){
   if (c.other) seg.push('未判 ' + c.other);
   return '<div class="psum"><span><b class="n">' + ps.length + '</b> 条预测</span>' + (seg.length ? '<span>' + seg.join(' · ') + '</span>' : '') + '</div>';
 }
-const arcPredList = ps => '<ul class="preds">' + ps.map(p => { const r = resKind(p.result); return '<li class="pred' + (r === 'miss' ? ' r-miss' : '') + '"><div class="pt">' + esc(p.text) + '</div>' + (p.actual ? '<div class="pa">实际：' + esc(p.actual) + '</div>' : '') + (p.result ? '<span class="pen ' + r + '">' + esc(p.result) + '</span>' : '') + '</li>'; }).join('') + '</ul>';
+const arcPredList = ps => '<ul class="preds">' + ps.map(p => { const r = resKind(p.result); return '<li class="pred' + (r === 'miss' || r === 'half' ? ' r-'+r : '') + '"><div class="pt">' + esc(p.text) + '</div>' + (p.actual ? '<div class="pa">实际：' + esc(p.actual) + '</div>' : '') + (p.result ? '<span class="pen ' + r + '">' + esc(p.result) + '</span>' : '') + '</li>'; }).join('') + '</ul>';
 function predSummaryText(preds){ const c = { hit:0, miss:0, half:0, open:0 }; preds.forEach(p => { c[RES[p.result] ? p.result : 'open']++; }); return preds.length + ' 条预测：对 ' + c.hit + ' · 落空 ' + c.miss + ' · 一半 ' + c.half + ' · 待判 ' + c.open; }
 function arcPredSummaryText(ps){ const c = { hit:0, miss:0, half:0, other:0 }; ps.forEach(p => { c[resKind(p.result) || 'other']++; }); return ps.length + ' 条预测：中 ' + c.hit + ' · 没中 ' + c.miss + ' · 暂时中或一半 ' + c.half + (c.other ? ' · 未判 ' + c.other : ''); }
-function yBanner(y){
-  let s = '<section class="card banner"><div class="stage">昨天（' + md(y) + '）没有收尾</div>'
-    + '<p class="muted">想起了什么，可以补记；没想起也没关系，从今天继续。</p>'
-    + '<div class="row"><button type="button" class="btn sm" data-act="open" data-type="min" data-key="' + y + '">补记昨天 · 2 分钟</button><button type="button" class="btn ghost sm" data-act="skipOpen">放过它</button></div>';
-  if (ui.skipOpen){
-    s += '<div class="inline"><div class="lab">放过的原因（一下就好）</div><div class="chips">' + SKIPR.map(r => '<button type="button" class="chip" data-act="skip" data-key="' + y + '" data-v="' + r + '">' + r + '</button>').join('') + '</div>'
-      + '<p class="fine">原因会出现在周复盘里。「不想面对」本身就是一条线索。</p></div>';
-  }
-  s += '<p class="fine">更早的空白不用补：隔太久写出来的，多半是编的。</p></section>';
-  return s;
-}
 function predCard(k, d){
   const t = dayKey(), hr = new Date().getHours(), isNight = hr >= 18 || hr < 4;
   const write = (key, label, ghost = false) => '<button type="button" class="btn' + (ghost ? ' ghost' : '') + '" data-act="open" data-type="morning" data-key="' + key + '">' + label + '</button>';
@@ -1794,43 +1750,24 @@ function eventCardHTML(ev){
     + '<button type="button" class="linkbtn" data-act="copyEvent" data-id="' + ev.id + '">复制给 Claude</button></div>'
     + '</article>';
 }
-function eveCard(k, d){
-  const isT = k === dayKey();
-  let s = '<section class="card"><div class="stage"><span class="tag">' + (d.evening ? '收好' : '此刻') + '</span>' + (d.evening ? '留给自己的这一页' : '今天，哪一刻留在了心里？') + '</div>';
-  if (d.evening){
-    const e = d.evening, D = e.D || {}, raw = e.raw || {};
-    const excerpt = e.mode === 'min' ? raw.q1 : ((raw.C || {}).fact || raw.surprise || (raw.A || {}).self);
-    s += '<p class="fine">' + (e.mode === 'std' ? '深入复盘' : e.late ? '补记' : '轻量复盘') + ' · ' + hm(e.at) + ' 写下</p>';
-    if (excerpt) s += '<blockquote class="saved-reflection">' + esc(excerpt) + '</blockquote>';
-    else s += '<p class="muted">今天的复盘已收好。不必每次都有一个结论。</p>';
-    if (D.line) s += '<div class="hyp">' + D.line + '</div>';
-    s += '<div class="row"><button type="button" class="btn" data-act="open" data-type="' + (e.mode === 'std' ? 'evening' : 'min') + '" data-key="' + k + '">再读一遍 / 接着写</button>' + (dlNs ? '<button type="button" class="btn ghost" data-act="wordDay" data-key="' + k + '">保存为 Word</button>' : '') + '</div>';
-  } else {
-    const draft = drafts['min:' + k], fullDraft = drafts['evening:' + k];
-    s += '<p class="muted">一件小事、一点意外，或一个说不清的感受。<br>写两句，就可以收好今天。</p>';
-    if (d.skip) s += '<p class="fine">这一天选择了留白。想写了，随时可以继续。</p>';
-    s += '<div class="row"><button type="button" class="btn" data-act="open" data-type="min" data-key="' + k + '">' + (draft ? '接着写草稿' : '写两句 · 约 2 分钟') + ' <span aria-hidden="true">↗</span></button><button type="button" class="btn ghost" data-act="open" data-type="evening" data-key="' + k + '">' + (fullDraft ? '继续深入草稿' : '深入写一页') + '</button></div>';
-    s += '<p class="fine">' + (d.preds.length ? '今天的 ' + d.preds.length + ' 条预测，会在写作时一起回看。' : '不需要先写预测。想起什么，就从那里开始。') + '</p>';
-  }
-  s += '<button type="button" class="linkbtn" style="align-self:flex-start" data-act="copy" data-key="' + k + '">想聊着梳理？复制' + (isT ? '今天' : '这一天') + '的材料给 Claude ↗</button>';
-  return s + '</section>';
+function eveCard(k,d){
+  const t=dayKey(),e=d.evening,done=!!e,future=k>t,past=k<t,open=(type,label,ghost=false)=>'<button type="button" class="btn'+(ghost?' ghost':'')+'" data-act="open" data-type="'+type+'" data-key="'+k+'">'+label+'</button>';
+  const title=done?'已收好 · '+hm(e.at)+' · '+(e.mode==='std'?'标准复盘':'轻量复盘'):future?'明天，留给明天':d.skip?'这一天选择了留白':past?'补记 '+md(k):'今天，哪一刻留在了心里？';
+  let s='<section class="card today-card" aria-label="当天复盘"><h1>'+title+'</h1>';
+  if(done){
+    const raw=e.raw||{},excerpt=e.mode==='min'?raw.q1:((raw.C||{}).fact||raw.surprise||(raw.A||{}).self),expanded=ui.open.has('excerpt:'+k);
+    if(excerpt)s+='<blockquote class="saved-reflection'+(expanded?' expanded':'')+'" id="review-excerpt">'+esc(excerpt)+'</blockquote><button type="button" class="linkbtn excerpt-toggle" data-act="reviewExcerpt" data-key="'+k+'" aria-controls="review-excerpt" aria-expanded="'+expanded+'">'+(expanded?'收起摘录':'展开摘录')+'</button>';
+    else s+='<p class="fine">这一页已经收好。不必每次都有一个结论。</p>';
+    if(e.D&&e.D.line)s+='<div class="review-hyp-line">'+e.D.line+'</div>';
+    s+='<div class="row">'+open(e.mode==='std'?'evening':'min','再读一遍 / 接着写',true)+'<button type="button" class="icon-button" data-act="reviewMenu" data-key="'+k+'" aria-label="当天复盘的更多操作">⋯</button></div>';
+  }else if(future)s+='<a class="btn" href="#pred">写明天的预测</a>';
+  else if(d.skip)s+='<p class="fine">想写了，随时可以继续</p><div class="row">'+open('min','写两句')+'</div>';
+  else if(past)s+='<div class="row">'+open('min','补记 · 只写印象最深的一刻')+'</div>';
+  else{s+='<div class="row review-primary">'+open('min',drafts['min:'+k]?'接着写草稿':'写两句 · 约 2 分钟')+open('evening',drafts['evening:'+k]?'继续深入草稿':'深入写一页',true)+'</div><p class="fine">会一起回看：'+(d.preds||[]).length+' 条预测 · '+(d.caps||[]).length+' 条随手记</p>';}
+  return s+'</section>';
 }
-function reviewEventCard(k){
-  const t = dayKey(), evs = eventsOn(k);
-  const open = k === t ? Object.values(S.events).filter(e => !e.done && e.date !== k && e.date >= addDays(t, -14)).sort((a, b) => (b.updated || '').localeCompare(a.updated || '')) : [];
-  let s = '<section class="card"><div class="stage"><span class="tag">随时</span>单件复盘<span class="right">' + evs.length + ' 件</span></div>';
-  if (evs.length) s += '<div class="stack">' + evs.map(eventCardHTML).join('') + '</div>';
-  else s += '<p class="muted">挑一件事单独慢放一遍，不用等到晚上。适合你反复在想、或者想不通自己为什么那样做的事。</p>';
-  if (open.length) s += '<div class="lab">别的日子还没写完的</div><ul class="capmini">' + open.slice(0, 5).map(e => '<li><span class="mono">' + mdShort(e.date) + '</span><button type="button" class="linkbtn" data-act="editEvent" data-id="' + e.id + '">' + esc(e.title) + '</button><span class="pending">没写完</span></li>').join('') + '</ul>';
-  return s + '<div class="row"><button type="button" class="btn ghost sm" data-act="newEvent">复盘' + (k === t ? '一件事' : '这一天的一件事') + '</button></div></section>';
-}
-function reviewArcCard(k){
-  const t = dayKey(), list = archivesOn(k);
-  let s = '<section class="card"><div class="stage"><span class="tag">对话</span>对话复盘</div>';
-  if (list.length) s += '<div class="stack">' + list.map(archiveHTML).join('') + '</div>';
-  else s += '<p class="muted">和 Claude 聊完复盘，把它最后给的那段存档粘贴进来，结论就回到这个本子里。</p>';
-  return s + '<div class="row"><button type="button" class="btn ghost sm" data-act="impOpen">导入对话复盘</button><button type="button" class="btn ghost sm" data-act="copy" data-key="' + k + '">复制' + (k === t ? '今天' : '这一天') + '的材料给 Claude</button></div></section>';
-}
+
+
 function copyBox(){
   if (!ui.copy) return '';
   return '<section class="card copybox" style="margin-bottom:12px"><div class="stage">复制没成功，手动全选复制</div><textarea id="copyArea" readonly>' + esc(ui.copy) + '</textarea><div class="row"><button type="button" class="btn ghost sm" data-act="closeCopy">关掉</button></div></section>';
@@ -1950,7 +1887,12 @@ function finishMonthScroll(){
   if(!reviewVisible()||monthResetting||monthPointer)return;const sc=$('#month-scroller'),page=Math.round(sc.scrollLeft/sc.clientWidth);
   if(!monthGesture){if(page!==1)centerMonth();return;}monthGesture=false;if(page!==1)changeReviewMonth(page-1);
 }
-function closeDayActions(){const d=$('#day-actions');if(d.open)d.close();const b=$('#summary-more');if(b)b.focus({preventScroll:true});}
+function closeDayActions(){const d=$('#day-actions');if(d.open)d.close();const b=d.dataset.from==='review'?document.querySelector('[data-act="reviewMenu"]'):$('#summary-more');if(b)b.focus({preventScroll:true});}
+function closeHypActions(restore=true){const d=$('#hyp-actions'),id=d.dataset.id;if(d.open)d.close();if(restore){const b=Array.from(document.querySelectorAll('[data-act="hypMenu"]')).find(b=>b.dataset.id===id);if(b)b.focus({preventScroll:true});}}
+function openHypActions(id){
+  const x=S.hyps[id];if(!x)return;const d=$('#hyp-actions');d.dataset.id=id;
+  d.innerHTML='<div class="row"><h2 id="hyp-actions-title">'+hypNo(x)+' · 更多操作</h2><button type="button" class="icon-button" data-act="hypMenuClose" aria-label="关闭假设操作面板">×</button></div><button type="button" class="btn ghost" data-act="hypAct" data-id="'+esc(id)+'" data-v="evs">修改证据</button><button type="button" class="btn ghost" data-act="hypAct" data-id="'+esc(id)+'" data-v="rev">缩小条件 / 改写</button><button type="button" class="btn ghost" data-act="hypStatus" data-id="'+esc(id)+'" data-v="'+(x.status==='solid'?'test':'solid')+'">'+(x.status==='solid'?'退回待验证':'升为较可信')+'</button><button type="button" class="btn ghost danger" data-act="hypAct" data-id="'+esc(id)+'" data-v="del">删除</button>';d.showModal();
+}
 function vSettings(){
   const theme=['light','dark'].includes(uiPrefs.theme)?uiPrefs.theme:'system';
   return copyBox()+'<h1 class="h">设置</h1><div class="settings-stack">'+syncCard()+dataCard()+'<section class="card" id="settings-ai"><h2 class="stage">AI</h2><p class="fine">AI 尚未接入</p></section><section class="card"><h2 class="stage">显示</h2><div class="theme-options" role="group" aria-label="主题">'+[['system','跟随系统'],['light','浅色'],['dark','深色']].map(([v,label])=>'<button type="button" data-act="theme" data-v="'+v+'" aria-pressed="'+(theme===v)+'">'+label+'</button>').join('')+'</div></section><section class="card"><h2 class="stage">关于</h2><p class="fine">自我观察本 · <span class="mono">'+APP_VERSION+'</span></p><p class="fine">记录默认只存在这台设备。开启云端同步后，会额外保存一份加密备份；本机草稿与显示偏好不进入同步。</p></section></div>';
@@ -2088,6 +2030,7 @@ function fMin(){
     h += '<div class="lab">预测对了吗（点一下就行）</div>' + d.preds.map(p => '<div class="f"><div class="pt" style="font-size:14px">' + esc(p.text) + '</div>' + segHTML('R.' + p.id + '.r', [['hit','对'],['miss','落空'],['half','一半']]) + predMissHint(p, x.R[p.id] && x.R[p.id].r) + '</div>').join('');
   }
   h += fieldTA('q1', (isLate ? '那天' : '今天') + '哪一刻的我，和我以为的自己不一样？', '例如：以为自己会一直拖着，结果开始五分钟后，反而不想停了。');
+  h += '<p class="hint friend-hint">如果是朋友经历了今天，你会怎样看待他？</p>';
   h += fieldTA('q2', '那一刻，我在乎的是什么？', '是被理解、能自己做主，还是想把事情做好？');
   h += '<details class="journal-disclosure"' + disclosureAttrs('day:' + form.key + ':min-hyp', !!(x.D.sit || x.D.rea)) + '><summary>想再往前一步？<small>留一条待验证的发现</small></summary><div class="f"><div class="lab">写成一条假设（可选）</div><div class="pair"><span>在</span>' + fieldIn('D.sit', '什么情况下', 'hyp') + '<span>我可能会</span>' + fieldIn('D.rea', '怎样', 'hyp') + '</div><div class="warn" id="w-hyp">' + hypWarn((x.D.sit || '') + (x.D.rea || '')) + '</div></div>';
   h += '<p class="fine">没看出规律也没关系。这一栏可以空着，等以后再回来验证。</p></details>';
@@ -2508,43 +2451,25 @@ function importFile(f){
 }
 
 function vHyps(){
-  const hs = Object.values(S.hyps);
-  const groups = [['test','待验证'],['solid','较可信']];
-  let h = '<h1 class="h">自我假设清单</h1><p class="lede">每天的记录会被忘掉，这张清单不会。它是你对自己的当前理解，每条都带着证据。</p>';
-  h += '<div class="row" style="margin-bottom:12px"><button type="button" class="btn sm" data-act="hypNew">手动加一条</button></div>';
-  if (ui.hypNew) h += '<div class="card" style="margin-bottom:12px"><div class="pair"><span>在</span><input type="text" id="hn-sit" placeholder="什么情况下"><span>我可能会</span><input type="text" id="hn-rea" placeholder="怎样"></div><input type="text" id="hn-ev" placeholder="证据（一句话，可选）"><div class="row"><button type="button" class="btn sm" data-act="hypNewSave">加进清单</button><button type="button" class="btn ghost sm" data-act="hypNewCancel">算了</button></div></div>';
-  if (!hs.length){
-    h += '<div class="hyp example"><div class="hmeta"><span class="st test">示例</span></div><div class="hs"><span class="pre">在</span>计划被临时打乱后<span class="pre">时，</span><br><span class="pre">我可能会</span>放弃当天剩下的全部计划</div><div class="hmeta"><span class="tally">支持 ' + tally(1) + '</span><span class="tally con">反例 ' + tally(0) + '</span></div></div>';
-    h += '<p class="fine" style="margin-top:10px">晚上复盘的 D 部分会把你的第一条假设放进来。支持满 3 次、没有反例，就可以升为「较可信」；出现反例，先缩小条件，不要直接删。</p>';
-    return h;
-  }
-  groups.forEach(g => {
-    const list = hs.filter(x => (x.status === 'solid' ? 'solid' : 'test') === g[0]).sort((a, b) => (a.no || 0) - (b.no || 0));
-    if (!list.length) return;
-    h += '<h2 class="h2">' + g[1] + ' · ' + list.length + '</h2><div class="stack">' + list.map(hypCard).join('') + '</div>';
-  });
+  const hs=Object.values(S.hyps),filter=ui.hypFilter||'test',group=x=>x.status==='solid'?'solid':'test';
+  let h='<div class="hyp-heading"><h1 class="h">自我假设清单</h1><button type="button" class="btn ghost sm" data-act="hypNew">＋ 手动加一条</button></div><p class="hyp-intro">每条都带着证据，是你对自己的当前理解。</p><div class="seg hyp-filter" role="group" aria-label="筛选假设">'+[['test','待验证 '+hs.filter(x=>group(x)==='test').length],['solid','较可信 '+hs.filter(x=>group(x)==='solid').length],['all','全部']].map(([v,label])=>'<button type="button" class="'+(filter===v?'on':'')+'" data-act="hypFilter" data-v="'+v+'" aria-pressed="'+(filter===v)+'">'+label+'</button>').join('')+'</div>';
+  if(ui.hypNew)h+='<div class="card hyp-new"><div class="pair"><span>在</span><input type="text" id="hn-sit" placeholder="什么情况下"><span>我可能会</span><input type="text" id="hn-rea" placeholder="怎样"></div><input type="text" id="hn-ev" placeholder="证据（一句话，可选）"><div class="row"><button type="button" class="btn sm" data-act="hypNewSave">加进清单</button><button type="button" class="btn ghost sm" data-act="hypNewCancel">算了</button></div></div>';
+  const list=hs.filter(x=>filter==='all'||group(x)===filter).sort((a,b)=>(a.no||0)-(b.no||0));
+  if(list.length)h+='<div class="stack hyp-list">'+list.map(hypCard).join('')+'</div>';
+  else h+='<p class="fine">'+(hs.length?'这里还没有'+(filter==='solid'?'较可信':'待验证')+'的假设。':'还没有假设。从一件具体的事开始，慢慢积累证据。')+'</p>';
+  if(!hs.length)h+='<div class="hyp example"><div class="hmeta"><span class="st test">示例</span></div><div class="hs"><span class="pre">在</span>计划被临时打乱后<span class="pre">时，</span><br><span class="pre">我可能会</span>放弃当天剩下的全部计划</div><p class="fine">复盘里留下的假设，也会出现在这里。</p></div>';
   return h;
 }
+
 function hypCard(x){
-  const sup = evCount(x, 'sup'), con = evCount(x, 'con'), st0 = evStats(x.ev), o = ui.hypOpen && ui.hypOpen.id === x.id ? ui.hypOpen.act : null;
-  const status = x.status === 'solid' ? 'solid' : 'test', hist = x.history || [];
-  let s = '<article class="hyp ' + status + '"><div class="hmeta"><span class="hno">' + hypNo(x) + '</span><span class="st ' + status + '">' + (status === 'solid' ? '较可信' : '待验证') + '</span><span>首次 ' + md(x.created) + '</span>' + (x.revisedOn ? '<span>' + md(x.revisedOn) + ' 改写</span>' : '') + '</div>';
-  s += hypLines(x);
-  s += '<div class="hmeta"><span class="tally">支持 ' + tally(sup) + '</span><span class="tally con">反例 ' + tally(con) + '</span>' + ((st0.supW + st0.conW) ? '<span>其中弱证据 ' + (st0.supW + st0.conW) + '</span>' : '') + '</div>';
-  const evAll = x.ev || [], ev = evAll.slice(-4).reverse();
-  if (ev.length && o !== 'evs'){
-    s += '<ul class="evs">' + ev.map(evLi).join('') + '</ul>';
-    if (evAll.length > 4) s += '<p class="fine" style="margin:0">只显示最近 4 条，一共 ' + evAll.length + ' 条。点「修改证据」看全部。</p>';
-  }
-  if (o === 'evs') s += evEditPanel(x);
-  if (hist.length) s += '<details class="hist"' + disclosureAttrs('hyp:' + x.id + ':history') + '><summary>改写过 ' + hist.length + ' 次，看旧版本</summary><ol>' + hist.slice().reverse().map(v => { const vs = evStats(v.ev); return '<li><span class="old">' + esc(v.text) + '</span><br><span class="fine">' + (v.from ? md(v.from) : '') + ' – ' + md(v.to) + ' · 支持 ' + vs.sup + ' · 反例 ' + vs.con + '</span></li>'; }).join('') + '</ol></details>';
-  {
-    if (x.status === 'test' && sup >= 3 && con === 0) s += '<p class="suggest">支持 ' + sup + ' 次、没有反例，可以升为「较可信」。</p>';
-    if (con > 0) s += '<p class="suggest r">有反例了。先缩小条件，把「在什么情况下」写得更精确。</p>';
-    s += '<div class="row"><button type="button" class="btn ghost sm" data-act="hypAct" data-id="' + x.id + '" data-v="sup">+ 支持</button><button type="button" class="btn ghost sm" data-act="hypAct" data-id="' + x.id + '" data-v="con">+ 反例</button>' + (evAll.length ? '<button type="button" class="btn ghost sm" data-act="hypAct" data-id="' + x.id + '" data-v="evs">修改证据</button>' : '') + '<button type="button" class="btn ghost sm" data-act="hypAct" data-id="' + x.id + '" data-v="rev">缩小条件 / 改写</button>'
-      + (x.status === 'test' ? '<button type="button" class="btn ghost sm" data-act="hypStatus" data-id="' + x.id + '" data-v="solid">升为较可信</button>' : '<button type="button" class="btn ghost sm" data-act="hypStatus" data-id="' + x.id + '" data-v="test">退回待验证</button>')
-      + '<button type="button" class="linkbtn" data-act="hypAct" data-id="' + x.id + '" data-v="del">删除</button></div>';
-  }
+  const sup=evCount(x,'sup'),con=evCount(x,'con'),st0=evStats(x.ev),o=ui.hypOpen&&ui.hypOpen.id===x.id?ui.hypOpen.act:null,status=x.status==='solid'?'solid':'test',hist=x.history||[],evAll=(x.ev||[]).slice().sort((a,b)=>String(a.date||'').localeCompare(String(b.date||''))),ev=evAll.slice(-2).reverse();
+  let s='<article class="hyp '+status+'" data-hyp-id="'+esc(x.id)+'"><div class="hmeta"><span class="hno">'+hypNo(x)+'</span><span class="st '+status+'">'+(status==='solid'?'较可信':'待验证')+'</span><span>首次 '+md(x.created)+'</span></div>'+hypLines(x);
+  s+='<div class="hmeta evidence-counts"><span class="tally">支持 '+tally(sup)+'</span><span aria-hidden="true">｜</span><span class="tally con">反例 '+tally(con)+'</span>'+((st0.supW+st0.conW)?'<span>其中弱证据 '+(st0.supW+st0.conW)+'</span>':'')+'</div>';
+  if(o==='evs')s+=evEditPanel(x);
+  else if(ev.length){s+='<ul class="evs recent-evidence">'+ev.map(evLi).join('')+'</ul>';if(evAll.length>2)s+='<details class="all-evidence"'+disclosureAttrs('hyp:'+x.id+':evidence')+'><summary>全部 '+evAll.length+' 条证据 ›</summary><ul class="evs">'+evAll.slice().reverse().map(evLi).join('')+'</ul></details>';}
+  if(con>0)s+='<p class="suggest r">有反例了，先缩小条件</p>';else if(status==='test'&&sup>=3)s+='<p class="suggest">可以升为较可信</p>';
+  s+='<div class="row hyp-primary"><button type="button" class="btn ghost sm" data-act="hypAct" data-id="'+esc(x.id)+'" data-v="sup">＋ 支持</button><button type="button" class="btn ghost sm" data-act="hypAct" data-id="'+esc(x.id)+'" data-v="con">＋ 反例</button><button type="button" class="icon-button" data-act="hypMenu" data-id="'+esc(x.id)+'" aria-label="'+hypNo(x)+' 更多操作">⋯</button></div>';
+  if(hist.length)s+='<details class="hist"'+disclosureAttrs('hyp:'+x.id+':history')+'><summary>改写过 '+hist.length+' 次，看旧版本</summary><ol>'+hist.slice().reverse().map(v=>{const vs=evStats(v.ev);return '<li><span class="old">'+esc(v.text)+'</span><br><span class="fine">'+(v.from?md(v.from):'')+' – '+md(v.to)+' · 支持 '+vs.sup+' · 反例 '+vs.con+'</span></li>';}).join('')+'</ol></details>';
   if (o === 'sup' || o === 'con'){
     const str = (ui.hypOpen && ui.hypOpen.str) || 'strong';
     s += '<div class="inline"><input type="text" id="hx-note" placeholder="' + (o === 'sup' ? '支持它的事实' : '和它对不上的事实') + '（一句话）"><div class="seg">' + [['strong','强 · 当时记下或预测过'],['weak','弱 · 事后回想']].map(p => '<button type="button" class="' + (str === p[0] ? 'on' : '') + '" data-act="hypStr" data-v="' + p[0] + '" aria-pressed="' + (str === p[0]) + '">' + p[1] + '</button>').join('') + '</div><div class="row"><button type="button" class="btn sm' + (o === 'con' ? ' red' : '') + '" data-act="hypEv" data-id="' + x.id + '" data-v="' + o + '">记下' + (o === 'con' ? '反例' : '支持') + '</button><button type="button" class="btn ghost sm" data-act="hypClose">算了</button></div></div>';
@@ -2553,6 +2478,7 @@ function hypCard(x){
   if (o === 'del') s += '<div class="inline"><p class="muted">删掉后找不回来。确定删除这条？</p><div class="row"><button type="button" class="btn sm red" data-act="hypDel" data-id="' + x.id + '">删除</button><button type="button" class="btn ghost sm" data-act="hypClose">算了</button></div></div>';
   return s + '</article>';
 }
+
 function dataCard(){
   const b=backupInfo();
   return '<section class="card" id="settings-data"><h2 class="stage">数据</h2><p class="'+(b.stale?'warn':'fine')+'">'+(b.date?'上次导出：'+b.date:'还没有导出过备份。')+'</p><p class="fine">导出 JSON 可以备份或迁移全部记录。导入会保留已有记录；本机草稿、访问口令和显示偏好不进入导出。保存某一天的 Word，可到回顾页点选日期后打开“⋯”。</p><div class="row">'+(dlNs?'<button type="button" class="btn ghost" data-act="export">全部数据导出</button>':'')+'<button type="button" class="btn ghost" data-act="importPick">全部数据导入</button><button type="button" class="btn ghost" data-act="copyAll">复制全部为文字</button></div><input type="file" id="importFile" accept=".json,application/json" hidden></section>';
@@ -2677,6 +2603,7 @@ function render(){
   view.innerHTML = html;
   updateReviewShell();
   sizeCaptureInput();
+  const excerpt=$('#review-excerpt'),toggle=$('.excerpt-toggle');if(excerpt&&toggle&&!excerpt.classList.contains('expanded'))toggle.hidden=excerpt.scrollHeight<=excerpt.clientHeight+1;
   if (samePage){
     if (renderedView.form === form && renderedView.date === context.date) previous.inputs.forEach(saved => {
       const el = findControl(view, saved.identity);
@@ -2971,10 +2898,16 @@ const A = {
   monthFinish(el){const on=!ui.open.has('month:finish');setDisclosure('month:finish',on);el.setAttribute('aria-expanded',String(on));$('#month-finish').hidden=!on;},
   monthInfo(el){const on=!ui.open.has('month:info');setDisclosure('month:info',on);el.setAttribute('aria-expanded',String(on));$('#month-info').hidden=!on;},
   summaryClose(){closeSummary();},
-  summaryMenu(){if(!ui.moreDay)return;const d=$('#day-actions');d.dataset.key=ui.moreDay;d.showModal();},
+  dismissReminder(el){const date=dayKey(),prev=uiPrefs.predDismiss;uiPrefs.predDismiss={date,types:Array.from(new Set((prev&&prev.date===date&&Array.isArray(prev.types)?prev.types:[]).concat(el.dataset.v)))};saveUIPrefs();render();},
+  reviewExcerpt(el){const key='excerpt:'+el.dataset.key,on=!ui.open.has(key);setDisclosure(key,on);$('#review-excerpt').classList.toggle('expanded',on);el.textContent=on?'收起摘录':'展开摘录';el.setAttribute('aria-expanded',String(on));},
+  reviewMenu(el){const d=$('#day-actions');d.dataset.key=el.dataset.key;d.dataset.from='review';d.showModal();},
+  summaryMenu(){if(!ui.moreDay)return;const d=$('#day-actions');d.dataset.key=ui.moreDay;d.dataset.from='summary';d.showModal();},
+  hypMenu(el){openHypActions(el.dataset.id);},
+  hypMenuClose(){closeHypActions();},
+  hypFilter(el){ui.hypFilter=el.dataset.v;ui.hypOpen=null;render();},
   dayActionsClose(){closeDayActions();},
   summaryWord(){const k=$('#day-actions').dataset.key;closeDayActions();A.wordDay({dataset:{key:k}});},
-  summaryCopy(){const k=$('#day-actions').dataset.key;closeDayActions();closeSummary(true,false);A.copy({dataset:{key:k}});},
+  summaryCopy(){const k=$('#day-actions').dataset.key;closeDayActions();if($('#day-actions').dataset.from!=='review')closeSummary(true,false);A.copy({dataset:{key:k}});},
   moreOpen(el){
     const k = el.dataset.key, section = el.dataset.section;
     if (!validDate(k) || !Object.prototype.hasOwnProperty.call(MORE_SECTIONS, section)) return;
@@ -3092,8 +3025,8 @@ const A = {
   goWeek(el){ ui.weekKey = el.dataset.key; form = null; if (location.hash === '#week'){ route = 'week'; render(); } else location.hash = '#week'; },
   hypNew(){ ui.hypNew = !ui.hypNew; render(); const i = $('#hn-sit'); if (i) i.focus(); },
   hypNewCancel(){ ui.hypNew = false; render(); },
-  async hypNewSave(){ if (!needReady()) return; const sit = $('#hn-sit').value.trim(), rea = $('#hn-rea').value.trim(), note = $('#hn-ev').value.trim(); if (!sit || !rea){ toast('情境和反应都要写。'); return; } const h = makeHyp({ sit, rea, ev:note ? [{ date:dayKey(), kind:'sup', note, str:'strong' }] : [] }); ui.hypNew = false; render(); try { await put('hyps', h.id, h); render(); toast('加进清单了，编号 ' + hypNo(h) + '。'); } catch (e) {} },
-  hypAct(el){ ui.hypOpen = { id:el.dataset.id, act:el.dataset.v, str:'strong' }; render(); const i = $('#hx-note') || $('#hx-text'); if (i) i.focus(); },
+  async hypNewSave(){ if (!needReady()) return; const sit = $('#hn-sit').value.trim(), rea = $('#hn-rea').value.trim(), note = $('#hn-ev').value.trim(); if (!sit || !rea){ toast('情境和反应都要写。'); return; } const h = makeHyp({ sit, rea, ev:note ? [{ date:dayKey(), kind:'sup', note, str:'strong' }] : [] }); ui.hypNew = false; ui.hypFilter='test'; render(); try { await put('hyps', h.id, h); render(); toast('加进清单了，编号 ' + hypNo(h) + '。'); } catch (e) {} },
+  hypAct(el){ closeHypActions(false); ui.hypOpen = { id:el.dataset.id, act:el.dataset.v, str:'strong' }; render(); const card=Array.from(document.querySelectorAll('[data-hyp-id]')).find(c=>c.dataset.hypId===el.dataset.id),i=$('#hx-note')||$('#hx-text')||(card&&card.querySelector('.inline [data-act="hypClose"]'));if(i)i.focus(); },
   hypStr(el){ const i = $('#hx-note'); if (ui.hypOpen){ ui.hypOpen.note = i ? i.value : ''; ui.hypOpen.str = el.dataset.v; } render(); const j = $('#hx-note'); if (j){ j.value = (ui.hypOpen && ui.hypOpen.note) || ''; j.focus(); } },
   hypClose(){ ui.hypOpen = null; render(); },
   evEdit(el){
@@ -3138,7 +3071,7 @@ const A = {
     try { for (const f of ops) await f(); render(); toast('删掉了这条证据。'); } catch (e) {}
   },
   async hypEv(el){ if (!needReady()) return; const h = clone(S.hyps[el.dataset.id]); if (!h) return; const note = ($('#hx-note').value || '').trim(), str = (ui.hypOpen && ui.hypOpen.str) === 'weak' ? 'weak' : 'strong'; h.ev = (h.ev || []).concat([{ date:dayKey(), kind:el.dataset.v, note, str }]); h.updated = new Date().toISOString(); ui.hypOpen = null; render(); try { await put('hyps', h.id, h); render(); if (el.dataset.v === 'con') toast('反例记下了。它是新信息：试试缩小这条的条件。'); } catch (e) {} },
-  async hypStatus(el){ if (!needReady()) return; const h = clone(S.hyps[el.dataset.id]); if (!h) return; h.status = el.dataset.v; h.updated = new Date().toISOString(); render(); try { await put('hyps', h.id, h); render(); } catch (e) {} },
+  async hypStatus(el){ closeHypActions(); if (!needReady()) return; const h = clone(S.hyps[el.dataset.id]); if (!h) return; h.status = el.dataset.v; h.updated = new Date().toISOString(); render(); try { await put('hyps', h.id, h); render(); } catch (e) {} },
   async hypRevise(el){
     if (!needReady()) return;
     const h = clone(S.hyps[el.dataset.id]); if (!h) return;
@@ -3380,7 +3313,7 @@ document.addEventListener('input', e => {
 const ROUTE_ALIAS = { today:'pred', log:'more' };   // links and icons saved from older versions
 function resolveRoute(hash){ const r = (hash || '#review').slice(1).split('?')[0], a = ROUTE_ALIAS[r] || r; return ['pred','capture','review','hyps','more','week','settings'].includes(a) ? a : 'review'; }
 function onHash(){
-  cancelDayMotion();cancelReviewMotion();if($('#day-actions').open)$('#day-actions').close();
+  cancelDayMotion();cancelReviewMotion();closeHypActions(false);if($('#day-actions').open)$('#day-actions').close();
   route = resolveRoute(location.hash); ui.cal = false;
   const panel = moreLocation(), returning = route === 'more' && !panel.section && panel.day && ui.moreReturn && ui.moreReturn.day === panel.day;
   if (panel.day){ ui.moreDay = panel.day; ui.moreMonth = returning ? ui.moreReturn.month : panel.day.slice(0, 7); }
@@ -3407,6 +3340,7 @@ monthScroller.addEventListener('wheel',()=>{monthGesture=true;},{passive:true});
 monthScroller.addEventListener('keydown',e=>{if(['ArrowLeft','ArrowRight','Home','End'].includes(e.key))monthGesture=true;});
 monthScroller.addEventListener('scrollend',finishMonthScroll);
 if(!('onscrollend' in monthScroller))monthScroller.addEventListener('scroll',()=>{clearTimeout(monthTimer);monthTimer=setTimeout(finishMonthScroll,150);},{passive:true});
+$('#hyp-actions').addEventListener('cancel',e=>{e.preventDefault();closeHypActions();});
 $('#day-actions').addEventListener('cancel',e=>{e.preventDefault();closeDayActions();});
 $('#day-summary').addEventListener('cancel',e=>{e.preventDefault();closeSummary();});
 window.addEventListener('resize',()=>requestAnimationFrame(()=>{if(reviewVisible()){centerMonth();renderSummary();revealSelectedWeek();}}));
@@ -3423,6 +3357,8 @@ if (!('onscrollend' in weekScroller)) weekScroller.addEventListener('scroll',() 
 let resizeFrame = null;
 window.addEventListener('resize',() => { cancelAnimationFrame(resizeFrame); resizeFrame=requestAnimationFrame(() => { if (!$('#week-shell').hidden) centerWeek(weekStart(sel)); sizeCaptureInput(); }); });
 document.addEventListener('keydown',e => {
+  if(e.key==='Tab'&&$('#hyp-actions').open){const bs=Array.from($('#hyp-actions').querySelectorAll('button:not([disabled])')),first=bs[0],last=bs[bs.length-1];if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}}
+  if(e.key==='Escape'&&$('#hyp-actions').open){e.preventDefault();closeHypActions();return;}
   if(e.key==='Tab' && $('#day-actions').open){const buttons=Array.from($('#day-actions').querySelectorAll('button:not([disabled])')),first=buttons[0],last=buttons[buttons.length-1];if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}}
   if ((e.ctrlKey || e.metaKey) && e.key === 'Enter' && !e.isComposing && form && form.type === 'capture'){ e.preventDefault(); A.saveCap(); }
   if(e.key==='Escape' && $('#day-actions').open){e.preventDefault();closeDayActions();return;}
