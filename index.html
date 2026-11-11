@@ -731,14 +731,15 @@ body.keyboard-open .capture-save{bottom:var(--s-2)}
 .calendar-legend i{display:inline-block;width:12px;height:12px;border-radius:50%;background:var(--line)}
 .calendar-legend .std{background:var(--accent)}
 .calendar-legend .min{background:var(--accent-soft);border:1px solid var(--line-strong)}
-.calendar-legend .part{width:4px;height:4px;background:var(--accent)}
+.calendar-legend .date-sample{position:relative;display:inline-flex;align-items:center;justify-content:center;width:24px;height:28px;font-style:normal;background:transparent;color:var(--ink);font-size:12px}
+.calendar-legend .date-sample::after{content:'';position:absolute;width:5px;height:5px;border-radius:50%;background:var(--accent);top:1px;right:1px}
+.calendar-legend .date-sample.part::after{width:4px;height:4px;top:auto;right:auto;bottom:2px;left:10px}
+.calendar-legend .date-sample.a::after{background:var(--pen)}
 .calendar-legend .skip{background:repeating-linear-gradient(135deg,var(--line-strong) 0 1px,transparent 1px 4px)}
-.calendar-legend .a,.calendar-legend .e{width:5px;height:5px;background:var(--pen)}
-.calendar-legend .e{background:var(--accent)}
 #calendar-legend-wrap .fold-toggle{padding-inline:var(--s-2);min-height:44px}
 .month-summary{padding:var(--s-4) 0;border-block:1px solid var(--line);margin-bottom:var(--s-5)}
 .month-totals{display:flex;flex-wrap:wrap;gap:var(--s-2);align-items:center;font-size:var(--fs-small)}
-.month-totals button{min-height:44px;padding:0 var(--s-1);border:0;background:none;color:var(--ink);text-decoration:underline;text-underline-offset:4px}
+.month-totals button,.month-totals a{display:inline-flex;align-items:center;min-height:44px;padding:0 var(--s-1);border:0;background:none;color:var(--ink);text-decoration:underline;text-underline-offset:4px}
 .month-summary p{margin-top:var(--s-2)}
 #desktop-summary{display:none}
 #day-summary{position:fixed;inset:auto 0 0;margin:0 auto;width:100%;max-width:680px;height:55vh;height:55dvh;min-height:240px;max-height:none;padding:0;border:1px solid var(--line);border-bottom:0;border-radius:var(--r-sheet) var(--r-sheet) 0 0;background:var(--card);color:var(--ink);box-shadow:var(--sh-sheet);z-index:31;overflow:hidden}
@@ -858,7 +859,7 @@ const VAGUE = ['充实','好好','努力','认真','尽量','高效','顺利','�
 const MOMENTS = ['情绪最强的一刻','最不像自己的一刻','最有劲的一刻','别的时刻'];
 const FORMAT = 'review-archive/v1';
 const OFFLINE_APP = true;
-const APP_VERSION = 'v6.7';
+const APP_VERSION = 'v6.8';
 const LS_KEY = 'zwgcb-data-v1', LS_DRAFT = 'zwgcb-drafts-v1';
 
 /* ---------- utils ---------- */
@@ -1851,7 +1852,7 @@ function calendarGrid(ym,modeName){
   for(let i=(lead+n)%7;i&&i<7;i++)h+='<span></span>';
   return h+'</div>';
 }
-function calendarLegend(){return '<div class="calendar-legend"><span><i class="std"></i>标准版</span><span><i class="min"></i>轻量版</span><span><i class="part"></i>有记录</span><span><i class="skip"></i>放过</span><span><i class="a"></i>对话存档</span><span><i class="e"></i>单件复盘</span></div>';}
+function calendarLegend(){return '<div class="calendar-legend"><span><i class="std" aria-hidden="true"></i>标准版</span><span><i class="min" aria-hidden="true"></i>轻量版</span><span><i class="date-sample part" aria-hidden="true">8</i>有记录</span><span><i class="skip" aria-hidden="true"></i>放过</span><span><i class="date-sample a" aria-hidden="true">8</i>对话存档</span><span><i class="date-sample e" aria-hidden="true">8</i>单件复盘</span></div>';}
 function reviewMonthData(ym){
   const t=dayKey(),inMonth=k=>String(k||'').slice(0,7)===ym&&String(k).slice(0,10)<=t;
   let rec=0,info=0,any=false;
@@ -1865,7 +1866,7 @@ function reviewMonthData(ym){
 }
 function reviewMonthSummary(ym){
   const m=reviewMonthData(ym),lr=lastRevision(),days=lr?Math.round((parse(dayKey())-parse(lr))/864e5):null;
-  return '<section class="month-summary" aria-label="本月小结">'+(!m.any?'<p class="fine">这个月还没有记录。</p>':'')+'<div class="month-totals"><span>收尾 '+m.rec+' 天</span><span>·</span><button type="button" data-act="monthInfo" aria-expanded="'+ui.open.has('month:info')+'" aria-controls="month-info">新信息 '+m.info+' 条</button><span>· 清单 '+m.count+' 条（较可信 '+m.solid+'）</span></div><p class="fine" id="month-info"'+(ui.open.has('month:info')?'':' hidden')+'>新信息 = 落空的预测 + 意外的反应 + 反例 + 改写。它们提示了值得再观察的地方，不必追求数量。</p><p class="fine">'+(lr?'上一次重新认识自己：'+(days===0?'今天':days+' 天前')+'，改写了一条假设。':'每次发现都可以慢慢积累，不急着给自己下结论。')+'</p></section>';
+  return '<section class="month-summary" aria-label="本月小结">'+(!m.any?'<p class="fine">这个月还没有记录。</p>':'')+'<div class="month-totals"><button type="button" data-act="monthFinish" aria-expanded="'+ui.open.has('month:finish')+'" aria-controls="month-finish">收尾 '+m.rec+' 天</button><span>·</span><button type="button" data-act="monthInfo" aria-expanded="'+ui.open.has('month:info')+'" aria-controls="month-info">新信息 '+m.info+' 条</button><span>·</span><a href="#hyps">清单 '+m.count+' 条</a><span>（较可信 '+m.solid+'）</span></div><p class="fine" id="month-finish"'+(ui.open.has('month:finish')?'':' hidden')+'>这个月写了晚上复盘的天数（标准版和轻量版都算）</p><p class="fine" id="month-info"'+(ui.open.has('month:info')?'':' hidden')+'>新信息 = 落空的预测 + 意外的反应 + 反例 + 改写。它们提示了值得再观察的地方，不必追求数量。</p><p class="fine">'+(lr?'上一次重新认识自己：'+(days===0?'今天':days+' 天前')+'，改写了一条假设。':'每次发现都可以慢慢积累，不急着给自己下结论。')+'</p></section>';
 }
 function summaryHTML(k){
   const d=S.days[k]||newDay(k),ps=d.preds||[],caps=(d.caps||[]).filter(c=>captureVisible(k,c)).sort((a,b)=>Date.parse(b.at)-Date.parse(a.at)),arcs=archivesOn(k),evs=eventsOn(k),st=dayStatus(k,dayKey());
@@ -2967,6 +2968,7 @@ function needReady(){ if (!ready){ toast('还在打开记录本，稍等几秒�
 function predSrc(k){ const t = dayKey(); return k > t ? 'eve' : k === t ? 'morning' : 'late'; }
 const A = {
   theme(el){uiPrefs.theme=el.dataset.v;saveUIPrefs();applyTheme(uiPrefs.theme);render();},
+  monthFinish(el){const on=!ui.open.has('month:finish');setDisclosure('month:finish',on);el.setAttribute('aria-expanded',String(on));$('#month-finish').hidden=!on;},
   monthInfo(el){const on=!ui.open.has('month:info');setDisclosure('month:info',on);el.setAttribute('aria-expanded',String(on));$('#month-info').hidden=!on;},
   summaryClose(){closeSummary();},
   summaryMenu(){if(!ui.moreDay)return;const d=$('#day-actions');d.dataset.key=ui.moreDay;d.showModal();},
