@@ -737,8 +737,8 @@ body.keyboard-open .capture-save{bottom:var(--s-2)}
 (() => {
 'use strict';
 /* ---------- constants ---------- */
-const KINDS = { avoid:'最可能拖着不做的事', emotion:'最可能让我情绪起伏的', specific:'具体预测' };
-const SRC = { morning:'早上写', late:'补写', eve:'前晚出题' };
+const KINDS = { avoid:'最可能拖着不做的事', change:'最有可能做出改变的事', emotion:'最可能让我情绪起伏的', specific:'具体预测' };
+const SRC = { morning:'当天写', late:'当天写', eve:'前晚出题' };
 const RES = { hit:'对', miss:'落空', half:'一半' };
 const EMOS = ['焦虑','烦躁','委屈','失落','羞愧','愤怒','紧张','无力','不耐烦','兴奋','被认可','平静'];
 const BODY = ['胸闷','肩颈紧','心跳快','胃里发紧','脸发热','坐不住','想逃开','没力气','呼吸浅','放松'];
@@ -748,7 +748,7 @@ const VAGUE = ['充实','好好','努力','认真','尽量','高效','顺利','�
 const MOMENTS = ['情绪最强的一刻','最不像自己的一刻','最有劲的一刻','别的时刻'];
 const FORMAT = 'review-archive/v1';
 const OFFLINE_APP = true;
-const APP_VERSION = 'v6.5';
+const APP_VERSION = 'v6.6';
 const LS_KEY = 'zwgcb-data-v1', LS_DRAFT = 'zwgcb-drafts-v1';
 
 /* ---------- utils ---------- */
@@ -1411,11 +1411,12 @@ function tally(n){
   return s + '<span class="mono">' + n + '</span>';
 }
 function bars(n){ let s = '<span class="bars" aria-label="强度 ' + (n || 0) + '/5">'; for (let i = 1; i <= 5; i++) s += '<i class="' + (i <= n ? 'on' : '') + '"></i>'; return s + '</span>'; }
+function predMissHint(p, result = p.result){ return p.kind === 'change' && result === 'miss' ? '<p class="fine pred-miss-hint">没做到也是信息：卡在了哪一步？</p>' : ''; }
 function predRow(p, k, removable){
   const r = p.result ? ' r-' + p.result : '';
   return '<li class="pred' + r + '"><div class="pk"><span>' + KINDS[p.kind] + '</span><span class="mono">' + hm(p.at) + ' · ' + SRC[p.src] + '</span></div>'
     + '<div class="pt">' + esc(p.text) + '</div>'
-    + (p.actual ? '<div class="pa">实际：' + esc(p.actual) + '</div>' : '')
+    + (p.actual ? '<div class="pa">实际：' + esc(p.actual) + '</div>' : '') + predMissHint(p)
     + (p.result ? '<span class="pen ' + p.result + '">' + RES[p.result] + '</span>' : '')
     + (removable && !p.result ? '<button type="button" class="x" data-act="delPred" data-key="' + k + '" data-id="' + p.id + '" aria-label="删掉这条预测">×</button>' : '')
     + '</li>';
@@ -1680,24 +1681,24 @@ function statsCard(t){
     + '<p class="note">新信息 = 落空的预测 + 意外的反应 + 反例 + 改写。它们提示了值得再观察的地方，不必追求数量。' + lrLine + '</p>' + backupLine() + '</section>';
 }
 function predCard(k, d){
-  const t = dayKey(), hr = new Date().getHours(), isMorning = hr >= 4 && hr < 12, isNight = hr >= 18 || hr < 4;
-  let s = '<section class="card"><div class="stage"><span class="tag">早</span>' + (k === t ? '今天的预测' : k > t ? '明天的预测' : '这一天的预测') + '</div>';
+  const t = dayKey(), hr = new Date().getHours(), isNight = hr >= 18 || hr < 4;
+  const write = (key, label, ghost = false) => '<button type="button" class="btn' + (ghost ? ' ghost' : '') + '" data-act="open" data-type="morning" data-key="' + key + '">' + label + '</button>';
+  let s = '<section class="card"><div class="stage"><span class="tag">预</span>' + (k === t ? '今天的预测' : k > t ? '明天的预测' : '这一天的预测') + '</div>';
   if (!ready) return s + '<p class="muted">正在打开记录本…</p></section>';
-  if (d.preds.length){
-    s += predSummary(d.preds) + '<ul class="preds">' + d.preds.map(p => predRow(p, k, !d.evening && k >= t)).join('') + '</ul>';
-    if (k >= t && !d.evening) s += '<div class="row"><button type="button" class="btn ghost sm" data-act="open" data-type="morning" data-key="' + k + '">再加一条</button></div>';
-    if (k <= t && !d.evening && d.preds.some(p => !p.result)) s += '<p class="fine">对错在复盘时判。</p><div class="row"><a class="btn ghost sm" href="#review">去复盘</a></div>';
-  } else if (k > t){
-    s += '<p class="muted">给明天出一道题：写一条明天晚上能判对错的预测，明早打开就能看到。</p><div class="row"><button type="button" class="btn" data-act="open" data-type="morning" data-key="' + k + '">给明天出题</button></div>';
+  if (d.preds.length) s += predSummary(d.preds) + '<ul class="preds">' + d.preds.map(p => predRow(p, k, !d.evening && k >= t)).join('') + '</ul>';
+  if (k === t && d.evening){
+    s += '<div class="row">' + write(addDays(t,1), '给明天出题') + '</div>';
+  } else if (k === t && isNight){
+    s += '<p class="muted">今天还剩一段时间，可以给今晚写一条；也可以直接给明天出题。</p><div class="row">' + write(k, '给今晚写一条') + write(addDays(t,1), '给明天出题', true) + '</div>';
+  } else if (k === t){
+    s += '<p class="muted">1 分钟，写 2–3 条今晚能判对错的预测。只预测还没发生的事。</p><div class="row">' + write(k, '写今天的预测') + '</div>';
+  } else if (k > t && !d.evening){
+    if (!d.preds.length) s += '<p class="muted">给明天出一道题：写一条明天晚上能判对错的预测，明早打开就能看到。</p>';
+    s += '<div class="row">' + write(k, d.preds.length ? '再加一条' : '给明天出题', !!d.preds.length) + '</div>';
   } else if (k < t){
-    s += '<p class="muted">这一天没写预测。过去的事没法再预测，可以去「复盘」页补记那天印象最深的一刻。</p>';
-  } else if (isMorning){
-    s += '<p class="muted">1 分钟，写 2–3 条晚上能判对错的预测。写错了正好。</p><div class="row"><button type="button" class="btn" data-act="open" data-type="morning" data-key="' + k + '">写今天的预测</button></div>';
-  } else if (!isNight){
-    s += '<p class="muted">上午过去了。现在补写也有用，但只预测接下来还没发生的事。</p><div class="row"><button type="button" class="btn" data-act="open" data-type="morning" data-key="' + k + '">补写预测</button></div>';
-  } else {
-    s += '<p class="muted">今天没写预测，没关系。晚上复盘时，「对照」会换成「意外回看」。复盘最后可以给明天出一道题，明早就不用再想。</p><div class="row"><button type="button" class="btn ghost sm" data-act="open" data-type="morning" data-key="' + k + '">还是补一条</button></div>';
+    if (!d.preds.length) s += '<p class="muted">这一天没写预测。过去的事没法再预测，可以去「复盘」页补记那天印象最深的一刻。</p>';
   }
+  if (k <= t && !d.evening && d.preds.some(p => !p.result)) s += '<p class="fine">对错在复盘时判。</p><div class="row"><a class="btn ghost sm" href="#review">去复盘</a></div>';
   return s + '</section>';
 }
 function evLink(k, c){
@@ -1771,7 +1772,7 @@ function openForm(type, key, extra){
   const id = type + ':' + key;
   let data = drafts[id] ? clone(drafts[id]) : null;
   if (!data){
-    if (type === 'morning') data = { avoid:'', emotion:'', specific:'', hid:null };
+    if (type === 'morning') data = { change:'', emotion:'', specific:'', hid:null };
     if (type === 'evening' || type === 'min'){
       const d = S.days[key];
       if (d && d.evening && d.evening.mode === (type === 'evening' ? 'std' : 'min')) data = clone(d.evening.raw || {});
@@ -1815,13 +1816,14 @@ function formHead(title, lede, tag){ return '<div class="row" style="justify-con
 
 function fMorning(){
   const k = form.key, x = form.data, now = new Date(), t = dayKey(), hr = now.getHours();
-  const late = k === t && !(hr >= 4 && hr < 12);
+  const showTime = k === t && (hr >= 12 || hr < 4);
   const d = S.days[k] || newDay(k);
   let h = formHead('对' + (k === t ? '今天' : md(k)) + '的自己下几个预测', '写错了正好。晚上最值钱的就是落空的那一条。', md(k) + ' ' + wdOf(k));
-  if (late) h += '<p class="warn" style="margin:0 0 12px">现在 ' + pad(hr) + ':' + pad(now.getMinutes()) + '，算补写：只预测接下来还没发生的事，上午已经发生的不算。</p>';
+  if (showTime) h += '<p class="fine" style="margin:0 0 12px">现在 ' + pad(hr) + ':' + pad(now.getMinutes()) + '。从现在到今晚的事都可以预测，已经发生的不算。</p>';
   h += '<div class="card">';
   if (d.preds.length) h += '<div class="lab">已经写下的</div><ul class="preds">' + d.preds.map(p => predRow(p, k, false)).join('') + '</ul>';
-  h += fieldTA('avoid', '今天我最可能拖着不做的事', '比如：打开作业文档写第一段');
+  if ((x.avoid || '').trim()) h += '<div class="note"><div class="lab">旧问题草稿：最可能拖着不做的事</div><p class="fine">' + esc(x.avoid) + '</p><p class="fine">这段原文留给你参考，请在下面改写成你认为会发生的改变。</p></div>';
+  h += fieldTA('change', '今天最有可能做出改变的一件事', '比如：下午 3 点前打开作业文档，写完第一段', '写你真觉得会发生的，不是希望发生的。要能在今晚判对错。');
   h += fieldTA('emotion', '最可能让我情绪起伏的场合或人', '比如：下午的小组讨论');
   h += '<div class="f"><label for="f-specific">一条具体的预测</label><textarea id="f-specific" data-f="specific" data-live="vague" rows="2" placeholder="我会在 10 点前 ___ / 在 ___ 的时候，我会 ___">' + esc(x.specific) + '</textarea><div class="warn" id="w-specific">' + vagueWarn(x.specific) + '</div>';
   const hs = openHyps().filter(h2 => h2.status === 'test').slice(0, 6);
@@ -1841,7 +1843,7 @@ function fEvening(){
   h += '<div class="sec-h"><span class="mono">B</span>' + (d.preds.length ? '对照' : '意外回看') + '<span class="t">2 分钟</span></div>';
   if (d.preds.length){
     h += d.preds.map(p => '<div class="f"><div class="pred' + (x.R[p.id] && x.R[p.id].r && x.R[p.id].r !== 'hit' ? ' r-miss' : '') + '"><div class="pk"><span>' + KINDS[p.kind] + '</span><span class="mono">' + SRC[p.src] + '</span></div><div class="pt">' + esc(p.text) + '</div></div>'
-      + '<div class="row">' + segHTML('R.' + p.id + '.r', [['hit','对'],['miss','落空'],['half','一半']]) + '</div>' + fieldIn('R.' + p.id + '.a', '实际怎样') + '</div>').join('');
+      + '<div class="row">' + segHTML('R.' + p.id + '.r', [['hit','对'],['miss','落空'],['half','一半']]) + '</div>' + predMissHint(p, x.R[p.id] && x.R[p.id].r) + fieldIn('R.' + p.id + '.a', '实际怎样') + '</div>').join('');
   } else {
     h += fieldTA('surprise', '今天哪一刻，你的反应出乎自己意料？', '', '没有事前预测，这条可能被事后的解释修饰过，周复盘里会标成弱证据。');
   }
@@ -1894,7 +1896,7 @@ function fMin(){
   let h = formHead(isLate ? '补记' + md(k) : '给今天，留两句话', isLate ? '只写印象最深的一刻。记不清的就不写，别为了填满而编。' : '不用总结整个人生。先记下一刻，再看看它为什么留在心里。', md(k) + ' ' + wdOf(k));
   h += '<div class="card">';
   if (d.preds.length){
-    h += '<div class="lab">预测对了吗（点一下就行）</div>' + d.preds.map(p => '<div class="f"><div class="pt" style="font-size:14px">' + esc(p.text) + '</div>' + segHTML('R.' + p.id + '.r', [['hit','对'],['miss','落空'],['half','一半']]) + '</div>').join('');
+    h += '<div class="lab">预测对了吗（点一下就行）</div>' + d.preds.map(p => '<div class="f"><div class="pt" style="font-size:14px">' + esc(p.text) + '</div>' + segHTML('R.' + p.id + '.r', [['hit','对'],['miss','落空'],['half','一半']]) + predMissHint(p, x.R[p.id] && x.R[p.id].r) + '</div>').join('');
   }
   h += fieldTA('q1', (isLate ? '那天' : '今天') + '哪一刻的我，和我以为的自己不一样？', '例如：以为自己会一直拖着，结果开始五分钟后，反而不想停了。');
   h += fieldTA('q2', '那一刻，我在乎的是什么？', '是被理解、能自己做主，还是想把事情做好？');
@@ -2161,13 +2163,13 @@ function fWeek(){
   h += '<h1 class="h">周复盘</h1><p class="lede">一周里最重要的发现，是你在哪个方向上反复猜错自己。单天落空可能是偶然，同一方向错 3 次就是盲点。</p>';
   h += '<div class="card"><div class="stage">这周的材料<span class="right">自动汇总</span></div>';
   h += '<div class="grid5">' + '一二三四五六日'.split('').map(c => '<div class="wd">' + c + '</div>').join('') + w.days.map(d => '<div class="cell ' + d.st + (d.k === t ? ' today' : '') + '" title="' + md(d.k) + '"></div>').join('') + '</div>';
-  h += '<div class="figs"><span>收尾<b>' + w.rec + '</b>天</span><span>预测<b>' + w.preds + '</b>条（补写 ' + w.late + '）</span><span class="redb">落空<b>' + w.misses.length + '</b>条</span><span>随手记<b>' + w.capN + '</b>条</span></div>';
+  h += '<div class="figs"><span>收尾<b>' + w.rec + '</b>天</span><span>预测<b>' + w.preds + '</b>条</span><span class="redb">落空<b>' + w.misses.length + '</b>条</span><span>随手记<b>' + w.capN + '</b>条</span></div>';
   const sk = Object.entries(w.skips);
   if (sk.length) h += '<p class="note">放过的原因：' + sk.map(e => esc(e[0]) + ' ×' + e[1]).join('，') + '</p>';
   h += '</div>';
   h += '<h2 class="h2">落空的预测，排在一起看</h2>';
   if (w.misses.length || w.surprises.length){
-    h += '<ul class="preds">' + w.misses.map(p => '<li class="pred r-' + p.result + '"><div class="pk"><span class="mono">' + mdShort(p.k) + '</span><span>' + KINDS[p.kind] + (p.src === 'late' ? ' · 补写' : '') + '</span></div><div class="pt">' + esc(p.text) + '</div>' + (p.actual ? '<div class="pa">实际：' + esc(p.actual) + '</div>' : '') + '<span class="pen">' + RES[p.result] + '</span></li>').join('')
+    h += '<ul class="preds">' + w.misses.map(p => '<li class="pred r-' + p.result + '"><div class="pk"><span class="mono">' + mdShort(p.k) + '</span><span>' + KINDS[p.kind] + (p.src === 'late' ? ' · ' + SRC[p.src] : '') + '</span></div><div class="pt">' + esc(p.text) + '</div>' + (p.actual ? '<div class="pa">实际：' + esc(p.actual) + '</div>' : '') + '<span class="pen">' + RES[p.result] + '</span></li>').join('')
       + w.surprises.map(s => '<li class="pred r-half"><div class="pk"><span class="mono">' + mdShort(s.k) + '</span><span>' + esc(s.label || '意外回看 · 弱证据') + '</span></div><div class="pt">' + esc(s.text) + '</div></li>').join('') + '</ul>';
   } else h += '<p class="fine">这周没有落空的预测。可能是预测写得太保险了：下周写得更具体、更容易错一点。</p>';
   const emos = Object.entries(w.emos).sort((a, b) => b[1] - a[1]);
@@ -2609,7 +2611,7 @@ function dayDocXml(k){
   B.push(wTxt(k.slice(0, 4) + '年' + md(k) + ' ' + wdOf(k), 'Title'));
   B.push(wTxt(e ? (e.mode === 'std' ? '晚上复盘：标准版' : (e.late ? '第二天补记（轻量版）' : '晚上复盘：轻量版')) : d.skip ? '这一天放过了，原因：' + d.skip.reason : '这一天还没有复盘', 'Small'));
   archivesOn(k).forEach(r => { B.push.apply(B, archiveBlocks(r)); });
-  B.push(wH1('早上的预测'));
+  B.push(wH1('当天的预测'));
   if (d.preds.length) B.push(wTxt(predSummaryText(d.preds), 'Small'));
   if (d.preds.length) d.preds.forEach((p, i) => {
     B.push(wP(wRun((i + 1) + '. ', { b:true }) + wRun(p.text) + (p.result ? wRun('　' + RES[p.result], { b:true, color:p.result === 'hit' ? '2C7150' : 'B5362B' }) : '')));
@@ -2777,7 +2779,7 @@ function capAt(k, time){
   return new Date(p[0], p[1] - 1, p[2], +tm[1], +tm[2]).toISOString();
 }
 function needReady(){ if (!ready){ toast('还在打开记录本，稍等几秒再存。'); return false; } return true; }
-function predSrc(k){ const t = dayKey(); if (k > t) return 'eve'; const h = new Date().getHours(); return (k === t && h >= 4 && h < 12) ? 'morning' : 'late'; }
+function predSrc(k){ const t = dayKey(); return k > t ? 'eve' : k === t ? 'morning' : 'late'; }
 const A = {
   moreOpen(el){
     const k = el.dataset.key, section = el.dataset.section;
@@ -2831,7 +2833,7 @@ const A = {
   async saveMorning(){
     if (!needReady()) return;
     const k = form.key, x = form.data, d = getDay(k), now = new Date().toISOString(), src = predSrc(k);
-    [['avoid', x.avoid], ['emotion', x.emotion], ['specific', x.specific]].forEach(p => { const t = (p[1] || '').trim(); if (t) d.preds.push({ id:newId(), kind:p[0], text:t, hid:p[0] === 'specific' ? (x.hid || null) : null, at:now, src, result:'', actual:'' }); });
+    [['change', x.change], ['emotion', x.emotion], ['specific', x.specific]].forEach(p => { const t = (p[1] || '').trim(); if (t) d.preds.push({ id:newId(), kind:p[0], text:t, hid:p[0] === 'specific' ? (x.hid || null) : null, at:now, src, result:'', actual:'' }); });
     if (!d.preds.length){ toast('至少写一条。'); return; }
     closeForm(); render();
     try { await put('days', k, d); toast('存好了。晚上见。'); } catch (e) {}
