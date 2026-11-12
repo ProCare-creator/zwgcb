@@ -1,5 +1,5 @@
 // 自我观察本 · offline cache. VERSION is set by build.py; a new value makes every phone pick up the new files.
-const VERSION = 'v6.10';
+const VERSION = 'v6.10.1';
 const CACHE = 'zwgcb-' + VERSION;
 const ASSETS = ['./', './index.html', './manifest.webmanifest', './icons/icon-192.png', './icons/icon-512.png', './icons/icon-maskable-512.png', './icons/apple-touch-icon.png'];
 self.addEventListener('install', e => {
@@ -21,6 +21,10 @@ self.addEventListener('fetch', e => {
     return res;
   }).catch(() => null);
   e.waitUntil(net.then(() => {}));
-  e.respondWith(caches.match(key, { ignoreSearch: true }).then(hit => hit || net.then(res => res || new Response('离线，而且这个文件还没有缓存。联网打开一次就好。', { status: 503, headers: { 'Content-Type': 'text/plain; charset=utf-8' } }))));
+  // Cloudflare redirects /index.html to /. A cached redirected response cannot
+  // satisfy a navigation whose redirect mode is manual; return its final body.
+  const forNavigation = res => req.mode === 'navigate' && res.redirected
+    ? new Response(res.body, { status:res.status, statusText:res.statusText, headers:res.headers }) : res;
+  e.respondWith(caches.match(key, { ignoreSearch: true }).then(hit => hit || net.then(res => res || new Response('离线，而且这个文件还没有缓存。联网打开一次就好。', { status: 503, headers: { 'Content-Type': 'text/plain; charset=utf-8' } }))).then(forNavigation));
 });
 
