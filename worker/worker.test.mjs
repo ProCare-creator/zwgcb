@@ -4,10 +4,48 @@ import {timingSafeEqual} from 'node:crypto';
 import {createHandler,validate,upstreamBody} from './worker.mjs';
 // Test-only compatibility shim. Values here are fixtures, never real credentials.
 crypto.subtle.timingSafeEqual=(a,b)=>timingSafeEqual(new Uint8Array(a),new Uint8Array(b));
-const body={date:'2026-11-10',materials:{review:'今天先做了十分钟。',preds:[],caps:[],hyps:[]}};
+const body={date:'2026-11-10',materials:{review:'����������ʮ���ӡ�',preds:[],caps:[],hyps:[]}};
 const env=()=>({ACCESS_TOKEN:'mock-access',AI_API_KEY:'mock-upstream',ALLOWED_ORIGIN:'https://zwgcb.cn',AI_BASE_URL:'https://primary.example/api',AI_BASE_URL_BACKUP:'https://backup.example/api',MODEL_SUMMARY:'summary-test',MODEL_EXPLORE:'explore-test',MAX_TOKENS_SUMMARY:'1024',MAX_TOKENS_EXPLORE:'2048',AI_RATE_LIMITER:{limit:async()=>({success:true})},ASSETS:{fetch:async()=>new Response('static')}});
 const req=(path='/api/summary',data=body,opts={})=>new Request('https://zwgcb.cn'+path,{method:'POST',headers:{origin:'https://zwgcb.cn',authorization:'Bearer mock-access','content-type':'application/json',...opts.headers},body:typeof data==='string'?data:JSON.stringify(data),...Object.fromEntries(Object.entries(opts).filter(([k])=>k!=='headers'))});
 const sse=text=>new Response(text||'data: {"type":"message_stop"}\n\n',{headers:{'content-type':'text/event-stream'}});
+test('adaptive thinking, effort allowlist and token limits are server controlled',()=>{
+ const e={...env(),MAX_TOKENS_SUMMARY:'8000',MAX_TOKENS_EXPLORE:'32000',EFFORT_SUMMARY:'high',EFFORT_EXPLORE:'xhigh'};
+ const input=validate({...body,messages:[{role:'user',content:'��һ����'}]},'explore');
+ for(const mode of ['summary','explore']){
+  const b=upstreamBody(e,mode,input);assert.equal(b.max_tokens,mode==='summary'?8000:32000);
+  assert.deepEqual(b.thinking,{type:'adaptive',display:'summarized'});assert.equal(b.output_config.effort,mode==='summary'?'high':'xhigh');
+ }
+ for(const effort of ['low','medium','high','xhigh','max',undefined,'','invalid']){
+  const b=upstreamBody({...e,EFFORT_SUMMARY:effort},'summary',input);
+  assert.deepEqual(b.output_config,['low','medium','high','xhigh','max'].includes(effort)?{effort}:undefined);
+ }
+ assert.equal(upstreamBody({...e,MAX_TOKENS_SUMMARY:'64000'},'summary',input).max_tokens,64000);
+ for(const max of ['64001','0','NaN','1.5'])assert.throws(()=>upstreamBody({...e,MAX_TOKENS_SUMMARY:max},'summary',input));
+});
+test('400 retries exactly once with both optional fields removed and safe diagnostics',async()=>{
+ for(const second of [200,400,401,429]){
+  const calls=[];let canceled=false;const h=createHandler({fetcher:async(url,opts)=>{
+   calls.push({url,body:JSON.parse(opts.body)});
+   if(calls.length===1)return new Response(new ReadableStream({cancel(){canceled=true;}}),{status:400});
+   return second===200?sse():new Response('private echoed material',{status:second});
+  }});
+  const r=await h(req(),{...env(),EFFORT_SUMMARY:'high'});
+  assert.equal(calls.length,2);assert.equal(calls[0].url,calls[1].url);assert.equal(canceled,true);
+  const {thinking,output_config,...plain}=calls[0].body;assert.ok(thinking);assert.ok(output_config);assert.deepEqual(calls[1].body,plain);
+  assert.equal(r.headers.get('x-ai-effort'),'dropped');assert.equal(r.headers.get('x-ai-effort-fallback-status'),'400');assert.equal(r.status,second===200?200:502);assert.ok(!(await r.text()).includes('private'));
+ }
+});
+test('success and in-stream errors never retry; original bytes and applied header preserved',async()=>{
+ let calls=0;const bytes='data: {"type":"error","error":{"type":"invalid_request_error"}}\n\n';
+ const h=createHandler({fetcher:async()=>{calls++;return sse(bytes);}});
+ const r=await h(req(),{...env(),EFFORT_SUMMARY:'high'});assert.equal(r.headers.get('x-ai-effort'),'applied');assert.equal(await r.text(),bytes);assert.equal(calls,1);
+});
+test('connection deadline and idle deadline are independent; total budget includes connection',async()=>{
+ let timer;const h=createHandler({timeoutMs:10,idleMs:100,streamMs:200,fetcher:async()=>new Response(new ReadableStream({start(c){timer=setTimeout(()=>{c.enqueue(new TextEncoder().encode('ok'));c.close();},35);},cancel(){clearTimeout(timer);}}),{headers:{'content-type':'text/event-stream'}})});
+ assert.equal(await (await h(req(),env())).text(),'ok');
+ let canceled=false;const total=createHandler({timeoutMs:200,idleMs:200,streamMs:60,fetcher:async()=>{await new Promise(r=>setTimeout(r,35));return new Response(new ReadableStream({start(c){timer=setInterval(()=>c.enqueue(new Uint8Array([1])),5);},cancel(){canceled=true;clearInterval(timer);}}),{headers:{'content-type':'text/event-stream'}});}});
+ const start=Date.now(),r=await total(req(),env());await assert.rejects(()=>r.text());assert.ok(Date.now()-start<95);assert.equal(canceled,true);
+});
 test('routes, methods, origin, authorization and health avoid upstream calls',async()=>{
  const handler=createHandler({fetcher:()=>{throw Error('must not call upstream');}}),e=env();
  assert.equal((await handler(new Request('https://zwgcb.cn/'),e)).status,200);
@@ -35,8 +73,8 @@ test('one shared authenticated rate bucket rejects request 11',async()=>{
  for(let i=0;i<11;i++)assert.equal((await h(req(),e)).status,i===10?429:200);
 });
 test('prompt caching keeps material prefix stable and marks latest user turn',()=>{
- const e=env(),first=upstreamBody(e,'explore',validate({...body,messages:[{role:'user',content:'从哪里开始？'}]},'explore'));
- const second=upstreamBody(e,'explore',validate({...body,messages:[{role:'user',content:'从哪里开始？'},{role:'assistant',content:'你卡在哪一步？'},{role:'user',content:'打开文档。'}]},'explore'));
+ const e=env(),first=upstreamBody(e,'explore',validate({...body,messages:[{role:'user',content:'�����￪ʼ��'}]},'explore'));
+ const second=upstreamBody(e,'explore',validate({...body,messages:[{role:'user',content:'�����￪ʼ��'},{role:'assistant',content:'�㿨����һ����'},{role:'user',content:'���ĵ���'}]},'explore'));
  assert.deepEqual(first.messages[0],second.messages[0]);
  assert.equal(first.system[0].cache_control.type,'ephemeral');
  assert.equal(second.messages.at(-1).content[0].cache_control.type,'ephemeral');
@@ -91,7 +129,7 @@ test('active bytes can continue longer than the connection timeout; stalled stre
  const active=createHandler({fetcher:async()=>new Response(source,{headers:{'content-type':'text/event-stream'}}),timeoutMs:35,streamMs:250});
  const r=await active(req(),env());assert.match(await r.text(),/data: 5/);
  let canceled=false;
- const stalled=createHandler({fetcher:async()=>new Response(new ReadableStream({cancel(){canceled=true;}}),{headers:{'content-type':'text/event-stream'}}),timeoutMs:20,streamMs:250});
+ const stalled=createHandler({fetcher:async()=>new Response(new ReadableStream({cancel(){canceled=true;}}),{headers:{'content-type':'text/event-stream'}}),timeoutMs:20,idleMs:20,streamMs:250});
  const s=await stalled(req(),env()),alive=setTimeout(()=>{},300);
  await assert.rejects(()=>s.text());assert.equal(canceled,true);clearTimeout(alive);
 });

@@ -1,40 +1,50 @@
-# 自我观察本 Worker
+# ���ҹ۲챾 Worker
 
-页面由 Workers Static Assets 托管，`/api/*` 由 `worker.mjs` 处理；正式域名为 `https://zwgcb.cn`。GitHub Pages 保留原有静态页面。
+ҳ���� Workers Static Assets �йܣ�`/api/*` �� `worker.mjs` ��������ʽ����Ϊ `https://zwgcb.cn`��GitHub Pages ����ԭ�о�̬ҳ�档
 
-## 配置和部署
+## ���úͲ���
 
-- `wrangler.jsonc` 只包含公开配置：节点、认证方式、模型、输出上限、Origin 和限流。
-- `AI_API_KEY`、`ACCESS_TOKEN` 由使用者在 Cloudflare 控制台添加为 **Secret**。不放进 `vars` 或任何本地文件。
-- **正式发布 = 推送到 `main`**。Worker 已连接 Cloudflare Workers Builds（仓库 `ProCare-creator/zwgcb`，生产分支 `main`，Build command 留空，Deploy command `npx wrangler deploy --keep-vars`，Preview builds 关闭）。推送到 `main` 后 Cloudflare 自动构建并部署到 zwgcb.cn；其他分支不会部署。没验收的改动不要合并到 `main`。
-- 需要手动部署时（例如 Workers Builds 出问题），在本机用 Windows 用户环境变量中的 `CLOUDFLARE_API_TOKEN` 执行 `npx wrangler deploy --keep-vars`；不要把 Token 的值写进命令、脚本或仓库。
-- 构建脚本 `build.mjs` 由 wrangler 在部署时运行，仅复制页面、Service Worker、manifest 和图标到 `dist/`。
-- `.env*`、`.dev.vars*`、`.wrangler/`、`dist/` 已忽略。
+- `wrangler.jsonc` ֻ�����������ã��ڵ㡢��֤��ʽ��ģ�͡�������ޡ�Origin ��������
+- `AI_API_KEY`��`ACCESS_TOKEN` ��ʹ������ Cloudflare ����̨����Ϊ **Secret**�����Ž� `vars` ����ύ���ļ���������ʵ���Խ�����ʹ�òֿ��Ŀ¼�� `.dev.vars`���Ѻ��ԣ����������Կ��
+- **��ʽ���� = ���͵� `main`**��Worker ������ Cloudflare Workers Builds���ֿ� `ProCare-creator/zwgcb`��������֧ `main`��Build command ���գ�Deploy command `npx wrangler deploy --keep-vars`��Preview builds �رգ������͵� `main` �� Cloudflare �Զ����������� zwgcb.cn��������֧���Ჿ��û���յĸĶ���Ҫ�ϲ��� `main`��
+- ��Ҫ�ֶ�����ʱ������ Workers Builds �����⣩���ڱ����� Windows �û����������е� `CLOUDFLARE_API_TOKEN` ִ�� `npx wrangler deploy --keep-vars`����Ҫ�� Token ��ֵд������ű���ֿ⡣
+- �����ű� `build.mjs` �� wrangler �ڲ���ʱ���У�������ҳ�桢Service Worker��manifest ��ͼ�굽 `dist/`��
+- `.env*`��`.dev.vars*`��`.wrangler/`��`dist/` �Ѻ��ԡ�
 
-## 接口行为
+## �ӿ���Ϊ
 
-| 接口 | 方法 | 行为 |
+| �ӿ� | ���� | ��Ϊ |
 | --- | --- | --- |
-| `/api/health` | GET | 验证访问口令，返回配置的模型名，不调用模型 |
-| `/api/summary` | POST | 当天所选材料的总结，转发 Anthropic SSE |
-| `/api/explore` | POST | 当天所选材料、可选总结及多轮对话，转发 Anthropic SSE |
+| `/api/health` | GET | ��֤���ʿ���������õ�ģ������������ģ�� |
+| `/api/summary` | POST | ������ѡ���ϵ��ܽᣬת�� Anthropic SSE |
+| `/api/explore` | POST | ������ѡ���ϡ���ѡ�ܽἰ���ֶԻ���ת�� Anthropic SSE |
 
-全部接口验证 Bearer 访问口令。POST 必须带 `Origin: https://zwgcb.cn`；GET 若提供 Origin，也必须匹配。三者共用 Cloudflare 限流绑定：`limit: 10`、`period: 60`。该绑定是近似计数，验收按“10 秒内发起 30 次 POST，出现 429”判断。
+ȫ���ӿ���֤ Bearer ���ʿ��POST ����� `Origin: https://zwgcb.cn`��GET ���ṩ Origin��Ҳ����ƥ�䡣���߹��� Cloudflare �����󶨣�`limit: 10`��`period: 60`���ð��ǽ��Ƽ��������հ���10 ���ڷ��� 30 �� POST������ 429���жϡ�
 
-请求体上限 64 KiB；只接受约定字段，客户端无法覆盖模型或输出上限。提示缓存标记位于系统提示、当天材料和最新一轮用户消息。缓存是否实际命中以中转站返回的 usage 为准。
+���������� 64 KiB��ֻ����Լ���ֶΣ��ͻ����޷�����ģ�ͻ�������ޡ���ʾ������λ��ϵͳ��ʾ��������Ϻ�����һ���û���Ϣ�������Ƿ�ʵ����������תվ���ص� usage Ϊ׼��
 
-默认认证为 `x-api-key`。连接超时或 5xx 可在输出开始前切换备用节点；401、429 以及已经开始的输出不自动重发。连接限时 60 秒；流式输出空闲限时 60 秒、总时长最多 180 秒。取消下游请求会取消上游。
+Ĭ����֤Ϊ `x-api-key`�����ӳ�ʱ�� 5xx ���������ʼǰ�л����ýڵ㣻401��429 �Լ��Ѿ���ʼ��������Զ��ط���������ʱ 60 �룻��ʽ���������ʱ 120 �롣�ܽ���ʱ�� 300 �룬̽�� 600 �루���ӡ����Ժ��������ͬһ��Ԥ�㣩��ȡ�����������ȡ�����Ρ�
 
-只跟随 307/308，最多两次；目标必须为 HTTPS，且 origin 必须精确匹配配置中的主、备用节点。外部域名不会收到密钥。经口令验证的响应头提供 `x-ai-node`、`x-ai-redirected`、`x-ai-redirect-domain`；只含主/备标记、是否跟随跳转及最后一个跳转域名，不返回路径、查询参数、密钥或请求内容。不记录请求体、模型文本或口令，未启用 Worker 日志。
+ֻ���� 307/308��������Σ�Ŀ�����Ϊ HTTPS���� origin ���뾫ȷƥ�������е��������ýڵ㡣�ⲿ���������յ���Կ����������֤����Ӧͷ�ṩ `x-ai-node`��`x-ai-redirected`��`x-ai-redirect-domain`��ֻ����/����ǡ��Ƿ������ת�����һ����ת������������·������ѯ��������Կ���������ݡ�����¼�����塢ģ���ı�����δ���� Worker ��־��
 
-## 本地测试
+## �� A ����˼����ض�
+
+- �ܽ᣺`EFFORT_SUMMARY=high`��`MAX_TOKENS_SUMMARY=8000`��̽����`EFFORT_EXPLORE=xhigh`��`MAX_TOKENS_EXPLORE=32000`������������� 1�C64000��
+- ���Ƚ����� `low / medium / high / xhigh / max`��δ���û���Чʱ������ `output_config`������ `thinking: {type: 'adaptive', display: 'summarized'}`��
+- �����ʼǰ�� HTTP 400 ����������һ�Σ��Ƴ� `thinking` �� `output_config`���������󲻱䡣������Ӧͷ `x-ai-effort: applied`������Ϊ `dropped`������ `x-ai-effort-fallback-status: 400`��δ������Ч����ʱΪ `not_requested`����Щ��Ǳ�ʾ�����Ƿ��Ͳ�����ܣ�����������֤��תվ�ڲ���ʵ��ִ�С�
+- 401��429 �����ԣ���ʼ��ʽ�����Ҳ�����ԡ��������Ĳ���͸�����¼��
+- ǰ���ܽ� / ̽���ֱ���ʱ 330 / 660 �롣˼��ժҪ���ڻỰ�ڴ��У������ķֿ�������ݸ塢���������ģ������
+- `max_tokens` ������ʱ���沢��ʾ�ضϣ�û������ʱ��ʾ���ԣ��������ܽᡣ���������������ѡ `stopReason`�����ı�洢������ `COLS`��
+- �����ڼ価��������Ļ Wake Lock���ص�ǰ̨ʱ�����룻��ɡ�ʧ�ܡ�ȡ��ʱ�ͷš�������ܾ���֧��ʱ��Ӱ������
+
+## ���ز���
 
 `node --test worker/worker.test.mjs`
 
-测试仅使用模拟凭据和模拟模型响应，不需要 `.dev.vars` 或真实密钥。线上验收使用虚构材料，与用户的本地记录无关。
+��Ԫ���Խ�ʹ��ģ��ƾ�ݺ�ģ��ģ����Ӧ������Ҫ `.dev.vars` ����ʵ��Կ���� A ��������ʵ����ʹ�� `wrangler dev --local` ���鹹���ϣ���һ���ܽ���̽��������ǰ��֪���������ֻ����״̬��token �����Ƿ��յ�˼������ʱ�Ͱ�ȫ��Ӧͷ������¼�������ݻ�ģ�������
 
-## 当前验收边界（2026-11-12）
+## ��ǰ���ձ߽磨2026-11-12��
 
-已实测：401/200 身份验证、403 Origin、413 大请求、30 次突发中的 429。主域名已绑定；用户确认手机不开代理能打开。
+��ʵ�⣺401/200 ������֤��403 Origin��413 ������30 ��ͻ���е� 429���������Ѱ󶨣��û�ȷ���ֻ����������ܴ򿪡�
 
-追问、备用节点成功生成和第二轮缓存命中仍待用户手机验收；已停止从本机重试线上接口。第 5 批 AI 页面已通过本机模拟流程，保存在专用分支，等待截图验收，尚未发布。
+׷�ʡ����ýڵ�ɹ����ɺ͵ڶ��ֻ��������Դ��û��ֻ����գ���ֹͣ�ӱ����������Ͻӿڡ��� 5 �� AI ҳ����ͨ������ģ�����̣�������ר�÷�֧���ȴ���ͼ���գ���δ������

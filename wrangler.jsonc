@@ -14,8 +14,10 @@
     "AI_AUTH_MODE": "x-api-key",
     "MODEL_SUMMARY": "claude-sonnet-5-5",
     "MODEL_EXPLORE": "claude-opus-5-5",
-    "MAX_TOKENS_SUMMARY": "1024",
-    "MAX_TOKENS_EXPLORE": "2048",
+    "EFFORT_SUMMARY": "high",
+    "EFFORT_EXPLORE": "xhigh",
+    "MAX_TOKENS_SUMMARY": "8000",
+    "MAX_TOKENS_EXPLORE": "32000",
     "ALLOWED_ORIGIN": "https://zwgcb.cn"
   },
   "ratelimits": [{"name":"AI_RATE_LIMITER","namespace_id":"71002","simple":{"limit":10,"period":60}}],
