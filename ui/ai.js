@@ -30,6 +30,7 @@ function aiMaterials(k,selection){
  return {review:parts.join('\n\n'),preds:selection.preds?g.preds:[],caps:selection.caps?g.caps:[],hyps:selection.hyps?g.hyps:[]};
 }
 function aiMaterialLabel(s){
+ if(s.materials){const m=s.materials;return [m.review?'当天文字材料':'',m.preds.length?'预测 '+m.preds.length+' 条':'',m.caps.length?'随手记 '+m.caps.length+' 条':'',m.hyps.length?'当天关联假设 '+m.hyps.length+' 条':''].filter(Boolean).join('、')+'（本轮已固定）';}
  const selection=s.selection||aiSelection(),g=aiGroups(s.date);return AI_GROUPS.filter(([key])=>selection[key]&&(typeof g[key]==='string'?g[key].length:g[key].length)).map(([key,label])=>label+(Array.isArray(g[key])?' '+g[key].length+' 条':'')).join('、')||'尚未选择材料';
 }
 function aiSaveDraft(s){
@@ -196,11 +197,11 @@ async function aiSaveExplore(){
  try{await aiStoreDay(day);}catch{s.exploreError='这次探索没存成功，请先保留草稿。';aiRender();return false;}
  const unsent=s.input;delete drafts['ai-explore:'+s.date];saveDrafts();aiResetRound(s);if(unsent){s.input=unsent;aiSaveDraft(s);}toast('这次探索已收进当天记录。');aiRender();return true;
 }
-function aiResetRound(s){Object.assign(s,{messages:[],input:'',materials:null,selection:null,contextSummary:'',roundId:newId(),roundModel:'',retry:null,tokens:0,exploreError:'',exploreNotice:'',consent:null});delete drafts['ai-explore:'+s.date];saveDrafts();}
+function aiResetRound(s){Object.assign(s,{messages:[],input:'',materials:null,selection:null,contextSummary:'',roundId:newId(),roundModel:'',retry:null,tokens:0,exploreError:'',exploreNotice:''});delete drafts['ai-explore:'+s.date];saveDrafts();}
 function aiDialogClose(){const d=$('#ai-confirm');if(d.open)d.close();ai.confirm=null;}
 function aiNewRound(){
  const s=aiSession();if(ai.request)return;if(!s.messages.length&&!s.input){aiResetRound(s);aiRender();return;}
- ai.confirm={newRound:true};const d=$('#ai-confirm');d.innerHTML='<h2 id="ai-confirm-title">先收好这一轮？</h2><p class="fine">保存后可在“之前的探索”里阅读；新一轮会重新选择材料。</p><div class="ai-dialog-actions"><button type="button" class="btn" data-act="aiSaveAndNew">保存并开新一轮</button><button type="button" class="btn ghost" data-act="aiDiscardRound">不保存，开新一轮</button><button type="button" class="linkbtn" data-act="aiConsentCancel">继续这一轮</button></div>';d.showModal();
+ const canSave=s.messages.some(m=>m.role==='assistant');ai.confirm={newRound:true};const d=$('#ai-confirm');d.innerHTML='<h2 id="ai-confirm-title">先收好这一轮？</h2><p class="fine">'+(canSave?'保存后可在“之前的探索”里阅读；新一轮会重新选择材料。':'还没收到回复，输入已保存在本机草稿。可以继续这一轮，或放下它重新开始。')+'</p><div class="ai-dialog-actions"><button type="button" class="btn" data-act="aiSaveAndNew"'+(canSave?'':' disabled')+'>保存并开新一轮</button><button type="button" class="btn ghost" data-act="aiDiscardRound">不保存，开新一轮</button><button type="button" class="linkbtn" data-act="aiConsentCancel">继续这一轮</button></div>';d.showModal();
 }
 const AI_ACTIONS={
  aiOpen(el){aiEnter(el.dataset.key);},aiBack(){if(ai.request){ai.request.stopped=true;ai.request.ctl.abort();}sel=ai.date;location.hash='#review';},
@@ -212,7 +213,7 @@ const AI_ACTIONS={
  aiConsentAccept(){const s=aiSession(),c=ai.confirm;if(!c)return;const ctx={selection:c.selection,materials:s.materials||aiMaterials(s.date,c.selection)};if(!aiHasMaterial(ctx.materials)){ $('#ai-consent-error').textContent='至少选择一项有内容的材料。';return;}uiPrefs.aiMaterials=clone(c.selection);saveUIPrefs();s.consent=aiSignature(s,ctx);const mode=c.mode;aiDialogClose();if(mode)aiRun(mode,s,ctx);else aiRender();},
  aiSaveExplore(){aiSaveExplore();},aiNewRound(){aiNewRound();},async aiSaveAndNew(){if(await aiSaveExplore())aiDialogClose();},aiDiscardRound(){aiResetRound(aiSession());aiDialogClose();aiRender();},
  aiDeleteExplore(el){const id=el.dataset.id;ai.confirm={deleteId:id};const d=$('#ai-confirm');d.innerHTML='<h2 id="ai-confirm-title">删除这次探索？</h2><p class="fine">当天复盘和总结会保留。</p><div class="row"><button type="button" class="btn ghost" data-act="aiConsentCancel">取消</button><button type="button" class="btn" data-act="aiDeleteConfirm">删除</button></div>';d.showModal();},
- async aiDeleteConfirm(){const day=getDay(ai.date);if(!day.ai)return;day.ai.explores=(day.ai.explores||[]).filter(x=>x.id!==ai.confirm.deleteId);await put('days',ai.date,day);aiDialogClose();aiRender();}
+ async aiDeleteConfirm(){const day=getDay(ai.date);if(!day.ai)return;day.ai.explores=(day.ai.explores||[]).filter(x=>x.id!==ai.confirm.deleteId);try{await aiStoreDay(day);aiDialogClose();aiRender();}catch{toast('删除没存成功，请保留页面后再试。');}}
 };
 document.addEventListener('input',e=>{if(e.target.id==='ai-question'&&ai.date){const s=aiSession();s.input=e.target.value;aiSaveDraft(s);}});
 document.addEventListener('change',e=>{if(e.target.dataset.aiCheck&&ai.confirm){ai.confirm.selection[e.target.dataset.aiCheck]=e.target.checked;aiPreviewConsent();}});

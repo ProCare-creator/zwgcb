@@ -1,0 +1,10 @@
+{
+  "name": "zwgcb",
+  "private": true,
+  "scripts": {
+    "build:page": "node tools/build-page.mjs",
+    "build": "node build.mjs",
+    "test:worker": "node --test worker/worker.test.mjs"
+  },
+  "devDependencies": {"terser": "5.51.2"}
+}
