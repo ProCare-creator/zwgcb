@@ -740,7 +740,7 @@ const VAGUE = ['充实','好好','努力','认真','尽量','高效','顺利','�
 const MOMENTS = ['情绪最强的一刻','最不像自己的一刻','最有劲的一刻','别的时刻'];
 const FORMAT = 'review-archive/v1';
 const OFFLINE_APP = true;
-const APP_VERSION = 'v6.11';
+const APP_VERSION = 'v6.11.1';
 const LS_KEY = 'zwgcb-data-v1', LS_DRAFT = 'zwgcb-drafts-v1';
 
 /* ---------- utils ---------- */
@@ -3241,7 +3241,7 @@ document.addEventListener('input', e => {
   if (el.dataset.live === 'hyp'){ const w = $('#w-hyp'); if (w) w.textContent = hypWarn((form.data.D.sit || '') + (form.data.D.rea || '')); }
 });
 const ROUTE_ALIAS = { today:'pred', log:'more' };   // links and icons saved from older versions
-function resolveRoute(hash){ const r = (hash || '#review').slice(1).split('?')[0], a = ROUTE_ALIAS[r] || r; return ['pred','capture','review','hyps','more','week','settings','ai'].includes(a) ? a : 'review'; }
+function resolveRoute(hash){ const r = (hash || '#review').slice(1).split('?')[0], a = ROUTE_ALIAS[r] || r; return ['pred','capture','review','hyps','more','week','settings','ai'].includes(a) && (a !== 'ai' || AI_ON) ? a : 'review'; }
 function onHash(){
   if(ai.request){ai.request.stopped=true;ai.request.ctl.abort();}
   aiDialogClose();

@@ -1,5 +1,8 @@
 /* AI UI is embedded in index.html; no external runtime script or real-key mock. */
-const AI_ERRORS={bad_request:'这次没发出去，刷新后再试。',unauthorized:'访问口令不对，请在这里重新输入。',forbidden:'这次没发出去，刷新后再试。',too_large:'内容太长了，少勾选几项再试。',rate_limited:'点得太快了，等一分钟。',quota_exceeded:'今天的 AI 额度用完了，明天再试。',upstream_error:'AI 服务暂时连不上。',timeout:'等太久了，可能是网络慢。',not_configured:'AI 尚未完成配置。',offline:'需要联网后才能和 Claude 聊一聊。'};
+// AI only runs on the Cloudflare site (and local previews). Elsewhere (GitHub Pages) there is no
+// /api backend, so the page must never show the entry, ask for the access token or call /api.
+const AI_ON=location.origin==='https://zwgcb.cn'||['localhost','127.0.0.1'].includes(location.hostname);
+const AI_ERRORS={bad_request:'这次没发出去，刷新后再试。',unauthorized:'访问口令不对，请在这里重新输入。',forbidden:'这次没发出去，刷新后再试。',too_large:'内容太长了，少勾选几项再试。',rate_limited:'点得太快了，等一分钟。',quota_exceeded:'今天的 AI 额度用完了，明天再试。',upstream_limited:'AI 额度用完或请求太频繁，稍后再试。',upstream_error:'AI 服务暂时连不上。',timeout:'等太久了，可能是网络慢。',not_configured:'AI 尚未完成配置。',offline:'需要联网后才能和 Claude 聊一聊。'};
 const AI_GROUPS=[['review','当天复盘'],['preds','预测'],['caps','随手记'],['events','单件复盘'],['archives','对话存档'],['hyps','当天关联的假设']];
 const ai={sessions:new Map(),date:null,token:'',needsToken:false,models:null,request:null,pending:null,confirm:null,texts:new Map(),diag:null,authBusy:false,authMessage:'',settingsEdit:false};
 try{ai.token=JSON.parse(localStorage.getItem('zwgcb-ai')||'{}').token||'';}catch{}
@@ -41,11 +44,11 @@ function aiSaveDraft(s){
 }
 function aiHasRecords(k){const d=S.days[k]||{};return !!(d.evening||(d.preds||[]).length||(d.caps||[]).length||eventsOn(k).length||archivesOn(k).length||d.ai);}
 function aiEntry(k){
- if(!aiHasRecords(k))return '';const saved=(S.days[k]||{}).ai||{},count=(saved.explores||[]).length,status=(saved.summary?'已总结':'还没总结')+(count?' · 探索 '+count+' 次':'');
+ if(!AI_ON||!aiHasRecords(k))return '';const saved=(S.days[k]||{}).ai||{},count=(saved.explores||[]).length,status=(saved.summary?'已总结':'还没总结')+(count?' · 探索 '+count+' 次':'');
  return '<button type="button" class="ai-entry" data-act="aiOpen" data-key="'+k+'"'+(!navigator.onLine?' disabled':'')+'><span>和 Claude 聊一聊</span><small>'+(!navigator.onLine?'需要联网':!saved.summary&&!count?'还没聊过':status)+'</small><span aria-hidden="true">›</span></button>';
 }
 function aiTextSlot(id,text,cls=''){ai.texts.set(id,String(text||''));return '<div class="ai-prose '+cls+'" id="'+id+'"></div>';}
-function aiSummaryBlock(k){const saved=(S.days[k]||{}).ai&&S.days[k].ai.summary;if(!saved||!saved.text)return '';return '<button type="button" class="ai-summary-link" data-act="aiOpen" data-key="'+k+'" aria-label="阅读 AI 总结"><span class="ai-eyebrow">Claude 的总结'+(saved.stopped?' · 已停止':'')+'</span>'+aiTextSlot('ai-card-summary',saved.text,'ai-six-lines')+'<span class="ai-summary-foot">读完整总结 <span aria-hidden="true">›</span></span></button>';}
+function aiSummaryBlock(k){if(!AI_ON)return '';const saved=(S.days[k]||{}).ai&&S.days[k].ai.summary;if(!saved||!saved.text)return '';return '<button type="button" class="ai-summary-link" data-act="aiOpen" data-key="'+k+'" aria-label="阅读 AI 总结"><span class="ai-eyebrow">Claude 的总结'+(saved.stopped?' · 已停止':'')+'</span>'+aiTextSlot('ai-card-summary',saved.text,'ai-six-lines')+'<span class="ai-summary-foot">读完整总结 <span aria-hidden="true">›</span></span></button>';}
 function aiParagraphs(el,text){if(!el)return;const fragment=document.createDocumentFragment();String(text||'').split(/\n\s*\n/).forEach(part=>{const p=document.createElement('p');p.textContent=part;fragment.append(p);});el.replaceChildren(fragment);}
 function aiHydrate(){ai.texts.forEach((text,id)=>aiParagraphs(document.getElementById(id),text));if(route==='ai')aiPaint();}
 function aiPaint(){
@@ -55,7 +58,7 @@ function aiPaint(){
 }
 function aiRender(){render(true);}
 function aiEnter(k,tab='summary'){
- if(!validDate(k))return;if(ai.request)ai.request.ctl.abort();ai.date=k;aiSession(k).tab=tab;sel=k;
+ if(!AI_ON||!validDate(k))return;if(ai.request)ai.request.ctl.abort();ai.date=k;aiSession(k).tab=tab;sel=k;
  const hash='#ai?day='+k;if(location.hash===hash){route='ai';aiRender();}else location.hash=hash;
 }
 function aiTokenCard(){return '<section class="card ai-token"><span class="ai-eyebrow">先连接，再慢慢聊</span><h2>只需输入一次访问口令</h2><p class="fine">保存在这台设备，不进入数据导出或云端同步。</p><label for="ai-token">访问口令</label><div class="ai-token-row"><input id="ai-token" type="password" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="输入你设置的口令"><button type="button" class="btn" data-act="aiTokenSave"'+(ai.authBusy?' disabled':'')+'>'+(ai.authBusy?'正在测试…':'保存并测试')+'</button></div>'+(ai.authMessage?'<p class="ai-error" role="status">'+esc(ai.authMessage)+'</p>':'')+'</section>';}
@@ -98,12 +101,12 @@ function aiDiagnostics(){
  const rows=[['接口',d.endpoint],['HTTP 状态',d.status??'未收到响应'],['耗时',(d.elapsed/1000).toFixed(1)+' 秒'],['收到结束事件',d.ended?'是':'否'],['input_tokens',d.input_tokens??'未提供'],['output_tokens',d.output_tokens??'未提供'],['cache_read_input_tokens',d.cache_read_input_tokens??'未提供'],['实际节点',d.node==='primary'?'主节点':d.node==='backup'?'备用节点':'未提供 / 未调用'],['发生跳转',d.redirected?'是':'否'],['跳转后的域名',d.redirected?aiDomain(d.domain):'—']];
  return '<dl class="ai-diagnostics">'+rows.map(([label,value])=>'<dt>'+label+'</dt><dd>'+esc(value)+'</dd>').join('')+'</dl><p class="fine">只存在内存，刷新即清空；不进入导出或同步。</p>';
 }
-function aiSettings(){return '<section class="card" id="settings-ai"><h2 class="stage">AI</h2><p class="fine">'+(ai.models?'总结：'+esc(ai.models.summary)+'<br>探索：'+esc(ai.models.explore):'模型：测试连接后显示')+'</p><div class="row"><button type="button" class="btn ghost sm" data-act="aiEditToken">修改口令</button><button type="button" class="btn ghost sm" data-act="aiHealth"'+(ai.authBusy?' disabled':'')+'>'+(ai.authBusy?'正在测试…':'测试连接')+'</button></div>'+(ai.settingsEdit?aiTokenCard():ai.authMessage?'<p class="fine" role="status">'+esc(ai.authMessage)+'</p>':'')+foldHTML('ai:diagnostic','ai-diagnostic','诊断信息',aiDiagnostics(),{close:'收起诊断信息'})+'</section>';}
+function aiSettings(){if(!AI_ON)return '<section class="card" id="settings-ai"><h2 class="stage">AI</h2><p class="fine">AI 只在 zwgcb.cn 上可用。这个网址不会请求访问口令，也不会连接 AI 接口。</p></section>';return '<section class="card" id="settings-ai"><h2 class="stage">AI</h2><p class="fine">'+(ai.models?'总结：'+esc(ai.models.summary)+'<br>探索：'+esc(ai.models.explore):'模型：测试连接后显示')+'</p><div class="row"><button type="button" class="btn ghost sm" data-act="aiEditToken">修改口令</button><button type="button" class="btn ghost sm" data-act="aiHealth"'+(ai.authBusy?' disabled':'')+'>'+(ai.authBusy?'正在测试…':'测试连接')+'</button></div>'+(ai.settingsEdit?aiTokenCard():ai.authMessage?'<p class="fine" role="status">'+esc(ai.authMessage)+'</p>':'')+foldHTML('ai:diagnostic','ai-diagnostic','诊断信息',aiDiagnostics(),{close:'收起诊断信息'})+'</section>';}
 function aiNewDiagnostic(endpoint){return ai.diag={endpoint,status:null,elapsed:0,ended:false,input_tokens:null,output_tokens:null,cache_read_input_tokens:null,node:null,redirected:false,domain:null};}
 function aiReadHeaders(d,r){d.status=r.status;const node=r.headers.get('x-ai-node');d.node=['primary','backup'].includes(node)?node:null;d.redirected=r.headers.get('x-ai-redirected')==='true';d.domain=d.redirected?aiDomain(r.headers.get('x-ai-redirect-domain')):null;}
 function aiReadUsage(d,usage){if(!usage)return;['input_tokens','output_tokens','cache_read_input_tokens'].forEach(key=>{if(Number.isFinite(usage[key])&&usage[key]>=0)d[key]=usage[key];});}
 async function aiHealth(saveToken=false){
- if(ai.authBusy||ai.request)return;if(!navigator.onLine){ai.authMessage=AI_ERRORS.offline;aiRender();return;}
+ if(!AI_ON||ai.authBusy||ai.request)return;if(!navigator.onLine){ai.authMessage=AI_ERRORS.offline;aiRender();return;}
  const value=saveToken?($('#ai-token')?.value||'').trim():ai.token;if(!value){ai.settingsEdit=true;ai.needsToken=true;ai.authMessage='请先输入访问口令。';aiRender();return;}
  ai.authBusy=true;ai.authMessage='';const d=aiNewDiagnostic('/api/health'),start=performance.now();aiRender();
  try{
@@ -127,7 +130,7 @@ function aiShowConsent(mode=null){
 function aiPreviewConsent(){const s=aiSession(),m=s.materials||aiMaterials(s.date,ai.confirm.selection);let text=JSON.stringify({date:s.date,materials:m},null,2);if(ai.confirm.mode==='explore')text+='\n\n已有总结：\n'+(s.materials?s.contextSummary:((S.days[s.date]||{}).ai?.summary?.text||''))+'\n\n本轮对话：\n'+s.messages.map(x=>(x.role==='user'?'我':'Claude')+'：'+x.content).join('\n\n')+'\n\n我：'+(s.input||s.retry?.question||'');$('#ai-material-preview').textContent=text;}
 function aiSignature(s,ctx){return JSON.stringify({date:s.date,selection:ctx.selection,materials:ctx.materials});}
 function aiPrepare(mode){
- const s=aiSession();if(ai.request||ai.authBusy)return;s[mode+'Error']='';
+ const s=aiSession();if(!AI_ON||ai.request||ai.authBusy)return;s[mode+'Error']='';
  if(!navigator.onLine){s[mode+'Error']=AI_ERRORS.offline;aiRender();return;}
  if(mode==='explore'&&!s.input.trim()&&!s.retry){s.exploreError='写下一点想法，再发给 Claude。';aiRender();$('#ai-question')?.focus();return;}
  if(mode==='explore'&&(s.tokens>=30000||s.messages.length>=58)){s.exploreError='这轮内容已经很长了，保存后开新一轮吧。';aiRender();return;}
@@ -139,6 +142,7 @@ function aiPrepare(mode){
 async function aiStoreDay(day){await put('days',day.date,day);if(mode==='local'&&JSON.stringify(lsRead()?.days?.[day.date]?.ai)!==JSON.stringify(day.ai))throw Error('local-save');}
 async function aiPersistSummary(s,text,model,stopped){const day=getDay(s.date);day.ai=Object.assign({},day.ai,{summary:{text,at:new Date().toISOString(),model:model||ai.models?.summary||'',stopped}});await aiStoreDay(day);}
 async function aiRun(mode,s,ctx){
+ if(!AI_ON)return;
  let payload={date:s.date,materials:clone(ctx.materials)},baseMessages=null,question='';
  if(mode==='explore'){
   const retry=!s.input.trim()&&s.retry;baseMessages=clone(retry?s.retry.base:s.messages);question=retry?s.retry.question:s.input.trim();
@@ -153,7 +157,7 @@ async function aiRun(mode,s,ctx){
  const timer=setTimeout(()=>{timeout=true;r.ctl.abort();},240000);
  try{
   const response=await fetch('/api/'+mode,{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+ai.token},body:JSON.stringify(payload),signal:r.ctl.signal});aiReadHeaders(diagnostic,response);
-  if(!response.ok){const j=await response.json().catch(()=>({}));throw {code:response.status===401?'unauthorized':j.error?.code||'upstream_error'};}
+  if(!response.ok){const j=await response.json().catch(()=>({}));throw {code:response.status===401?'unauthorized':response.headers.get('x-ai-upstream-status')==='429'?'upstream_limited':j.error?.code||'upstream_error'};}
   if(!response.body||!response.headers.get('content-type')?.includes('text/event-stream'))throw {code:'upstream_error'};
   const reader=response.body.getReader(),decoder=new TextDecoder();let buffer='';
   const consume=raw=>{
