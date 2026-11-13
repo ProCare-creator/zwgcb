@@ -4,13 +4,13 @@ import {timingSafeEqual} from 'node:crypto';
 import {createHandler,validate,upstreamBody} from './worker.mjs';
 // Test-only compatibility shim. Values here are fixtures, never real credentials.
 crypto.subtle.timingSafeEqual=(a,b)=>timingSafeEqual(new Uint8Array(a),new Uint8Array(b));
-const body={date:'2026-11-10',materials:{review:'����������ʮ���ӡ�',preds:[],caps:[],hyps:[]}};
+const body={date:'2026-11-10',materials:{review:'今天先做了十分钟。',preds:[],caps:[],hyps:[]}};
 const env=()=>({ACCESS_TOKEN:'mock-access',AI_API_KEY:'mock-upstream',ALLOWED_ORIGIN:'https://zwgcb.cn',AI_BASE_URL:'https://primary.example/api',AI_BASE_URL_BACKUP:'https://backup.example/api',MODEL_SUMMARY:'summary-test',MODEL_EXPLORE:'explore-test',MAX_TOKENS_SUMMARY:'1024',MAX_TOKENS_EXPLORE:'2048',AI_RATE_LIMITER:{limit:async()=>({success:true})},ASSETS:{fetch:async()=>new Response('static')}});
 const req=(path='/api/summary',data=body,opts={})=>new Request('https://zwgcb.cn'+path,{method:'POST',headers:{origin:'https://zwgcb.cn',authorization:'Bearer mock-access','content-type':'application/json',...opts.headers},body:typeof data==='string'?data:JSON.stringify(data),...Object.fromEntries(Object.entries(opts).filter(([k])=>k!=='headers'))});
 const sse=text=>new Response(text||'data: {"type":"message_stop"}\n\n',{headers:{'content-type':'text/event-stream'}});
 test('adaptive thinking, effort allowlist and token limits are server controlled',()=>{
  const e={...env(),MAX_TOKENS_SUMMARY:'8000',MAX_TOKENS_EXPLORE:'32000',EFFORT_SUMMARY:'high',EFFORT_EXPLORE:'xhigh'};
- const input=validate({...body,messages:[{role:'user',content:'��һ����'}]},'explore');
+ const input=validate({...body,messages:[{role:'user',content:'下一步？'}]},'explore');
  for(const mode of ['summary','explore']){
   const b=upstreamBody(e,mode,input);assert.equal(b.max_tokens,mode==='summary'?8000:32000);
   assert.deepEqual(b.thinking,{type:'adaptive',display:'summarized'});assert.equal(b.output_config.effort,mode==='summary'?'high':'xhigh');
@@ -73,8 +73,8 @@ test('one shared authenticated rate bucket rejects request 11',async()=>{
  for(let i=0;i<11;i++)assert.equal((await h(req(),e)).status,i===10?429:200);
 });
 test('prompt caching keeps material prefix stable and marks latest user turn',()=>{
- const e=env(),first=upstreamBody(e,'explore',validate({...body,messages:[{role:'user',content:'�����￪ʼ��'}]},'explore'));
- const second=upstreamBody(e,'explore',validate({...body,messages:[{role:'user',content:'�����￪ʼ��'},{role:'assistant',content:'�㿨����һ����'},{role:'user',content:'���ĵ���'}]},'explore'));
+ const e=env(),first=upstreamBody(e,'explore',validate({...body,messages:[{role:'user',content:'从哪里开始？'}]},'explore'));
+ const second=upstreamBody(e,'explore',validate({...body,messages:[{role:'user',content:'从哪里开始？'},{role:'assistant',content:'你卡在哪一步？'},{role:'user',content:'打开文档。'}]},'explore'));
  assert.deepEqual(first.messages[0],second.messages[0]);
  assert.equal(first.system[0].cache_control.type,'ephemeral');
  assert.equal(second.messages.at(-1).content[0].cache_control.type,'ephemeral');

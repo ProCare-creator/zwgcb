@@ -4,7 +4,10 @@
   "scripts": {
     "build:page": "node tools/build-page.mjs",
     "build": "node build.mjs",
-    "test:worker": "node --test worker/worker.test.mjs"
+    "test:worker": "node --test worker/worker.test.mjs",
+    "test:ui": "node --test ui/ai.test.mjs"
   },
-  "devDependencies": {"terser": "5.51.2"}
+  "devDependencies": {
+    "terser": "5.51.2"
+  }
 }

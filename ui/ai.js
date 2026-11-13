@@ -62,13 +62,14 @@ function aiEnter(k,tab='summary'){
  const hash='#ai?day='+k;if(location.hash===hash){route='ai';aiRender();}else location.hash=hash;
 }
 function aiTokenCard(){return '<section class="card ai-token"><span class="ai-eyebrow">先连接，再慢慢聊</span><h2>只需输入一次访问口令</h2><p class="fine">保存在这台设备，不进入数据导出或云端同步。</p><label for="ai-token">访问口令</label><div class="ai-token-row"><input id="ai-token" type="password" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="输入你设置的口令"><button type="button" class="btn" data-act="aiTokenSave"'+(ai.authBusy?' disabled':'')+'>'+(ai.authBusy?'正在测试…':'保存并测试')+'</button></div>'+(ai.authMessage?'<p class="ai-error" role="status">'+esc(ai.authMessage)+'</p>':'')+'</section>';}
+function aiTruncation(item){return item?.stopReason==='max_tokens'?'<p class="fine" role="status">回答到上限被截断了</p>':'';}
 function aiErrorHTML(s,mode){const message=s[mode+'Error'];return message?'<div class="ai-error" role="status">'+esc(message)+(mode==='summary'?'<button type="button" class="linkbtn" data-act="aiGenerate">重试</button>':'')+'</div>':'';}
 function aiMaterialLine(s){return '<p class="ai-material-line">将发送：'+esc(aiMaterialLabel(s))+' <button type="button" class="linkbtn" data-act="aiMaterials">修改</button></p>';}
 function aiSummaryView(s){
  const old=(S.days[s.date]||{}).ai&&S.days[s.date].ai.summary,r=ai.request&&ai.request.session===s&&ai.request.mode==='summary'?ai.request:null;
  let html='<section class="ai-summary-pane" aria-label="总结">';
  if(r)html+='<p class="ai-eyebrow">正在把这一天连起来</p>'+aiTextSlot('ai-live-summary',r.text,'is-streaming')+'<button type="button" class="btn ghost" data-act="aiStop">停止</button>'+(old?'<p class="fine">完整生成后才会替换上次总结。</p>':'');
- else if(old&&old.text)html+='<p class="ai-eyebrow">从今天的材料里，看见一点线索</p>'+aiTextSlot('ai-saved-summary',old.text)+'<p class="ai-generated">'+md(s.date)+' · '+hm(old.at)+' 生成'+(old.stopped?' · 已停止':'')+'</p><div class="ai-summary-actions"><button type="button" class="btn" data-act="aiToExplore">带着总结去探索 <span aria-hidden="true">↗</span></button><button type="button" class="btn ghost" data-act="aiGenerate"'+(ai.request?' disabled':'')+'>重新生成</button></div>';
+ else if(old&&old.text)html+='<p class="ai-eyebrow">从今天的材料里，看见一点线索</p>'+aiTextSlot('ai-saved-summary',old.text)+aiTruncation(old)+'<p class="ai-generated">'+md(s.date)+' · '+hm(old.at)+' 生成'+(old.stopped?' · 已停止':'')+'</p><div class="ai-summary-actions"><button type="button" class="btn" data-act="aiToExplore">带着总结去探索 <span aria-hidden="true">↗</span></button><button type="button" class="btn ghost" data-act="aiGenerate"'+(ai.request?' disabled':'')+'>重新生成</button></div>';
  else html+='<div class="ai-empty"><span class="ai-date-note">'+md(s.date)+' · 给这一天留一点回声</span><h2>把零散的片段，<br>连成一条线。</h2><p>从你选的记录里，回看发生了什么、<br>什么值得再观察。不急着给自己下结论。</p><button type="button" class="btn" data-act="aiGenerate"'+(ai.request||!navigator.onLine?' disabled':'')+'>生成总结 <span aria-hidden="true">↗</span></button></div>';
  if(!r&&s.summaryPreview)html+='<details class="ai-partial"'+disclosureAttrs('ai:partial:'+s.date)+'><summary>本次未完成的文字</summary>'+aiTextSlot('ai-summary-partial',s.summaryPreview)+'</details>';
  if(s.summaryNotice)html+='<p class="fine" role="status">'+esc(s.summaryNotice)+'</p>';
@@ -78,13 +79,13 @@ function aiExploreView(s){
  const r=ai.request&&ai.request.session===s&&ai.request.mode==='explore'?ai.request:null,saved=(S.days[s.date]||{}).ai||{},history=saved.explores||[];
  let h='<section class="ai-explore-pane" aria-label="探索">';
  if(!s.messages.length){h+='<div class="ai-explore-intro"><p class="ai-eyebrow">不用一次想明白</p><h2>从一个小问题开始。</h2><p class="fine">'+(saved.summary?'会带上当天的总结，和你选的材料一起聊。':'会从你选的当天材料出发，一次只聊一个问题。')+'</p><div class="ai-starters">'+['哪条预测的落空，最值得再看一眼？','有没有一个小细节，和我对自己的判断不同？','明天可以做什么小尝试，验证今天的发现？'].map((q,i)=>'<button type="button" data-act="aiStarter" data-v="'+i+'"><span>'+q+'</span><span aria-hidden="true">↗</span></button>').join('')+'</div></div>';}
- h+='<div class="ai-messages">'+s.messages.map((m,i)=>'<article class="ai-message '+m.role+'"><span class="ai-eyebrow">'+(m.role==='user'?'我':'Claude')+'</span>'+aiTextSlot('ai-message-'+i,m.content)+'</article>').join('')+(r?'<article class="ai-message assistant"><span class="ai-eyebrow">Claude · 正在想</span>'+aiTextSlot('ai-live-explore',r.text,'is-streaming')+'</article>':'')+'</div><div id="ai-stream-anchor"></div>';
+ h+='<div class="ai-messages">'+s.messages.map((m,i)=>'<article class="ai-message '+m.role+'"><span class="ai-eyebrow">'+(m.role==='user'?'我':'Claude')+'</span>'+aiTextSlot('ai-message-'+i,m.content)+aiTruncation(m)+'</article>').join('')+(r?'<article class="ai-message assistant"><span class="ai-eyebrow">Claude · 正在想</span>'+aiTextSlot('ai-live-explore',r.text,'is-streaming')+'</article>':'')+'</div><div id="ai-stream-anchor"></div>';
  if(s.tokens>=30000||s.messages.length>=58)h+='<p class="ai-error">这轮内容已经很长了。先保存，再开新一轮继续探索。</p>';
  if(s.exploreNotice)h+='<p class="fine" role="status">'+esc(s.exploreNotice)+'</p>';
  h+=aiErrorHTML(s,'explore');
  h+='<div class="ai-composer"><label class="sr-only" for="ai-question">继续探索</label><textarea id="ai-question" rows="2" placeholder="写下你的想法，或一个还没想清楚的问题…"'+(r?' disabled':'')+'>'+esc(s.input)+'</textarea><div class="ai-compose-tools"><span class="fine">仅本机草稿</span><button type="button" class="btn" data-act="'+(r?'aiStop':'aiSend')+'"'+(!r&&(ai.request||!navigator.onLine)?' disabled':'')+'>'+(r?'停止':s.retry&&!s.input?'重试这次追问':'发送')+'</button></div></div>'+aiMaterialLine(s);
  if(s.messages.length)h+='<div class="ai-round-actions"><button type="button" class="btn ghost" data-act="aiSaveExplore"'+(ai.request?' disabled':'')+'>保存这次探索</button><button type="button" class="linkbtn" data-act="aiNewRound"'+(ai.request?' disabled':'')+'>开新一轮</button></div>';
- const historyHTML=history.length?history.slice().reverse().map((x,i)=>'<article class="ai-history-item"><div class="row"><span class="fine">'+md(s.date)+' · '+hm(x.at)+' · '+x.messages.filter(m=>m.role==='user').length+' 次追问</span><button type="button" class="linkbtn" data-act="aiDeleteExplore" data-id="'+esc(x.id)+'">删除</button></div>'+x.messages.map((m,j)=>'<div class="ai-message '+m.role+'"><span class="ai-eyebrow">'+(m.role==='user'?'我':'Claude')+'</span>'+aiTextSlot('ai-history-'+i+'-'+j,m.content)+'</div>').join('')+'</article>').join(''):'<p class="fine">保存后，这一轮会收进当天记录。</p>';
+ const historyHTML=history.length?history.slice().reverse().map((x,i)=>'<article class="ai-history-item"><div class="row"><span class="fine">'+md(s.date)+' · '+hm(x.at)+' · '+x.messages.filter(m=>m.role==='user').length+' 次追问</span><button type="button" class="linkbtn" data-act="aiDeleteExplore" data-id="'+esc(x.id)+'">删除</button></div>'+x.messages.map((m,j)=>'<div class="ai-message '+m.role+'"><span class="ai-eyebrow">'+(m.role==='user'?'我':'Claude')+'</span>'+aiTextSlot('ai-history-'+i+'-'+j,m.content)+aiTruncation(m)+'</div>').join('')+'</article>').join(''):'<p class="fine">保存后，这一轮会收进当天记录。</p>';
  return h+foldHTML('ai:history:'+s.date,'ai-history','之前的探索（'+history.length+'）',historyHTML,{close:'收起之前的探索（'+history.length+'）',className:'ai-history'})+'</section>';
 }
 function vAI(){
@@ -98,12 +99,12 @@ function aiPrepareShell(){
 function aiDomain(value){return typeof value==='string'&&value.length<=253&&/^[a-z0-9.-]+$/i.test(value)?value:'—';}
 function aiDiagnostics(){
  const d=ai.diag;if(!d)return '<p class="fine">还没有请求记录。诊断仅在本次打开期间保留。</p>';
- const rows=[['接口',d.endpoint],['HTTP 状态',d.status??'未收到响应'],['耗时',(d.elapsed/1000).toFixed(1)+' 秒'],['收到结束事件',d.ended?'是':'否'],['input_tokens',d.input_tokens??'未提供'],['output_tokens',d.output_tokens??'未提供'],['cache_read_input_tokens',d.cache_read_input_tokens??'未提供'],['实际节点',d.node==='primary'?'主节点':d.node==='backup'?'备用节点':'未提供 / 未调用'],['发生跳转',d.redirected?'是':'否'],['跳转后的域名',d.redirected?aiDomain(d.domain):'—']];
+ const rows=[['接口',d.endpoint],['HTTP 状态',d.status??'未收到响应'],['耗时',(d.elapsed/1000).toFixed(1)+' 秒'],['收到结束事件',d.ended?'是':'否'],['收到思考内容',d.thinking?'是':'否'],['结束原因',d.stopReason||'未提供'],['力度是否生效',d.effort==='applied'?'已应用（applied）':d.effort==='dropped'?'中转站拒绝，已降级（dropped）':'未提供 / 未设置'],['input_tokens',d.input_tokens??'未提供'],['output_tokens',d.output_tokens??'未提供'],['cache_read_input_tokens',d.cache_read_input_tokens??'未提供'],['实际节点',d.node==='primary'?'主节点':d.node==='backup'?'备用节点':'未提供 / 未调用'],['发生跳转',d.redirected?'是':'否'],['跳转后的域名',d.redirected?aiDomain(d.domain):'—']];
  return '<dl class="ai-diagnostics">'+rows.map(([label,value])=>'<dt>'+label+'</dt><dd>'+esc(value)+'</dd>').join('')+'</dl><p class="fine">只存在内存，刷新即清空；不进入导出或同步。</p>';
 }
 function aiSettings(){if(!AI_ON)return '<section class="card" id="settings-ai"><h2 class="stage">AI</h2><p class="fine">AI 只在 zwgcb.cn 上可用。这个网址不会请求访问口令，也不会连接 AI 接口。</p></section>';return '<section class="card" id="settings-ai"><h2 class="stage">AI</h2><p class="fine">'+(ai.models?'总结：'+esc(ai.models.summary)+'<br>探索：'+esc(ai.models.explore):'模型：测试连接后显示')+'</p><div class="row"><button type="button" class="btn ghost sm" data-act="aiEditToken">修改口令</button><button type="button" class="btn ghost sm" data-act="aiHealth"'+(ai.authBusy?' disabled':'')+'>'+(ai.authBusy?'正在测试…':'测试连接')+'</button></div>'+(ai.settingsEdit?aiTokenCard():ai.authMessage?'<p class="fine" role="status">'+esc(ai.authMessage)+'</p>':'')+foldHTML('ai:diagnostic','ai-diagnostic','诊断信息',aiDiagnostics(),{close:'收起诊断信息'})+'</section>';}
-function aiNewDiagnostic(endpoint){return ai.diag={endpoint,status:null,elapsed:0,ended:false,input_tokens:null,output_tokens:null,cache_read_input_tokens:null,node:null,redirected:false,domain:null};}
-function aiReadHeaders(d,r){d.status=r.status;const node=r.headers.get('x-ai-node');d.node=['primary','backup'].includes(node)?node:null;d.redirected=r.headers.get('x-ai-redirected')==='true';d.domain=d.redirected?aiDomain(r.headers.get('x-ai-redirect-domain')):null;}
+function aiNewDiagnostic(endpoint){return ai.diag={endpoint,status:null,elapsed:0,ended:false,thinking:false,stopReason:null,effort:null,input_tokens:null,output_tokens:null,cache_read_input_tokens:null,node:null,redirected:false,domain:null};}
+function aiReadHeaders(d,r){d.status=r.status;const effort=r.headers.get('x-ai-effort');d.effort=['applied','dropped','not_requested'].includes(effort)?effort:null;const node=r.headers.get('x-ai-node');d.node=['primary','backup'].includes(node)?node:null;d.redirected=r.headers.get('x-ai-redirected')==='true';d.domain=d.redirected?aiDomain(r.headers.get('x-ai-redirect-domain')):null;}
 function aiReadUsage(d,usage){if(!usage)return;['input_tokens','output_tokens','cache_read_input_tokens'].forEach(key=>{if(Number.isFinite(usage[key])&&usage[key]>=0)d[key]=usage[key];});}
 async function aiHealth(saveToken=false){
  if(!AI_ON||ai.authBusy||ai.request)return;if(!navigator.onLine){ai.authMessage=AI_ERRORS.offline;aiRender();return;}
@@ -140,21 +141,39 @@ function aiPrepare(mode){
  aiRun(mode,s,ctx);
 }
 async function aiStoreDay(day){await put('days',day.date,day);if(mode==='local'&&JSON.stringify(lsRead()?.days?.[day.date]?.ai)!==JSON.stringify(day.ai))throw Error('local-save');}
-async function aiPersistSummary(s,text,model,stopped){const day=getDay(s.date);day.ai=Object.assign({},day.ai,{summary:{text,at:new Date().toISOString(),model:model||ai.models?.summary||'',stopped}});await aiStoreDay(day);}
+async function aiPersistSummary(s,text,model,stopped,stopReason){const day=getDay(s.date);day.ai=Object.assign({},day.ai,{summary:{text,at:new Date().toISOString(),model:model||ai.models?.summary||'',stopped,...(stopReason?{stopReason}:{})}});await aiStoreDay(day);}
+// Thinking summaries stay in memory, separate from drafts, records and model input.
+function aiStreamEvent(r,d,event){
+ if(event.type==='message_start'){r.model=typeof event.message?.model==='string'?event.message.model:'';r.createdTokens=Number(event.message?.usage?.cache_creation_input_tokens)||0;aiReadUsage(d,event.message?.usage);}
+ if(event.type==='message_delta'){aiReadUsage(d,event.usage);if(typeof event.delta?.stop_reason==='string')r.stopReason=d.stopReason=event.delta.stop_reason;}
+ if(event.type==='message_stop'){r.ended=true;d.ended=true;}
+ if(event.type==='error')throw {code:'upstream_error'};
+ const block=event.type==='content_block_start'?event.content_block:null,delta=event.type==='content_block_delta'?event.delta:null;
+ const thinking=block?.type==='thinking'?block.thinking:delta?.type==='thinking_delta'?delta.thinking:null;
+ if(typeof thinking==='string'&&thinking.length){r.thinking+=thinking;d.thinking=true;}
+ const text=block?.type==='text'?block.text:delta?.type==='text_delta'?delta.text:null;
+ if(typeof text==='string'&&text.length){r.text+=text;return true;}return false;
+}
+function aiKeepAwake(r){
+ let lock=null,pending=false,closed=false;
+ const acquire=async()=>{if(closed||pending||lock||r.ctl.signal.aborted||document.visibilityState!=='visible'||!navigator.wakeLock?.request)return;pending=true;try{const next=await navigator.wakeLock.request('screen');if(closed||r.ctl.signal.aborted){await next.release();return;}lock=next;next.addEventListener('release',()=>{if(lock===next)lock=null;});}catch{}finally{pending=false;}};
+ const release=()=>{if(closed)return;closed=true;document.removeEventListener('visibilitychange',acquire);r.ctl.signal.removeEventListener('abort',release);const current=lock;lock=null;if(current)Promise.resolve(current.release()).catch(()=>{});};
+ document.addEventListener('visibilitychange',acquire);r.ctl.signal.addEventListener('abort',release,{once:true});void acquire();return release;
+}
 async function aiRun(mode,s,ctx){
  if(!AI_ON)return;
  let payload={date:s.date,materials:clone(ctx.materials)},baseMessages=null,question='';
  if(mode==='explore'){
   const retry=!s.input.trim()&&s.retry;baseMessages=clone(retry?s.retry.base:s.messages);question=retry?s.retry.question:s.input.trim();
   if(baseMessages.at(-1)?.role==='user')baseMessages.pop();
-  payload.summary=s.materials?s.contextSummary:((S.days[s.date]||{}).ai?.summary?.text||'');payload.messages=[...baseMessages,{role:'user',content:question}];
+  payload.summary=s.materials?s.contextSummary:((S.days[s.date]||{}).ai?.summary?.text||'');payload.messages=[...baseMessages.map(m=>({role:m.role,content:m.content})),{role:'user',content:question}];
  }
  if(new TextEncoder().encode(JSON.stringify(payload)).length>65536){s[mode+'Error']=AI_ERRORS.too_large;aiRender();return;}
- const r={mode,session:s,ctl:new AbortController(),text:'',model:'',start:performance.now(),stopped:false,ended:false,frame:null};ai.request=r;
+ const r={mode,session:s,ctl:new AbortController(),text:'',thinking:'',stopReason:null,model:'',start:performance.now(),stopped:false,ended:false,frame:null};ai.request=r;
  const diagnostic=aiNewDiagnostic('/api/'+mode);s[mode+'Error']='';s[mode+'Notice']='';
- if(mode==='explore'){s.materials=clone(ctx.materials);s.selection=clone(ctx.selection);s.contextSummary=payload.summary;s.messages=clone(payload.messages);s.input='';s.retry=null;aiSaveDraft(s);}else s.summaryPreview=null;
+ if(mode==='explore'){s.materials=clone(ctx.materials);s.selection=clone(ctx.selection);s.contextSummary=payload.summary;s.messages=[...baseMessages,{role:'user',content:question}];s.input='';s.retry=null;aiSaveDraft(s);}else s.summaryPreview=null;
  aiRender();let outcome='error',timeout=false;
- const timer=setTimeout(()=>{timeout=true;r.ctl.abort();},240000);
+ const timer=setTimeout(()=>{timeout=true;r.ctl.abort();},mode==='summary'?330000:660000),releaseWake=aiKeepAwake(r);
  try{
   const response=await fetch('/api/'+mode,{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+ai.token},body:JSON.stringify(payload),signal:r.ctl.signal});aiReadHeaders(diagnostic,response);
   if(!response.ok){const j=await response.json().catch(()=>({}));throw {code:response.status===401?'unauthorized':response.headers.get('x-ai-upstream-status')==='429'?'upstream_limited':j.error?.code||'upstream_error'};}
@@ -162,34 +181,31 @@ async function aiRun(mode,s,ctx){
   const reader=response.body.getReader(),decoder=new TextDecoder();let buffer='';
   const consume=raw=>{
    const data=raw.split(/\r?\n/).filter(l=>l.startsWith('data:')).map(l=>l.slice(5).trimStart()).join('\n');if(!data)return;let event;try{event=JSON.parse(data);}catch{throw {code:'upstream_error'};}
-   if(event.type==='message_start'){r.model=typeof event.message?.model==='string'?event.message.model:'';r.createdTokens=Number(event.message?.usage?.cache_creation_input_tokens)||0;aiReadUsage(diagnostic,event.message?.usage);}
-   if(event.type==='message_delta')aiReadUsage(diagnostic,event.usage);
-   if(event.type==='message_stop'){r.ended=true;diagnostic.ended=true;}
-   if(event.type==='error')throw {code:'upstream_error'};
-   if(event.type==='content_block_delta'&&event.delta?.type==='text_delta'&&typeof event.delta.text==='string'){
-    r.text+=event.delta.text;if(!r.frame)r.frame=requestAnimationFrame(()=>{r.frame=null;aiPaint();});
+   if(aiStreamEvent(r,diagnostic,event)){
+    if(!r.frame)r.frame=requestAnimationFrame(()=>{r.frame=null;aiPaint();});
     if(mode==='explore'&&!r.draftTimer)r.draftTimer=setTimeout(()=>{r.draftTimer=null;aiSaveDraft(s);},300);
    }
   };
   try{for(;;){const {done,value}=await reader.read();if(done)break;buffer+=decoder.decode(value,{stream:true});let match;while((match=/\r?\n\r?\n/.exec(buffer))){consume(buffer.slice(0,match.index));buffer=buffer.slice(match.index+match[0].length);}}buffer+=decoder.decode();if(buffer.trim())consume(buffer);}
   finally{reader.releaseLock();}
-  if(!r.ended||!r.text)throw {code:'upstream_error'};outcome='complete';
+  if(r.stopReason==='max_tokens'&&!r.text.trim())throw {code:'thinking_limit'};
+  if((!r.ended&&r.stopReason!=='max_tokens')||!r.text.trim())throw {code:'upstream_error'};outcome='complete';
  }catch(e){
   if(r.stopped)outcome='stopped';else{
-   s[mode+'Error']=r.text?'中途断了。已保留屏幕上的文字，可以重试。':AI_ERRORS[timeout?'timeout':e.code]||AI_ERRORS.upstream_error;
+   s[mode+'Error']=e.code==='thinking_limit'?'这次想得太久，没来得及回答，请重试':r.text?'中途断了。已保留屏幕上的文字，可以重试。':AI_ERRORS[timeout?'timeout':e.code]||AI_ERRORS.upstream_error;
    if(e.code==='unauthorized'){ai.needsToken=true;ai.pending={date:s.date,mode};ai.authMessage=AI_ERRORS.unauthorized;}
   }
  }finally{
-  clearTimeout(timer);clearTimeout(r.draftTimer);cancelAnimationFrame(r.frame);r.finished=true;r.ctl.abort();diagnostic.elapsed=performance.now()-r.start;
+  clearTimeout(timer);clearTimeout(r.draftTimer);cancelAnimationFrame(r.frame);r.finished=true;r.ctl.abort();releaseWake();diagnostic.elapsed=performance.now()-r.start;s[mode+'Thinking']=r.thinking;
   if(mode==='summary'){
    const previous=(S.days[s.date]||{}).ai?.summary;
-   if(outcome==='complete'||outcome==='stopped'&&!previous&&r.text){try{await aiPersistSummary(s,r.text,r.model,outcome==='stopped');}catch{s.summaryError='总结没存成功，请先保留这个页面。';s.summaryPreview=r.text;}}
+   if(outcome==='complete'||outcome==='stopped'&&!previous&&r.text){try{await aiPersistSummary(s,r.text,r.model,outcome==='stopped',r.stopReason);}catch{s.summaryError='总结没存成功，请先保留这个页面。';s.summaryPreview=r.text;}}
    else if(r.text)s.summaryPreview=r.text;
    if(outcome==='stopped')s.summaryNotice=previous?'已停止，保留上次总结。':'已停止。';
   }else{
    // A 401 sent no material upstream. Restore the draft so reauthentication can resume once.
    if(diagnostic.status===401){s.messages=baseMessages;s.input=question;}
-   else{if(r.text)s.messages.push({role:'assistant',content:r.text});if(outcome!=='complete')s.retry={base:baseMessages,question};}
+   else{if(r.text.trim())s.messages.push({role:'assistant',content:r.text,...(r.stopReason?{stopReason:r.stopReason}:{})});if(outcome!=='complete')s.retry={base:baseMessages,question};}
    s.roundModel=r.model||s.roundModel;s.tokens=(diagnostic.input_tokens||0)+(diagnostic.cache_read_input_tokens||0)+(r.createdTokens||0);s.exploreNotice=outcome==='stopped'?'已停止，文字留在本机草稿。':'草稿已存 · '+hm(new Date());aiSaveDraft(s);
   }
   if(ai.request===r)ai.request=null;if(route==='ai'&&ai.date===s.date)aiRender();
@@ -197,7 +213,7 @@ async function aiRun(mode,s,ctx){
 }
 async function aiSaveExplore(){
  const s=aiSession();if(ai.request)return false;if(!s.messages.some(m=>m.role==='assistant')){s.exploreError='还没有可保存的回复。';aiRender();return false;}
- const day=getDay(s.date),old=day.ai||{};day.ai=Object.assign({},old,{explores:[...(old.explores||[]).filter(x=>x.id!==s.roundId),{id:s.roundId,at:new Date().toISOString(),model:s.roundModel,messages:s.messages.map(m=>({role:m.role,content:m.content}))}]});
+ const day=getDay(s.date),old=day.ai||{};day.ai=Object.assign({},old,{explores:[...(old.explores||[]).filter(x=>x.id!==s.roundId),{id:s.roundId,at:new Date().toISOString(),model:s.roundModel,messages:s.messages.map(m=>({role:m.role,content:m.content,...(m.stopReason?{stopReason:m.stopReason}:{})}))}]});
  try{await aiStoreDay(day);}catch{s.exploreError='这次探索没存成功，请先保留草稿。';aiRender();return false;}
  const unsent=s.input;delete drafts['ai-explore:'+s.date];saveDrafts();aiResetRound(s);if(unsent){s.input=unsent;aiSaveDraft(s);}toast('这次探索已收进当天记录。');aiRender();return true;
 }
