@@ -1,0 +1,24 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "zwgcb-journal",
+  "main": "worker/worker.mjs",
+  "compatibility_date": "2026-11-12",
+  "compatibility_flags": ["enable_request_signal"],
+  "workers_dev": false,
+  "preview_urls": false,
+  "routes": [{"pattern":"zwgcb.cn","custom_domain":true}],
+  "assets": {"directory":"./dist","binding":"ASSETS","run_worker_first":["/api","/api/*"]},
+  "vars": {
+    "AI_BASE_URL": "https://node-cf.sssaicodeapi.com/api",
+    "AI_BASE_URL_BACKUP": "https://node-hk.sssaiapi.com/api",
+    "AI_AUTH_MODE": "x-api-key",
+    "MODEL_SUMMARY": "claude-sonnet-5-5",
+    "MODEL_EXPLORE": "claude-opus-5-5",
+    "MAX_TOKENS_SUMMARY": "1024",
+    "MAX_TOKENS_EXPLORE": "2048",
+    "ALLOWED_ORIGIN": "https://zwgcb.cn"
+  },
+  "ratelimits": [{"name":"AI_RATE_LIMITER","namespace_id":"71002","simple":{"limit":10,"period":60}}],
+  "observability": {"enabled":false},
+  "build": {"command":"node build.mjs"}
+}
