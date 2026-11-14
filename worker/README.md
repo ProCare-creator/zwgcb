@@ -18,6 +18,7 @@
 | `/api/health` | GET | 验证访问口令，返回配置的模型名，不调用模型 |
 | `/api/summary` | POST | 当天所选材料的总结，转发 Anthropic SSE |
 | `/api/explore` | POST | 当天所选材料、可选总结及多轮对话，转发 Anthropic SSE |
+| `/api/hyps` | POST | 从对话提炼最多 3 条假设，返回经校验的 JSON |
 
 全部接口验证 Bearer 访问口令。POST 必须带 `Origin: https://zwgcb.cn`；GET 若提供 Origin，也必须匹配。三者共用 Cloudflare 限流绑定：`limit: 10`、`period: 60`。该绑定是近似计数，验收按“10 秒内发起 30 次 POST，出现 429”判断。
 
@@ -39,7 +40,13 @@
 
 ## 本地测试
 
-`node --test worker/worker.test.mjs`
+`npm run test:worker`（包含 `worker.test.mjs` 和 `hyps.test.mjs`）
+
+### 提炼假设接口
+
+`POST /api/hyps` 与其他接口共用口令、Origin、限流和 64 KiB 请求上限。输入为 `{messages:[{role,content}],hyps:[{no,text}]}`，最多 60 条消息、300 条现有假设，只使用角色、正文、编号和文字。使用 `MODEL_SUMMARY`、力度 `medium`、上限 4000，非流式。连接、重试和总预算沿用总结接口；响应开始后不因格式错误重发模型请求。
+
+只从用户消息提出可验证或推翻的猜测，不能把 Claude 的建议当作事实。输出 `{hyps:[{text,why,near}]}`，最多 3 条。截断、无效 JSON、超大响应和缺失字段均报通用错误；不透传错误正文、思考、模型内部字段。不存在的相近编号归为 null。Worker 仅为本次响应临时解析 JSON，不记录或持久化对话、模型输出。
 
 单元测试仅使用模拟凭据和模拟模型响应，不需要 `.dev.vars` 或真实密钥。第 A 批本机真实测试使用 `wrangler dev --local` 和虚构材料，各一次总结与探索；测试前告知请求次数。只报告状态、token 数、是否收到思考、耗时和安全响应头，不记录请求内容或模型输出。
 
