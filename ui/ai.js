@@ -4,7 +4,7 @@
 const AI_ON=location.origin==='https://zwgcb.cn'||['localhost','127.0.0.1'].includes(location.hostname);
 const AI_ERRORS={bad_request:'这次没发出去，刷新后再试。',unauthorized:'访问口令不对，请在这里重新输入。',forbidden:'这次没发出去，刷新后再试。',too_large:'内容太长了，少勾选几项再试。',rate_limited:'点得太快了，等一分钟。',quota_exceeded:'今天的 AI 额度用完了，明天再试。',upstream_limited:'AI 额度用完或请求太频繁，稍后再试。',upstream_error:'AI 服务暂时连不上。',timeout:'等太久了，可能是网络慢。',not_configured:'AI 尚未完成配置。',offline:'需要联网后才能和 Claude 聊一聊。'};
 const AI_GROUPS=[['review','当天复盘'],['preds','预测'],['caps','随手记'],['events','单件复盘'],['archives','对话存档'],['hyps','当天关联的假设']];
-const ai={sessions:new Map(),date:null,token:'',needsToken:false,models:null,request:null,pending:null,confirm:null,texts:new Map(),diag:null,authBusy:false,authMessage:'',settingsEdit:false};
+const ai={sessions:new Map(),date:null,token:'',needsToken:false,models:null,request:null,pending:null,confirm:null,texts:new Map(),diag:null,authBusy:false,authMessage:'',settingsEdit:false,hypResults:new Map(),hypRequest:null};
 try{ai.token=JSON.parse(localStorage.getItem('zwgcb-ai')||'{}').token||'';}catch{}
 function aiSession(k=ai.date){
  if(!ai.sessions.has(k)){
@@ -50,7 +50,7 @@ function aiEntry(k){
 function aiTextSlot(id,text,cls=''){ai.texts.set(id,String(text||''));return '<div class="ai-prose '+cls+'" id="'+id+'"></div>';}
 function aiSummaryBlock(k){if(!AI_ON)return '';const saved=(S.days[k]||{}).ai&&S.days[k].ai.summary;if(!saved||!saved.text)return '';return '<button type="button" class="ai-summary-link" data-act="aiOpen" data-key="'+k+'" aria-label="阅读 AI 总结"><span class="ai-eyebrow">Claude 的总结'+(saved.stopped?' · 已停止':'')+'</span>'+aiTextSlot('ai-card-summary',saved.text,'ai-six-lines')+'<span class="ai-summary-foot">读完整总结 <span aria-hidden="true">›</span></span></button>';}
 function aiParagraphs(el,text){if(!el)return;const fragment=document.createDocumentFragment();String(text||'').split(/\n\s*\n/).forEach(part=>{const p=document.createElement('p');p.textContent=part;fragment.append(p);});el.replaceChildren(fragment);}
-function aiHydrate(){ai.texts.forEach((text,id)=>aiParagraphs(document.getElementById(id),text));if(route==='ai')aiPaint();}
+function aiHydrate(){aiHypReveal();ai.texts.forEach((text,id)=>aiParagraphs(document.getElementById(id),text));if(route==='ai')aiPaint();}
 function aiPaint(){
  const r=ai.request;if(!r||route!=='ai'||r.session.date!==ai.date)return;const el=$('#ai-live-'+r.mode);if(!el)return;
  const near=window.innerHeight+window.scrollY>=document.documentElement.scrollHeight-160;aiParagraphs(el,r.text);el.classList.toggle('is-streaming',true);
@@ -84,12 +84,12 @@ function aiExploreView(s){
  if(s.exploreNotice)h+='<p class="fine" role="status">'+esc(s.exploreNotice)+'</p>';
  h+=aiErrorHTML(s,'explore');
  h+='<div class="ai-composer"><label class="sr-only" for="ai-question">继续探索</label><textarea id="ai-question" rows="2" placeholder="写下你的想法，或一个还没想清楚的问题…"'+(r?' disabled':'')+'>'+esc(s.input)+'</textarea><div class="ai-compose-tools"><span class="fine">仅本机草稿</span><button type="button" class="btn" data-act="'+(r?'aiStop':'aiSend')+'"'+(!r&&(ai.request||!navigator.onLine)?' disabled':'')+'>'+(r?'停止':s.retry&&!s.input?'重试这次追问':'发送')+'</button></div></div>'+aiMaterialLine(s);
- if(s.messages.length)h+='<div class="ai-round-actions"><button type="button" class="btn ghost" data-act="aiSaveExplore"'+(ai.request?' disabled':'')+'>保存这次探索</button><button type="button" class="linkbtn" data-act="aiNewRound"'+(ai.request?' disabled':'')+'>开新一轮</button></div>';
- const historyHTML=history.length?history.slice().reverse().map((x,i)=>'<article class="ai-history-item"><div class="row"><span class="fine">'+md(s.date)+' · '+hm(x.at)+' · '+x.messages.filter(m=>m.role==='user').length+' 次追问</span><button type="button" class="linkbtn" data-act="aiDeleteExplore" data-id="'+esc(x.id)+'">删除</button></div>'+x.messages.map((m,j)=>'<div class="ai-message '+m.role+'"><span class="ai-eyebrow">'+(m.role==='user'?'我':'Claude')+'</span>'+aiTextSlot('ai-history-'+i+'-'+j,m.content)+aiTruncation(m)+'</div>').join('')+'</article>').join(''):'<p class="fine">保存后，这一轮会收进当天记录。</p>';
+ if(s.messages.length)h+='<div class="ai-round-actions"><button type="button" class="btn ghost" data-act="aiSaveExplore"'+(ai.request?' disabled':'')+'>保存这次探索</button>'+aiHypButton(s.roundId,s.messages.filter(m=>m.role==='assistant').length>=2)+'<button type="button" class="linkbtn" data-act="aiNewRound"'+(ai.request?' disabled':'')+'>开新一轮</button></div>'+aiHypCards(s.roundId);
+ const historyHTML=history.length?history.slice().reverse().map((x,i)=>'<article class="ai-history-item" data-chat-id="'+esc(x.id)+'"><div class="row"><span class="fine">'+md(s.date)+' · '+hm(x.at)+' · '+x.messages.filter(m=>m.role==='user').length+' 次追问</span>'+aiHypButton(x.id,true)+'<button type="button" class="linkbtn" data-act="aiDeleteExplore" data-id="'+esc(x.id)+'">删除</button></div>'+aiHypCards(x.id)+x.messages.map((m,j)=>'<div class="ai-message '+m.role+'"><span class="ai-eyebrow">'+(m.role==='user'?'我':'Claude')+'</span>'+aiTextSlot('ai-history-'+i+'-'+j,m.content)+aiTruncation(m)+'</div>').join('')+'</article>').join(''):'<p class="fine">保存后，这一轮会收进当天记录。</p>';
  return h+foldHTML('ai:history:'+s.date,'ai-history','之前的探索（'+history.length+'）',historyHTML,{close:'收起之前的探索（'+history.length+'）',className:'ai-history'})+'</section>';
 }
 function vAI(){
- if(!ai.date){const k=new URLSearchParams(location.hash.split('?')[1]||'').get('day');ai.date=validDate(k)?k:sel;}const s=aiSession();
+ if(!ai.date){const k=new URLSearchParams(location.hash.split('?')[1]||'').get('day');ai.date=validDate(k)?k:sel;}const s=aiSession();aiHypRoute(s);
  return '<div class="ai-page"><div class="ai-tabs" role="tablist" aria-label="聊天方式">'+[['summary','总结'],['explore','探索']].map(([key,label])=>'<button type="button" role="tab" aria-selected="'+(s.tab===key)+'" data-act="aiTab" data-v="'+key+'">'+label+'</button>').join('')+'</div>'+(!navigator.onLine?'<p class="ai-error" role="status">需要联网。已有内容仍可阅读。</p>':'')+(!ai.token||ai.needsToken?aiTokenCard():'')+(ai.request&&ai.request.mode!==s.tab?'<p class="fine">'+(ai.request.mode==='summary'?'总结':'探索')+'正在生成 <button type="button" class="linkbtn" data-act="aiStop">停止</button></p>':'')+(s.tab==='summary'?aiSummaryView(s):aiExploreView(s))+'</div>';
 }
 function aiPrepareShell(){
@@ -107,7 +107,7 @@ function aiNewDiagnostic(endpoint){return ai.diag={endpoint,status:null,elapsed:
 function aiReadHeaders(d,r){d.status=r.status;const effort=r.headers.get('x-ai-effort');d.effort=['applied','dropped','not_requested'].includes(effort)?effort:null;const node=r.headers.get('x-ai-node');d.node=['primary','backup'].includes(node)?node:null;d.redirected=r.headers.get('x-ai-redirected')==='true';d.domain=d.redirected?aiDomain(r.headers.get('x-ai-redirect-domain')):null;}
 function aiReadUsage(d,usage){if(!usage)return;['input_tokens','output_tokens','cache_read_input_tokens'].forEach(key=>{if(Number.isFinite(usage[key])&&usage[key]>=0)d[key]=usage[key];});}
 async function aiHealth(saveToken=false){
- if(!AI_ON||ai.authBusy||ai.request)return;if(!navigator.onLine){ai.authMessage=AI_ERRORS.offline;aiRender();return;}
+ if(!AI_ON||ai.authBusy||ai.request||ai.hypRequest)return;if(!navigator.onLine){ai.authMessage=AI_ERRORS.offline;aiRender();return;}
  const value=saveToken?($('#ai-token')?.value||'').trim():ai.token;if(!value){ai.settingsEdit=true;ai.needsToken=true;ai.authMessage='请先输入访问口令。';aiRender();return;}
  ai.authBusy=true;ai.authMessage='';const d=aiNewDiagnostic('/api/health'),start=performance.now();aiRender();
  try{
@@ -118,11 +118,12 @@ async function aiHealth(saveToken=false){
   ai.token=value;ai.needsToken=false;ai.settingsEdit=false;ai.models=j.models||null;ai.authMessage='连接正常。';
  }catch(e){if(e.code==='unauthorized'){ai.needsToken=true;ai.settingsEdit=true;}ai.authMessage=AI_ERRORS[e.code]||AI_ERRORS[e.name==='TimeoutError'?'timeout':'upstream_error'];}
  finally{d.elapsed=performance.now()-start;ai.authBusy=false;aiRender();}
- if(!ai.needsToken&&ai.pending&&route==='ai'){const pending=ai.pending;ai.pending=null;if(pending.date===ai.date)aiPrepare(pending.mode);}
+ if(!ai.needsToken&&ai.pending&&route==='ai'){const pending=ai.pending;ai.pending=null;if(pending.date===ai.date){if(pending.mode==='hyps')aiHypConsent(pending.chatId);else aiPrepare(pending.mode);}}
 }
 function aiComposeContext(s){return {selection:s.selection||aiSelection(),materials:s.materials||aiMaterials(s.date,aiSelection())};}
 function aiHasMaterial(m){return !!(m.review.trim()||m.preds.length||m.caps.length||m.hyps.length);}
-function aiShowConsent(mode=null){
+function aiShowConsent(mode=null,chat=null){
+ if(mode==='hyps'){aiHypConsentDialog(chat);return;}
  const s=aiSession(),ctx=aiComposeContext(s),g=aiGroups(s.date),locked=!!s.materials;
  ai.confirm={mode,selection:clone(ctx.selection)};const dialog=$('#ai-confirm');
  dialog.innerHTML='<header class="row"><div><p class="ai-eyebrow">'+md(s.date)+' · 仅这一天</p><h2 id="ai-confirm-title">这次发给 Claude 的内容</h2></div><button type="button" class="icon-button" data-act="aiConsentCancel" aria-label="关闭发送确认">×</button></header><p class="fine">由你选择；本机其他日期的记录不会发送。</p><div class="ai-checklist">'+AI_GROUPS.map(([key,label])=>'<label><input type="checkbox" data-ai-check="'+key+'"'+(ctx.selection[key]?' checked':'')+(locked||!g[key].length?' disabled':'')+'><span>'+label+'</span><small>'+(!g[key].length?'无记录':Array.isArray(g[key])?g[key].length+' 条':'已写')+'</small></label>').join('')+'</div>'+(locked?'<p class="fine">这轮材料已固定。保存后开新一轮，才能更换材料。</p>':'')+'<details class="ai-preview"><summary>查看实际发送的文字</summary><div id="ai-material-preview" class="ai-prose"></div></details><p class="ai-error" id="ai-consent-error" role="status"></p><button type="button" class="btn" data-act="aiConsentAccept">'+(mode?'确认并发送':'保存选择')+'</button>';
@@ -131,7 +132,7 @@ function aiShowConsent(mode=null){
 function aiPreviewConsent(){const s=aiSession(),m=s.materials||aiMaterials(s.date,ai.confirm.selection);let text=JSON.stringify({date:s.date,materials:m},null,2);if(ai.confirm.mode==='explore')text+='\n\n已有总结：\n'+(s.materials?s.contextSummary:((S.days[s.date]||{}).ai?.summary?.text||''))+'\n\n本轮对话：\n'+s.messages.map(x=>(x.role==='user'?'我':'Claude')+'：'+x.content).join('\n\n')+'\n\n我：'+(s.input||s.retry?.question||'');$('#ai-material-preview').textContent=text;}
 function aiSignature(s,ctx){return JSON.stringify({date:s.date,selection:ctx.selection,materials:ctx.materials});}
 function aiPrepare(mode){
- const s=aiSession();if(!AI_ON||ai.request||ai.authBusy)return;s[mode+'Error']='';
+ const s=aiSession();if(!AI_ON||ai.request||ai.hypRequest||ai.authBusy)return;s[mode+'Error']='';
  if(!navigator.onLine){s[mode+'Error']=AI_ERRORS.offline;aiRender();return;}
  if(mode==='explore'&&!s.input.trim()&&!s.retry){s.exploreError='写下一点想法，再发给 Claude。';aiRender();$('#ai-question')?.focus();return;}
  if(mode==='explore'&&(s.tokens>=30000||s.messages.length>=58)){s.exploreError='这轮内容已经很长了，保存后开新一轮吧。';aiRender();return;}
@@ -224,21 +225,88 @@ function aiNewRound(){
  const canSave=s.messages.some(m=>m.role==='assistant');ai.confirm={newRound:true};const d=$('#ai-confirm');d.innerHTML='<h2 id="ai-confirm-title">先收好这一轮？</h2><p class="fine">'+(canSave?'保存后可在“之前的探索”里阅读；新一轮会重新选择材料。':'还没收到回复，输入已保存在本机草稿。可以继续这一轮，或放下它重新开始。')+'</p><div class="ai-dialog-actions"><button type="button" class="btn" data-act="aiSaveAndNew"'+(canSave?'':' disabled')+'>保存并开新一轮</button><button type="button" class="btn ghost" data-act="aiDiscardRound">不保存，开新一轮</button><button type="button" class="linkbtn" data-act="aiConsentCancel">继续这一轮</button></div>';d.showModal();
 }
 const AI_ACTIONS={
+ aiHypExtract(el){aiHypConsent(el.dataset.chat);},aiHypEdit(el){aiHypEdit(el);},aiHypCancel(el){const row=aiHypRow(el);if(row&&!row.saving){delete row.edit;aiRender();}},aiHypAdd(el){aiHypAdd(el);},aiHypJump(el){ui.hypFilter='all';ai.jumpHyp=el.dataset.id;if(location.hash==='#hyps')aiRender();else location.hash='#hyps';},aiHypSource(el){const src=S.hyps[el.dataset.id]?.src;if(src?.type==='ai'){const hash='#ai?day='+src.date+'&chat='+encodeURIComponent(src.chatId);if(location.hash===hash){ai.sourceHash=null;aiRender();}else location.hash=hash;}},
  aiOpen(el){aiEnter(el.dataset.key);},aiBack(){if(ai.request){ai.request.stopped=true;ai.request.ctl.abort();}sel=ai.date;location.hash='#review';},
  aiTab(el){aiSession().tab=el.dataset.v;aiRender();},aiToExplore(){aiSession().tab='explore';aiRender();},
  aiGenerate(){aiPrepare('summary');},aiSend(){aiPrepare('explore');},aiStop(){if(ai.request){ai.request.stopped=true;ai.request.ctl.abort();}},
  aiStarter(el){aiSession().input=el.querySelector('span').textContent;aiSession().tab='explore';aiSaveDraft(aiSession());aiRender();$('#ai-question')?.focus();},
  aiTokenSave(){aiHealth(true);},aiHealth(){aiHealth();},aiEditToken(){ai.settingsEdit=!ai.settingsEdit;ai.authMessage='';aiRender();$('#ai-token')?.focus();},
  aiMaterials(){aiShowConsent();},aiConsentCancel(){aiDialogClose();},
- aiConsentAccept(){const s=aiSession(),c=ai.confirm;if(!c)return;const ctx={selection:c.selection,materials:s.materials||aiMaterials(s.date,c.selection)};if(!aiHasMaterial(ctx.materials)){ $('#ai-consent-error').textContent='至少选择一项有内容的材料。';return;}uiPrefs.aiMaterials=clone(c.selection);saveUIPrefs();s.consent=aiSignature(s,ctx);const mode=c.mode;aiDialogClose();if(mode)aiRun(mode,s,ctx);else aiRender();},
+ aiConsentAccept(){const s=aiSession(),c=ai.confirm;if(!c)return;if(c.mode==='hyps'){aiDialogClose();aiRunHyps(c);return;}const ctx={selection:c.selection,materials:s.materials||aiMaterials(s.date,c.selection)};if(!aiHasMaterial(ctx.materials)){ $('#ai-consent-error').textContent='至少选择一项有内容的材料。';return;}uiPrefs.aiMaterials=clone(c.selection);saveUIPrefs();s.consent=aiSignature(s,ctx);const mode=c.mode;aiDialogClose();if(mode)aiRun(mode,s,ctx);else aiRender();},
  aiSaveExplore(){aiSaveExplore();},aiNewRound(){aiNewRound();},async aiSaveAndNew(){if(await aiSaveExplore())aiDialogClose();},aiDiscardRound(){aiResetRound(aiSession());aiDialogClose();aiRender();},
  aiDeleteExplore(el){const id=el.dataset.id;ai.confirm={deleteId:id};const d=$('#ai-confirm');d.innerHTML='<h2 id="ai-confirm-title">删除这次探索？</h2><p class="fine">当天复盘和总结会保留。</p><div class="row"><button type="button" class="btn ghost" data-act="aiConsentCancel">取消</button><button type="button" class="btn" data-act="aiDeleteConfirm">删除</button></div>';d.showModal();},
  async aiDeleteConfirm(){const day=getDay(ai.date);if(!day.ai)return;day.ai.explores=(day.ai.explores||[]).filter(x=>x.id!==ai.confirm.deleteId);try{await aiStoreDay(day);aiDialogClose();aiRender();}catch{toast('删除没存成功，请保留页面后再试。');}}
 };
-document.addEventListener('input',e=>{if(e.target.id==='ai-question'&&ai.date){const s=aiSession();s.input=e.target.value;aiSaveDraft(s);}});
+document.addEventListener('input',e=>{if(e.target.dataset.aiHypEdit!==undefined){const row=aiHypRow(e.target);if(row)row.edit=e.target.value;}if(e.target.id==='ai-question'&&ai.date){const s=aiSession();s.input=e.target.value;aiSaveDraft(s);}});
 document.addEventListener('change',e=>{if(e.target.dataset.aiCheck&&ai.confirm){ai.confirm.selection[e.target.dataset.aiCheck]=e.target.checked;aiPreviewConsent();}});
 document.addEventListener('keydown',e=>{if(e.target.id==='ai-question'&&(e.ctrlKey||e.metaKey)&&e.key==='Enter'&&!e.isComposing){e.preventDefault();aiPrepare('explore');}});
 $('#ai-confirm').addEventListener('cancel',e=>{e.preventDefault();aiDialogClose();});
-window.addEventListener('pagehide',()=>{if(ai.date)aiSaveDraft(aiSession());if(ai.request){ai.request.stopped=true;ai.request.ctl.abort();}});
-window.addEventListener('offline',()=>{if(ai.request){ai.request.ctl.abort();}if(['ai','review'].includes(route))aiRender();});
+window.addEventListener('pagehide',()=>{ai.hypRequest?.ctl.abort();if(ai.date)aiSaveDraft(aiSession());if(ai.request){ai.request.stopped=true;ai.request.ctl.abort();}});
+window.addEventListener('offline',()=>{ai.hypRequest?.ctl.abort();if(ai.request){ai.request.ctl.abort();}if(['ai','review'].includes(route))aiRender();});
 window.addEventListener('online',()=>{if(['ai','review'].includes(route))aiRender();});
+
+// Extraction proposals are session-only. Only explicit confirmation creates a hypothesis.
+function aiHypKey(id){return ai.date+'|'+id;}
+function aiHypButton(id,show){return show?'<button type="button" class="btn ghost sm" data-act="aiHypExtract" data-chat="'+esc(id)+'"'+(ai.request||ai.hypRequest||ai.authBusy?' disabled':'')+'>提炼假设</button>':'';}
+function aiHypCards(id){
+ const state=ai.hypResults.get(aiHypKey(id));if(!state)return '';const attrs=' data-chat="'+esc(id)+'"';
+ let h='<div class="ai-hyp-results" data-results-chat="'+esc(id)+'" aria-live="polite">';
+ if(state.busy)return h+'<p class="fine" role="status">正在从这次对话里提炼假设…</p></div>';
+ if(state.error)h+='<p class="ai-error" role="status">'+esc(state.error)+'</p>';
+ if(state.hyps?.length===0)h+='<p class="fine">这次对话里没有找到适合验证的假设</p>';
+ return h+(state.hyps||[]).map((row,i)=>{const a=attrs+' data-index="'+i+'"';return '<article class="ai-hyp-card"><p class="ai-hyp-text">'+esc(row.text)+'</p><p class="fine">依据：'+esc(row.why)+'</p>'+(row.near?'<p class="fine">和 #'+row.near+' 相近</p>':'')+(row.added?'<button type="button" class="linkbtn" data-act="aiHypJump" data-id="'+esc(row.added.id)+'">已加入 #'+row.added.no+' ↗</button>':row.edit!==undefined?'<label>确认假设文字<textarea data-ai-hyp-edit=""'+a+' rows="3" maxlength="300"'+(row.saving?' disabled':'')+'>'+esc(row.edit)+'</textarea></label><p class="fine">确认后会保留来源对话，方便以后回看。只保存这条猜测，不把模型的依据记成证据。</p><div class="row"><button type="button" class="btn sm" data-act="aiHypAdd"'+a+(row.saving?' disabled':'')+'>'+(row.saving?'正在保存…':'确认加入')+'</button><button type="button" class="linkbtn" data-act="aiHypCancel"'+a+(row.saving?' disabled':'')+'>取消</button></div>':'<button type="button" class="btn ghost sm" data-act="aiHypEdit"'+a+'>加入我的假设</button>')+(row.error?'<p class="ai-error">'+esc(row.error)+'</p>':'')+'</article>';}).join('')+'</div>';
+}
+function aiHypChat(id){
+ const s=aiSession(),saved=(S.days[s.date]?.ai?.explores||[]).find(x=>x.id===id);
+ if(id===s.roundId)return {id,date:s.date,model:s.roundModel,messages:clone(s.messages)};
+ return saved?{...clone(saved),date:s.date}:null;
+}
+function aiHypConsent(id){
+ if(!AI_ON||ai.request||ai.hypRequest||ai.authBusy)return;const chat=aiHypChat(id);if(!chat)return;
+ if(!ai.token||ai.needsToken){ai.pending={mode:'hyps',chatId:id,date:chat.date};ai.needsToken=true;aiRender();$('#ai-token')?.focus();return;}
+ if(!navigator.onLine){toast(AI_ERRORS.offline);return;}aiShowConsent('hyps',chat);
+}
+function aiHypConsentDialog(chat){
+ const payload={messages:chat.messages.map(m=>({role:m.role,content:m.content})),hyps:Object.values(S.hyps).map(h=>({no:h.no,text:hypText(h)}))};
+ ai.confirm={mode:'hyps',chat,payload};const dialog=$('#ai-confirm');
+ dialog.innerHTML='<header class="row"><h2 id="ai-confirm-title">提炼前，确认发送内容</h2><button type="button" class="icon-button" data-act="aiConsentCancel" aria-label="关闭发送确认">×</button></header><p class="fine">会发送这次对话的全文和现有假设的文字。提炼结果只在本次打开期间保留，你确认加入后才会写入记录。</p><details class="ai-preview"><summary>查看实际发送的文字</summary><div id="ai-material-preview" class="ai-prose"></div></details><button type="button" class="btn" data-act="aiConsentAccept">确认并提炼</button>';
+ $('#ai-material-preview').textContent=JSON.stringify(payload,null,2);dialog.showModal();
+}
+async function aiRunHyps(c){
+ if(ai.hypRequest||ai.request)return;const key=c.chat.date+'|'+c.chat.id,old=ai.hypResults.get(key),state={chat:c.chat,busy:true,hyps:old?.hyps};
+ const payload=JSON.stringify(c.payload);if(new TextEncoder().encode(payload).length>65536){toast('对话或假设库太长了，这次没有发送。');return;}
+ ai.hypResults.set(key,state);const r={ctl:new AbortController()},d=aiNewDiagnostic('/api/hyps'),start=performance.now();ai.hypRequest=r;
+ const timer=setTimeout(()=>r.ctl.abort(),330000),release=aiKeepAwake(r);aiRender();
+ try{
+  const response=await fetch('/api/hyps',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+ai.token},body:payload,signal:r.ctl.signal});aiReadHeaders(d,response);
+  const j=await response.json().catch(()=>({}));if(!response.ok)throw {code:response.status===401?'unauthorized':j.error?.code||'upstream_error'};
+  if(!Array.isArray(j.hyps)||j.hyps.length>3||j.hyps.some(h=>!h||typeof h.text!=='string'||!h.text.trim()||h.text.length>300||typeof h.why!=='string'||!h.why.trim()||h.why.length>600))throw {code:'upstream_error'};
+  state.hyps=j.hyps.map(h=>({text:h.text,why:h.why,near:Number.isInteger(h.near)&&c.payload.hyps.some(x=>x.no===h.near)?h.near:null}));d.ended=true;
+ }catch(e){state.error=r.ctl.signal.aborted?'提炼已中止，可以重新提炼。':AI_ERRORS[e.code]||AI_ERRORS.upstream_error;if(e.code==='unauthorized'){ai.needsToken=true;ai.pending={mode:'hyps',date:c.chat.date,chatId:c.chat.id};}}
+ finally{clearTimeout(timer);release();state.busy=false;d.elapsed=performance.now()-start;if(ai.hypRequest===r)ai.hypRequest=null;if(route==='ai')aiRender();}
+}
+function aiHypRow(el){return ai.hypResults.get(aiHypKey(el.dataset.chat))?.hyps?.[Number(el.dataset.index)];}
+function aiHypEdit(el){const row=aiHypRow(el);if(!row||row.added||row.saving)return;row.edit=row.text;row.error='';aiRender();}
+async function aiHypAdd(el){
+ const state=ai.hypResults.get(aiHypKey(el.dataset.chat)),row=aiHypRow(el);if(!state||!row||row.added||row.saving||row.edit===undefined||!needReady())return;
+ const text=row.edit.trim();if(!text||text.length>300){row.error='请写下 1–300 字的假设。';aiRender();return;}row.saving=true;row.error='';aiRender();
+ try{
+  const chat=state.chat,day=clone(getDay(chat.date)),old=day.ai||{};
+  if(state.sourcePending||!(old.explores||[]).some(x=>x.id===chat.id)){
+   state.sourcePending=true;
+   day.ai={...old,explores:[...(old.explores||[]).filter(x=>x.id!==chat.id),{id:chat.id,at:new Date().toISOString(),model:chat.model||'',messages:chat.messages.map(m=>({role:m.role,content:m.content}))}]};await aiStoreDay(day);state.sourcePending=false;
+  }
+  const h=row.pendingHyp||(row.pendingHyp=makeHyp({text,src:{type:'ai',date:chat.date,chatId:chat.id}}));h.text=text;
+  await put('hyps',h.id,h);if(mode==='local'&&lsRead()?.hyps?.[h.id]?.text!==text)throw Error('local-save');
+  row.text=text;row.added={id:h.id,no:h.no};delete row.edit;delete row.pendingHyp;
+ }catch{row.error='没有保存成功，请保留页面并重试。';}finally{row.saving=false;aiRender();}
+}
+function aiHypSourceLabel(h){const src=h.src;return src?.type==='ai'&&validDate(src.date)&&typeof src.chatId==='string'?'<button type="button" class="linkbtn fine" data-act="aiHypSource" data-id="'+esc(h.id)+'">来自 '+src.date.slice(5).replace('-','/')+' 的对话</button>':'';}
+function aiHypRoute(s){
+ const id=new URLSearchParams(location.hash.split('?')[1]||'').get('chat');if(!id||ai.sourceHash===location.hash)return;ai.sourceHash=location.hash;s.tab='explore';
+ const exists=(S.days[s.date]?.ai?.explores||[]).some(x=>x.id===id);if(exists){setDisclosure('ai:history:'+s.date,true);ai.jumpChat=id;}else toast('来源对话已删除或不在这台设备上。');
+}
+function aiHypReveal(){
+ const id=route==='hyps'?ai.jumpHyp:route==='ai'?ai.jumpChat:null;if(!id)return;
+ ai.jumpHyp=null;ai.jumpChat=null;requestAnimationFrame(()=>{const attr=route==='hyps'?'data-hyp-id':'data-chat-id',el=Array.from(document.querySelectorAll('['+attr+']')).find(x=>x.getAttribute(attr)===id);if(el){el.tabIndex=-1;el.focus({preventScroll:true});el.scrollIntoView({block:'start'});}});
+}

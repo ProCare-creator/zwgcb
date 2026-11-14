@@ -1,5 +1,7 @@
 # AI 对话改版 · 第 A 批验收
 
+状态更新（2026-11-14）：用户验收通过，明确不补测。以下保留当时的测试事实；后续先插入“提炼假设”小批次，第 B 批尚未开始。
+
 日期：2026-11-13。分支：[ai-chat](https://github.com/ProCare-creator/zwgcb/tree/ai-chat)。未合并 main、未部署，未开始 B / C / D 批；应用和 Service Worker 均保留 v6.11.1。
 
 ## 改动与自动检查

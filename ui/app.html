@@ -1143,7 +1143,7 @@ const curSeq = () => (S.meta && S.meta.counters && S.meta.counters.hypSeq) || 0;
 const nextNo = () => Math.max(curSeq(), maxNo(S.hyps)) + 1;
 function claimNo(){ const n = nextNo(); put('meta', 'counters', { hypSeq:n }).catch(() => {}); return n; }
 function makeHyp(o){
-  return { id:newId(), no:o.no || claimNo(), text:o.text || composeHyp(o.sit, o.rea), sit:o.sit || null, rea:o.rea || null, created:o.date || dayKey(), updated:new Date().toISOString(), status:'test', ev:o.ev || [], history:[], revisedOn:null, origin:o.origin || 'app', verBy:null };
+  return { id:newId(), no:o.no || claimNo(), text:o.text || composeHyp(o.sit, o.rea), sit:o.sit || null, rea:o.rea || null, created:o.date || dayKey(), updated:new Date().toISOString(), status:'test', ev:o.ev || [], history:[], revisedOn:null, origin:o.origin || 'app', ...(o.src?{src:o.src}:{}), verBy:null };
 }
 function pushHistory(h, date){
   h.history = (h.history || []).concat([{ text:hypText(h), sit:h.sit || null, rea:h.rea || null, ev:h.ev || [], from:h.revisedOn || h.created, to:date, by:h.verBy || null, prevRevisedOn:h.revisedOn || null }]);
@@ -2385,7 +2385,7 @@ function vHyps(){
 
 function hypCard(x){
   const sup=evCount(x,'sup'),con=evCount(x,'con'),st0=evStats(x.ev),o=ui.hypOpen&&ui.hypOpen.id===x.id?ui.hypOpen.act:null,status=x.status==='solid'?'solid':'test',hist=x.history||[],evAll=(x.ev||[]).slice().sort((a,b)=>String(a.date||'').localeCompare(String(b.date||''))),ev=evAll.slice(-2).reverse();
-  let s='<article class="hyp '+status+'" data-hyp-id="'+esc(x.id)+'"><div class="hmeta"><span class="hno">'+hypNo(x)+'</span><span class="st '+status+'">'+(status==='solid'?'较可信':'待验证')+'</span><span>首次 '+md(x.created)+'</span></div>'+hypLines(x);
+  let s='<article class="hyp '+status+'" data-hyp-id="'+esc(x.id)+'"><div class="hmeta"><span class="hno">'+hypNo(x)+'</span><span class="st '+status+'">'+(status==='solid'?'较可信':'待验证')+'</span><span>首次 '+md(x.created)+'</span></div>'+hypLines(x)+aiHypSourceLabel(x);
   s+='<div class="hmeta evidence-counts"><span class="tally">支持 '+tally(sup)+'</span><span aria-hidden="true">｜</span><span class="tally con">反例 '+tally(con)+'</span>'+((st0.supW+st0.conW)?'<span>其中弱证据 '+(st0.supW+st0.conW)+'</span>':'')+'</div>';
   if(o==='evs')s+=evEditPanel(x);
   else if(ev.length){s+='<ul class="evs recent-evidence">'+ev.map(evLi).join('')+'</ul>';if(evAll.length>2)s+='<details class="all-evidence"'+disclosureAttrs('hyp:'+x.id+':evidence')+'><summary>全部 '+evAll.length+' 条证据 ›</summary><ul class="evs">'+evAll.slice().reverse().map(evLi).join('')+'</ul></details>';}
@@ -3243,6 +3243,7 @@ document.addEventListener('input', e => {
 const ROUTE_ALIAS = { today:'pred', log:'more' };   // links and icons saved from older versions
 function resolveRoute(hash){ const r = (hash || '#review').slice(1).split('?')[0], a = ROUTE_ALIAS[r] || r; return ['pred','capture','review','hyps','more','week','settings','ai'].includes(a) && (a !== 'ai' || AI_ON) ? a : 'review'; }
 function onHash(){
+  ai.hypRequest?.ctl.abort();
   if(ai.request){ai.request.stopped=true;ai.request.ctl.abort();}
   aiDialogClose();
   cancelDayMotion();cancelReviewMotion();closeHypActions(false);if($('#day-actions').open)$('#day-actions').close();
