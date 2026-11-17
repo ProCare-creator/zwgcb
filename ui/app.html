@@ -715,12 +715,14 @@ to{transform:translateY(0);opacity:1}}
     <a href="#review" data-r="review"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 14.5A7.5 7.5 0 0 1 9.5 5a7.5 7.5 0 1 0 9.5 9.5z"/></svg>复盘</a>
     <a href="#hyps" data-r="hyps"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="6" width="18" height="13" rx="1.5"/><path d="M3 10h18M7 14h6"/></svg>假设</a>
     <a href="#more" data-r="more"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 9h16M9 3v4M15 3v4"/></svg>回顾</a>
+    <a href="#chat" data-r="chat" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M4 4h16v12H9l-5 4z"/></svg>Claude</a>
   </div>
 </nav>
 <div id="toast" role="status" aria-live="polite" hidden></div>
 <div id="undo-toast" role="status" aria-live="polite" hidden><span id="undo-text">已删除</span><button type="button" id="undo-cap" data-act="undoCap">撤销</button></div>
 <dialog id="day-summary" aria-labelledby="summary-date"><div id="summary-content"></div></dialog>
 <dialog id="hyp-actions" aria-labelledby="hyp-actions-title"></dialog>
+<dialog id="chat-list" aria-label="对话列表"></dialog><dialog id="chat-dialog" aria-label="聊天操作"></dialog>
 <dialog id="ai-confirm" aria-labelledby="ai-confirm-title"></dialog>
 <dialog id="day-actions" aria-labelledby="day-actions-title"><div class="row"><h2 id="day-actions-title">当天记录</h2><button type="button" class="icon-button" data-act="dayActionsClose" aria-label="关闭操作面板">×</button></div><button type="button" class="btn ghost" data-act="summaryWord">保存为 Word</button><button type="button" class="btn ghost" data-act="summaryCopy">复制给 Claude</button></dialog>
 <div id="view-status" class="sr-status" role="status" aria-live="polite" aria-atomic="true"></div>
@@ -730,7 +732,7 @@ to{transform:translateY(0);opacity:1}}
 'use strict';
 /* ---------- constants ---------- */
 const KINDS = { avoid:'最可能拖着不做的事', change:'最有可能做出改变的事', emotion:'最可能让我情绪起伏的', specific:'具体预测' };
-const SRC = { morning:'当天写', late:'当天写', eve:'前晚出题' };
+const SRC = { morning:'当天写', late:'当天写', eve:'前晚出题', chat:'聊天加入' };
 const RES = { hit:'对', miss:'落空', half:'一半' };
 const EMOS = ['焦虑','烦躁','委屈','失落','羞愧','愤怒','紧张','无力','不耐烦','兴奋','被认可','平静'];
 const BODY = ['胸闷','肩颈紧','心跳快','胃里发紧','脸发热','坐不住','想逃开','没力气','呼吸浅','放松'];
@@ -1149,7 +1151,7 @@ function pushHistory(h, date){
   h.history = (h.history || []).concat([{ text:hypText(h), sit:h.sit || null, rea:h.rea || null, ev:h.ev || [], from:h.revisedOn || h.created, to:date, by:h.verBy || null, prevRevisedOn:h.revisedOn || null }]);
 }
 function evStats(ev){ const r = { sup:0, con:0, supW:0, conW:0 }; (ev || []).forEach(e => { if (e.kind === 'con'){ r.con++; if (e.str === 'weak') r.conW++; } else { r.sup++; if (e.str === 'weak') r.supW++; } }); return r; }
-const evLi = e => '<li class="' + (e.kind === 'con' ? 'c' : '') + '"><span class="mono">' + (e.date ? mdShort(e.date) : '') + '</span> ' + (e.kind === 'con' ? '反例' : '支持') + '<span class="strg ' + (e.str === 'weak' ? 'weak' : 'strong') + '">' + (e.str === 'weak' ? '弱' : '强') + '</span>' + (e.note ? esc(e.note) : '') + '</li>';
+const evLi = e => '<li class="' + (e.kind === 'con' ? 'c' : '') + '"><span class="mono">' + (e.date ? mdShort(e.date) : '') + '</span> ' + (e.kind === 'con' ? '反例' : '支持') + '<span class="strg ' + (e.str === 'weak' ? 'weak' : 'strong') + '">' + (e.str === 'weak' ? '弱' : '强') + '</span>' + (e.note ? esc(e.note) : '') + chatSourceLabel('ev',e) + '</li>';
 const strSeg = () => '<div class="f"><div class="lab">证据强度</div>' + segHTML('D.str', [['strong','强 · 当时记下或预测过'],['weak','弱 · 事后回想']]) + '</div>';
 let hypsMigrated = false;
 async function migrateHyps(){
@@ -1415,8 +1417,8 @@ function bars(n){ let s = '<span class="bars" aria-label="强度 ' + (n || 0) + 
 function predMissHint(p, result = p.result){ return p.kind === 'change' && result === 'miss' ? '<p class="fine pred-miss-hint">没做到也是信息：卡在了哪一步？</p>' : ''; }
 function predRow(p, k, removable){
   const r = p.result ? ' r-' + p.result : '';
-  return '<li class="pred' + r + '"><div class="pk"><span>' + KINDS[p.kind] + '</span><span class="mono">' + hm(p.at) + ' · ' + SRC[p.src] + '</span></div>'
-    + '<div class="pt">' + esc(p.text) + '</div>'
+  return '<li data-pred-id="'+esc(p.id)+'" class="pred' + r + '"><div class="pk"><span>' + KINDS[p.kind] + '</span><span class="mono">' + hm(p.at) + ' · ' + SRC[p.src] + '</span></div>'
+    + '<div class="pt">' + esc(p.text) + '</div>' + chatSourceLabel('pred',p)
     + (p.actual ? '<div class="pa">实际：' + esc(p.actual) + '</div>' : '') + predMissHint(p)
     + (p.result ? '<span class="pen ' + p.result + '">' + RES[p.result] + '</span>' : '')
     + (removable && !p.result ? '<button type="button" class="x" data-act="delPred" data-key="' + k + '" data-id="' + p.id + '" aria-label="删掉这条预测">×</button>' : '')
@@ -1784,7 +1786,7 @@ function openHypActions(id){
 }
 function vSettings(){
   const theme=['light','dark'].includes(uiPrefs.theme)?uiPrefs.theme:'system';
-  return copyBox()+'<h1 class="h">设置</h1><div class="settings-stack">'+syncCard()+dataCard()+aiSettings()+'<section class="card"><h2 class="stage">显示</h2><div class="theme-options" role="group" aria-label="主题">'+[['system','跟随系统'],['light','浅色'],['dark','深色']].map(([v,label])=>'<button type="button" data-act="theme" data-v="'+v+'" aria-pressed="'+(theme===v)+'">'+label+'</button>').join('')+'</div></section><section class="card"><h2 class="stage">关于</h2><p class="fine">自我观察本 · <span class="mono">'+APP_VERSION+'</span></p><p class="fine">记录默认只存在这台设备。开启云端同步后，会额外保存一份加密备份；本机草稿与显示偏好不进入同步。</p></section></div>';
+  return copyBox()+'<h1 class="h">设置</h1><div class="settings-stack">'+syncCard()+dataCard()+aiSettings()+chatSettings()+'<section class="card"><h2 class="stage">显示</h2><div class="theme-options" role="group" aria-label="主题">'+[['system','跟随系统'],['light','浅色'],['dark','深色']].map(([v,label])=>'<button type="button" data-act="theme" data-v="'+v+'" aria-pressed="'+(theme===v)+'">'+label+'</button>').join('')+'</div></section><section class="card"><h2 class="stage">关于</h2><p class="fine">自我观察本 · <span class="mono">'+APP_VERSION+'</span></p><p class="fine">记录默认只存在这台设备。开启云端同步后，会额外保存一份加密备份；本机草稿与显示偏好不进入同步。</p></section></div>';
 }
 
 /* ---------- forms ---------- */
@@ -2385,7 +2387,7 @@ function vHyps(){
 
 function hypCard(x){
   const sup=evCount(x,'sup'),con=evCount(x,'con'),st0=evStats(x.ev),o=ui.hypOpen&&ui.hypOpen.id===x.id?ui.hypOpen.act:null,status=x.status==='solid'?'solid':'test',hist=x.history||[],evAll=(x.ev||[]).slice().sort((a,b)=>String(a.date||'').localeCompare(String(b.date||''))),ev=evAll.slice(-2).reverse();
-  let s='<article class="hyp '+status+'" data-hyp-id="'+esc(x.id)+'"><div class="hmeta"><span class="hno">'+hypNo(x)+'</span><span class="st '+status+'">'+(status==='solid'?'较可信':'待验证')+'</span><span>首次 '+md(x.created)+'</span></div>'+hypLines(x)+aiHypSourceLabel(x);
+  let s='<article class="hyp '+status+'" data-hyp-id="'+esc(x.id)+'"><div class="hmeta"><span class="hno">'+hypNo(x)+'</span><span class="st '+status+'">'+(status==='solid'?'较可信':'待验证')+'</span><span>首次 '+md(x.created)+'</span></div>'+hypLines(x)+aiHypSourceLabel(x)+chatSourceLabel('hyp',x);
   s+='<div class="hmeta evidence-counts"><span class="tally">支持 '+tally(sup)+'</span><span aria-hidden="true">｜</span><span class="tally con">反例 '+tally(con)+'</span>'+((st0.supW+st0.conW)?'<span>其中弱证据 '+(st0.supW+st0.conW)+'</span>':'')+'</div>';
   if(o==='evs')s+=evEditPanel(x);
   else if(ev.length){s+='<ul class="evs recent-evidence">'+ev.map(evLi).join('')+'</ul>';if(evAll.length>2)s+='<details class="all-evidence"'+disclosureAttrs('hyp:'+x.id+':evidence')+'><summary>全部 '+evAll.length+' 条证据 ›</summary><ul class="evs">'+evAll.slice().reverse().map(evLi).join('')+'</ul></details>';}
@@ -2508,7 +2510,7 @@ function rememberView(view){
   };
 }
 function render(force=false){
-  if(ai.request&&route==='ai'&&!force)return;
+  if((ai.request&&route==='ai'||chat.request&&route==='chat')&&!force)return;
   ai.texts.clear();
   const view = $('#view'), previous = rememberView(view);
   syncLabel();
@@ -2518,7 +2520,7 @@ function render(force=false){
   if (!form && route === 'week'){ const k = ui.weekKey || weekStart(dayKey()); const w = S.weeks[k]; form = { type:'week', key:k, data:drafts['week:' + k] ? clone(drafts['week:' + k]) : (w ? clone(w) : { dir:'', said:['','',''], did:['','',''], was:'', saw:'' }), dirty:false }; }
   let html;
   if (form){ html = ({ morning:fMorning, evening:fEvening, min:fMin, capture:fCapture, week:fWeek, event:fEvent, import:fImport })[form.type](); }
-  else { const V = { pred:vPred, review:vReview, hyps:vHyps, more:vMore, settings:vSettings, ai:vAI }; html = (V[route] || vPred)(); }
+  else { const V = { pred:vPred, review:vReview, hyps:vHyps, more:vMore, settings:vSettings, ai:vAI, chat:vChat }; html = (V[route] || vPred)(); }
   const context = { route, type:form ? form.type : '', form, date:route === 'more' ? (moreLocation().day || ui.moreDay || ui.moreMonth) : sel };
   const samePage = renderedView && renderedView.route === context.route && renderedView.type === context.type;
   view.dataset.view = form ? form.type : route;
@@ -2527,13 +2529,13 @@ function render(force=false){
   view.innerHTML = html;
   updateReviewShell();
   prepareWriting();
-  aiPrepareShell();aiHydrate();
+  aiPrepareShell();aiHydrate();chatHydrate();chatRevealTarget();
   sizeCaptureInput();
   const excerpt=$('#review-excerpt'),toggle=$('.excerpt-toggle');if(excerpt&&toggle&&!excerpt.classList.contains('expanded'))toggle.hidden=excerpt.scrollHeight<=excerpt.clientHeight+1;
   if (samePage){
     if (renderedView.form === form && renderedView.date === context.date) previous.inputs.forEach(saved => {
       const el = findControl(view, saved.identity);
-      if (el && el.id !== 'copyArea' && !el.id.startsWith('ai-')){ el.value = saved.value; if (typeof saved.checked === 'boolean') el.checked = saved.checked; }
+      if (el && el.id !== 'copyArea' && !el.id.startsWith('ai-') && !el.id.startsWith('chat-') && !el.hasAttribute('data-chat-hyps')){ el.value = saved.value; if (typeof saved.checked === 'boolean') el.checked = saved.checked; }
     });
     const active = findControl(view, previous.focus);
     if (active && !active.disabled && active.getClientRects().length){
@@ -3229,7 +3231,7 @@ document.addEventListener('click', e => {
   const tab = e.target.closest('.tabs a');
   if (tab && tab.getAttribute('href') === (location.hash || '#review')){ e.preventDefault(); onHash(); return; }
   const el = e.target.closest('[data-act]'); if (!el) return;
-  const f = AI_ACTIONS[el.dataset.act] || A[el.dataset.act]; if (f){ e.preventDefault(); f(el, e); }
+  const f = CHAT_ACTIONS[el.dataset.act] || AI_ACTIONS[el.dataset.act] || A[el.dataset.act]; if (f){ e.preventDefault(); f(el, e); }
 });
 document.addEventListener('input', e => {
   const el = e.target; if (!form || !el.dataset || !el.dataset.f) return;
@@ -3241,13 +3243,13 @@ document.addEventListener('input', e => {
   if (el.dataset.live === 'hyp'){ const w = $('#w-hyp'); if (w) w.textContent = hypWarn((form.data.D.sit || '') + (form.data.D.rea || '')); }
 });
 const ROUTE_ALIAS = { today:'pred', log:'more' };   // links and icons saved from older versions
-function resolveRoute(hash){ const r = (hash || '#review').slice(1).split('?')[0], a = ROUTE_ALIAS[r] || r; return ['pred','capture','review','hyps','more','week','settings','ai'].includes(a) && (a !== 'ai' || AI_ON) ? a : 'review'; }
+function resolveRoute(hash){ const r = (hash || '#review').slice(1).split('?')[0], a = ROUTE_ALIAS[r] || r; return ['pred','capture','review','hyps','more','week','settings','ai','chat'].includes(a) && (!['ai','chat'].includes(a) || AI_ON) ? a : 'review'; }
 function onHash(){
   ai.hypRequest?.ctl.abort();
   if(ai.request){ai.request.stopped=true;ai.request.ctl.abort();}
   aiDialogClose();
   cancelDayMotion();cancelReviewMotion();closeHypActions(false);if($('#day-actions').open)$('#day-actions').close();
-  route = resolveRoute(location.hash); ui.cal = false;
+  route = resolveRoute(location.hash);if(!AI_ON&&location.hash.startsWith('#chat'))history.replaceState(null,'','#review');chatRoute(); ui.cal = false;
   if(route==='ai'){const k=new URLSearchParams(location.hash.split('?')[1]||'').get('day');ai.date=validDate(k)?k:sel;sel=ai.date;}
   const panel = moreLocation(), returning = route === 'more' && !panel.section && panel.day && ui.moreReturn && ui.moreReturn.day === panel.day;
   if (panel.day){ ui.moreDay = panel.day; ui.moreMonth = returning ? ui.moreReturn.month : panel.day.slice(0, 7); }
@@ -3307,6 +3309,7 @@ function updateKeyboard(){
   const keyboard = !!typing && (fullViewportHeight-window.innerHeight > 150 || (viewport && window.innerHeight-viewport.height > 150));
   document.body.classList.toggle('keyboard-open',keyboard);
   const inset=keyboard&&viewport&&Math.abs(viewport.scale-1)<.05?Math.max(0,innerHeight-viewport.height-viewport.offsetTop):0;document.documentElement.style.setProperty('--writing-pan',(keyboard&&viewport?viewport.offsetTop:0)+'px');document.documentElement.style.setProperty('--writing-inset',inset+'px');document.documentElement.style.setProperty('--writing-vh',(viewport?viewport.height:innerHeight)+'px');
+  if(route==='chat')chatSizeInput();
   if(keyboard&&isWriting())requestAnimationFrame(keepWritingVisible);
   if (keyboard && form && form.type === 'capture') requestAnimationFrame(keepCaptureSaveVisible);
 }
@@ -3316,6 +3319,7 @@ document.addEventListener('focusout',() => setTimeout(updateKeyboard,0));
 
 document.addEventListener('change', e => { if (e.target && e.target.id === 'importFile' && e.target.files && e.target.files[0]) importFile(e.target.files[0]); });
 route = resolveRoute(location.hash);
+if(!AI_ON&&location.hash.startsWith('#chat'))history.replaceState(null,'','#review');
 const initialMore = moreLocation();
 if (initialMore.day){ ui.moreDay = initialMore.day; ui.moreMonth = initialMore.day.slice(0, 7); }
 /* BOOT_APP */
