@@ -1,10 +1,11 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {timingSafeEqual} from 'node:crypto';
-import {validate,upstreamBody,CHAT_SYSTEM,createHandler} from './worker.mjs';
+import {validate,upstreamBody,createHandler} from './worker.mjs';
 crypto.subtle.timingSafeEqual=(a,b)=>timingSafeEqual(new Uint8Array(a),new Uint8Array(b));
 const input={messages:[{role:'user',content:'今天想聊点别的。'}]};
 const env={ACCESS_TOKEN:'mock',AI_API_KEY:'mock',ALLOWED_ORIGIN:'https://zwgcb.cn',AI_BASE_URL:'https://primary.example/api',MODEL_EXPLORE:'opus-test',EFFORT_EXPLORE:'xhigh',MAX_TOKENS_EXPLORE:'32000',AI_RATE_LIMITER:{limit:async()=>({success:true})}};
+const CHAT_SYSTEM=upstreamBody(env,'chat',validate(input,'chat')).system[0].text;
 const req=(body=input,path='/api/chat',headers={})=>new Request('https://zwgcb.cn'+path,{method:'POST',headers:{origin:env.ALLOWED_ORIGIN,authorization:'Bearer mock','content-type':'application/json',...headers},body:JSON.stringify(body)});
 test('chat validation accepts free conversation and strips non-contract fields',()=>{
  const v=validate({...input,secret:'drop',messages:[{...input.messages[0],ctx:{date:'2026-11-17'}}],hyps:[{no:12,text:'假设',ev:['private']}],materials:{date:'2026-11-17',review:'资料'}},'chat');
