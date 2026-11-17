@@ -19,10 +19,11 @@
 | `/api/summary` | POST | 当天所选材料的总结，转发 Anthropic SSE |
 | `/api/explore` | POST | 当天所选材料、可选总结及多轮对话，转发 Anthropic SSE |
 | `/api/hyps` | POST | 从对话提炼最多 3 条假设，返回经校验的 JSON |
+| `/api/chat` | POST | 独立自由聊天，可选假设清单 / 单次材料，转发 Anthropic SSE |
 
-全部接口验证 Bearer 访问口令。POST 必须带 `Origin: https://zwgcb.cn`；GET 若提供 Origin，也必须匹配。三者共用 Cloudflare 限流绑定：`limit: 10`、`period: 60`。该绑定是近似计数，验收按“10 秒内发起 30 次 POST，出现 429”判断。
+全部接口验证 Bearer 访问口令。POST 必须带 `Origin: https://zwgcb.cn`；GET 若提供 Origin，也必须匹配。所有接口共用 Cloudflare 限流绑定：`limit: 10`、`period: 60`。该绑定是近似计数，验收按“10 秒内发起 30 次 POST，出现 429”判断。
 
-请求体上限 64 KiB；只接受约定字段，客户端无法覆盖模型或输出上限。提示缓存标记位于系统提示、当天材料和最新一轮用户消息。缓存是否实际命中以中转站返回的 usage 为准。
+请求体上限 64 KiB，仅 `/api/chat` 为 256 KiB；只接受约定字段，客户端无法覆盖模型或输出上限。提示缓存标记位于系统提示、材料 / 假设清单和最新一轮用户消息。缓存是否实际命中以中转站返回的 usage 为准。
 
 默认认证为 `x-api-key`。连接超时或 5xx 可在输出开始前切换备用节点；401、429 以及已经开始的输出不自动重发。连接限时 60 秒；流式输出空闲限时 120 秒。总结总时长 300 秒，探索 600 秒（连接、重试和输出共用同一总预算）。取消下游请求会取消上游。
 
@@ -40,7 +41,15 @@
 
 ## 本地测试
 
-`npm run test:worker`（包含 `worker.test.mjs` 和 `hyps.test.mjs`）
+`npm run test:worker`（包含 `worker.test.mjs`、`hyps.test.mjs` 和 `chat.test.mjs`）
+
+### 独立聊天接口
+
+`POST /api/chat` 接收 1–200 条 `{role,content}` 消息，最后一条必须为 user；可选 `hyps` 最多 300 条，只保留编号和文字；可选 `materials:{date,...}` 复用探索材料校验。默认不带当天记录。
+
+使用探索模型、力度、输出上限和 adaptive / summarized 思考设置，连接 / 空闲 / 总时长分别为 60 / 120 / 600 秒。CHAT_SYSTEM 是模块内部常量（不能导出字符串，否则 Workers 会把它误当处理器入口）。系统、第一条用户消息前的假设清单、最后一条用户正文加缓存标记；当次材料放在最后一条用户正文前。资料中的 `<` 转义，并明确不执行资料里的指令。
+
+模型输出 hyp / pred / ev / ask 的纯文本标记。Worker 原样转发 SSE，不解析或保存聊天文本；前端负责安全呈现、用户点击后的写入与来源关联。规则及本机真实测试数字见 `docs/chat-acceptance.md`。
 
 ### 提炼假设接口
 
