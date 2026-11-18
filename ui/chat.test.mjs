@@ -1,4 +1,5 @@
 import {test} from 'node:test';
+import {validate,upstreamBody} from '../worker/worker.mjs';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import vm from 'node:vm';
@@ -7,7 +8,7 @@ function setup(fetcher=async()=>{throw Error('unexpected fetch');}){
  let seq=12,id=0;const document=new EventTarget();document.visibilityState='visible';
  const S={days:{},hyps:{h12:{id:'h12',no:12,text:'在只写第一步时，我可能会更早开始。',ev:[{id:'old',note:'旧证据'}]}},meta:{}};
  const b={document,window:new EventTarget(),navigator:{onLine:true},location:{origin:'http://localhost',hostname:'localhost',hash:'#chat'},history:{replaceState(_a,_b,hash){b.location.hash=hash;}},localStorage:{getItem:()=>null},$:s=>s==='#ai-confirm'?{addEventListener(){}}:null,ui:{},uiPrefs:{},drafts:{},S,route:'chat',mode:'test',newId:()=>String(++id),clone:structuredClone,saveDrafts:()=>true,saveUIPrefs(){},needReady:()=>true,render(){},toast(){},esc:s=>String(s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('"','&quot;'),dayKey:()=> '2026-11-17',ymd:d=>d.toISOString().slice(0,10),addDays:()=> '2026-11-18',validDate:s=>/^\d{4}-\d{2}-\d{2}$/.test(s||'')&&!isNaN(new Date(s))&&new Date(s).toISOString().startsWith(s),sameText:(a,c)=>a.replace(/[\s。]/g,'')===c.replace(/[\s。]/g,''),hypText:h=>h.text,getDay:d=>structuredClone(S.days[d]||{date:d,preds:[]}),makeHyp:o=>({...o,id:String(++id),no:++seq,status:'test',ev:[]}),put:async(c,k,v)=>{S[c][k]=structuredClone(v);},remove:async(c,k)=>{delete S[c][k];},fetch:fetcher,AbortController,AbortSignal,TextEncoder,TextDecoder,URLSearchParams,performance,setTimeout:(f,ms)=>{const t=setTimeout(f,ms);t.unref();return t;},clearTimeout,requestAnimationFrame:()=>0,cancelAnimationFrame(){}};
- vm.createContext(b);vm.runInContext(src+';globalThis.api={chat,ai,chatParse,chatNewDoc,chatSend,chatAddCard,chatUndoCard,chatCardHTML,chatSourceLabel,chatStats,chatSave,chatLoad,chatDraft,CHAT_ACTIONS};',b);b.api.ai.token='mock-access';b.api.chat.doc=b.api.chatNewDoc();return b;
+ vm.createContext(b);vm.runInContext(src+';globalThis.api={chat,ai,chatParse,chatNewDoc,chatSend,chatAddCard,chatUndoCard,chatCardHTML,chatMessagesHTML,chatSourceLabel,chatStats,chatSave,chatLoad,chatDraft,CHAT_ACTIONS};',b);b.api.ai.token='mock-access';b.api.chat.doc=b.api.chatNewDoc();return b;
 }
 const events=(text,stop='end_turn')=>[{type:'content_block_delta',delta:{type:'thinking_delta',thinking:'PRIVATE_THOUGHT'}},{type:'content_block_delta',delta:{type:'text_delta',text}},{type:'message_delta',delta:{stop_reason:stop},usage:{output_tokens:70}},{type:'message_stop'}];
 function stream(ev){const bytes=new TextEncoder().encode(ev.map(e=>'data: '+JSON.stringify(e)+'\r\n\r\n').join(''));return new Response(new ReadableStream({start(c){for(let i=0;i<bytes.length;i+=5)c.enqueue(bytes.slice(i,i+5));c.close();}}),{headers:{'content-type':'text/event-stream'}});}
@@ -45,7 +46,7 @@ test('unknown evidence target is disabled and never writes',async()=>{
 test('chat sends raw markers and only opted context, autosaves text but never thoughts',async()=>{
  const sent=[],text='<hyp>在只做五分钟时，我可能会更快开始。</hyp>';const b=setup(async(_u,o)=>{sent.push(JSON.parse(o.body));return stream(events(text));});
  await b.api.chatSend('虚构第一轮');const id=b.api.chat.doc.id;assert.equal(sent[0].materials,undefined);assert.equal(sent[0].hyps[0].ev,undefined);assert.equal(Object.keys(b.S.meta).length,1);assert.ok(!JSON.stringify(b.S).includes('PRIVATE_THOUGHT'));
- b.api.chat.attachment={date:'2026-11-17',materials:{review:'选中记录'}};await b.api.chatSend('第二轮');assert.equal(sent[1].messages[1].content,text);assert.equal(sent[1].materials.review,'选中记录');assert.equal(b.S.meta['chat:'+id].messages[2].ctx.date,'2026-11-17');assert.equal(b.api.chat.attachment,null);
+ b.api.chat.attachment={date:'2026-11-17',materials:{review:'选中记录'}};await b.api.chatSend('第二轮');assert.equal(sent[1].messages[1].content,text);assert.equal(sent[1].messages[2].ctx.materials.review,'选中记录');assert.equal(b.S.meta['chat:'+id].messages[2].ctx.date,'2026-11-17');assert.equal(b.api.chat.attachment,null);
  b.uiPrefs.chatHyps=false;await b.api.chatSend('第三轮');assert.equal(sent[2].materials,undefined);assert.equal(sent[2].hyps,undefined);assert.ok(!JSON.stringify(b.drafts).includes('PRIVATE_THOUGHT'));
 });
 test('truncated and interrupted replies survive, oversized input never leaves browser',async()=>{
@@ -54,4 +55,37 @@ test('truncated and interrupted replies survive, oversized input never leaves br
 });
 test('failed local writes roll back target and preserve recoverable draft',async()=>{
  const b=setup();b.mode='local';b.lsRead=()=>({hyps:{},meta:{}});const d=reply(b,'<hyp>在压力大时，我可能会更晚开始。</hyp>');await b.api.chatAddCard('1:0');assert.equal(Object.keys(b.S.hyps).length,1);assert.ok(b.drafts['chat:'+d.id]);assert.match(b.api.chat.error,/没有保存成功/);
+});
+test('three local sends preserve the original snapshot and only cache the system and final user text',async()=>{
+ const requests=[],wire=[],env={MODEL_EXPLORE:'mock',MAX_TOKENS_EXPLORE:'32000'};
+ const b=setup(async(_url,o)=>{const raw=JSON.parse(o.body);requests.push(raw);wire.push(upstreamBody(env,'chat',validate(raw,'chat')));return stream(events('虚构回复'));});
+ const attachment={date:'2026-11-17',materials:{review:'蓝卡片 <旧记录>'}};
+ b.api.chat.attachment=attachment;
+ for(const [i,q] of ['第一次','第二次','第三次'].entries()){
+   await b.api.chatSend(q);attachment.materials.review='已经变化';
+   const raw=requests[i],body=wire[i];assert.equal(raw.messages[0].ctx.materials.review,'蓝卡片 <旧记录>');
+   assert.ok(raw.messages.slice(1).every(m=>!m.ctx));assert.equal(raw.messages.length,2*i+1);
+   const blocks=body.messages.flatMap(m=>m.content);assert.equal(blocks.filter(v=>v.text.startsWith('<materials>')).length,1);
+   assert.match(body.messages[0].content[0].text,/^<materials>/);assert.ok(body.messages[0].content[0].text.includes('\\u003c旧记录>'));
+   assert.equal(body.messages[0].content.at(-1).text,'第一次');assert.equal(blocks.filter(v=>v.text.startsWith('<hypotheses>')).length,1);
+   assert.match(body.messages.at(-1).content.at(-2).text,/^<hypotheses>/);assert.equal(blocks.at(-1).text,q);
+   assert.deepEqual([...body.system,...blocks].filter(v=>v.cache_control),[body.system[0],blocks.at(-1)]);
+ }
+ const id=b.api.chat.doc.id;assert.equal(b.S.meta['chat:'+id].messages[0].ctx.materials.review,'蓝卡片 <旧记录>');
+ b.api.chat.doc.messages[0].ctx.materials.review='字'.repeat(90000);await b.api.chatSend('第四次');assert.equal(requests.length,3);assert.match(b.api.chat.error,/太长/);
+});
+test('chat HTML renders imported dates, identifiers, labels and roles as inert text',()=>{
+ const b=setup(),d=reply(b,'<pred date="2026-11-18">测试</pred>'),sample='<em>样本</em>';
+ d.messages[0].ctx={date:'2026-'+sample};d.cards['1:0']={status:'added',type:'pred',ref:{date:'2026-'+sample}};
+ d.messages.push({role:'other" '+sample,content:sample});let html=b.api.chatMessagesHTML();
+ assert.ok(!html.includes(sample));assert.ok(!html.includes('other"'));assert.ok(html.includes('&lt;em>'));
+ d.cards['1:0']={status:'added',type:'hyp',ref:{no:sample}};html=b.api.chatMessagesHTML();assert.ok(!html.includes(sample));
+});
+test('stream draft checkpoints are one second apart and final reply is flushed',async()=>{
+ let now=0;const checkpoints=[],b=setup(async()=>{let i=0;return new Response(new ReadableStream({pull(c){
+   now+=100;const e=i<25?{type:'content_block_delta',delta:{type:'text_delta',text:'甲'}}:{type:'message_stop'};
+   c.enqueue(new TextEncoder().encode('data: '+JSON.stringify(e)+'\n\n'));if(++i===26)c.close();
+ }},{highWaterMark:0}),{headers:{'content-type':'text/event-stream'}});});
+ b.performance={now:()=>now};b.saveDrafts=()=>{const r=b.api.chat.request,d=b.drafts['chat:'+b.api.chat.doc.id];if(r&&d)checkpoints.push([now,!!r.finishedAt,d.doc.messages.at(-1).content.length]);return true;};
+ await b.api.chatSend('虚构限频检查');assert.deepEqual(checkpoints,[[1000,false,10],[2000,false,20],[2600,true,25]]);
 });

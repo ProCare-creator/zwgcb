@@ -56,6 +56,7 @@ export function validate(body, mode){
     if(!object(body)||!Array.isArray(body.messages)||body.messages.length<1||body.messages.length>200)invalid();
     const turns=body.messages.map(m=>{if(!object(m)||!['user','assistant'].includes(m.role)||typeof m.content!=='string'||!m.content.trim())invalid();return {role:m.role,content:m.content};});
     if(turns.at(-1).role!=='user')invalid();
+    body.messages.forEach((m,i)=>{if(m.ctx?.materials!==undefined){if(m.role!=='user')invalid();turns[i].ctx=validate({date:m.ctx.date,materials:m.ctx.materials},'summary');}});
     const result={messages:turns};
     if(body.hyps!==undefined){if(!Array.isArray(body.hyps)||body.hyps.length>300)invalid();result.hyps=body.hyps.map(h=>{if(!object(h)||!Number.isSafeInteger(h.no)||h.no<1||typeof h.text!=='string'||!h.text.trim())invalid();return {no:h.no,text:h.text};});}
     if(body.materials!==undefined){if(!object(body.materials))invalid();const {date,...material}=body.materials;result.materials=validate({date,materials:material},'summary');}
@@ -126,9 +127,10 @@ export function upstreamBody(env, mode, input){
   if(mode==='chat'){
     const escaped=x=>JSON.stringify(x).replace(/</g,'\\u003c');
     const turns=input.messages.map((m,i)=>({role:m.role,content:[i===input.messages.length-1?cacheText(m.content):{type:'text',text:m.content}]}));
-    const firstUser=turns.find(m=>m.role==='user');
-    if(input.hyps)firstUser.content.unshift(cacheText('<hypotheses>\n'+escaped(input.hyps)+'\n</hypotheses>'));
-    if(input.materials)turns.at(-1).content.unshift({type:'text',text:'<materials>\n'+escaped(input.materials)+'\n</materials>'});
+    // Older clients send a top-level attachment for the final turn.
+    input.messages.forEach((m,i)=>{const ctx=m.ctx||(i===turns.length-1?input.materials:null);if(ctx)turns[i].content.unshift({type:'text',text:'<materials>\n'+escaped(ctx)+'\n</materials>'});});
+    if(input.hyps)turns.at(-1).content.splice(-1,0,{type:'text',text:'<hypotheses>\n'+escaped(input.hyps)+'\n</hypotheses>'});
+
     const date=ms=>new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Shanghai',year:'numeric',month:'2-digit',day:'2-digit'}).format(ms);
     return {model,max_tokens:max,stream:true,thinking:{type:'adaptive',display:'summarized'},...(['low','medium','high','xhigh','max'].includes(effort)?{output_config:{effort}}:{}),system:[cacheText(CHAT_SYSTEM+'\n今天：'+date(Date.now())+'；明天：'+date(Date.now()+86400000)+(input.hyps?'':'\n用户关闭了假设清单，不要生成 ev 标记。'))],messages:turns};
   }
