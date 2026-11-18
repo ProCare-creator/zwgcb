@@ -1,11 +1,13 @@
 /* AI UI is embedded in index.html; no external runtime script or real-key mock. */
 // AI only runs on the Cloudflare site (and local previews). Elsewhere (GitHub Pages) there is no
 // /api backend, so the page must never show the entry, ask for the access token or call /api.
-const AI_ON=location.origin==='https://zwgcb.cn'||['localhost','127.0.0.1'].includes(location.hostname);
+const accountAdmin=accountUser?.role==='admin';
 const AI_ERRORS={bad_request:'这次没发出去，刷新后再试。',unauthorized:'访问口令不对，请在这里重新输入。',forbidden:'这次没发出去，刷新后再试。',too_large:'内容太长了，少勾选几项再试。',rate_limited:'点得太快了，等一分钟。',quota_exceeded:'今天的 AI 额度用完了，明天再试。',upstream_limited:'AI 额度用完或请求太频繁，稍后再试。',upstream_error:'AI 服务暂时连不上。',timeout:'等太久了，可能是网络慢。',not_configured:'AI 尚未完成配置。',offline:'需要联网后才能和 Claude 聊一聊。'};
 const AI_GROUPS=[['review','当天复盘'],['preds','预测'],['caps','随手记'],['events','单件复盘'],['archives','对话存档'],['hyps','当天关联的假设']];
 const ai={sessions:new Map(),date:null,token:'',needsToken:false,models:null,request:null,pending:null,confirm:null,texts:new Map(),diag:null,authBusy:false,authMessage:'',settingsEdit:false,hypResults:new Map(),hypRequest:null};
 try{ai.token=JSON.parse(localStorage.getItem('zwgcb-ai')||'{}').token||'';}catch{}
+const AI_ON=accountHost&&(accountAdmin||(!accountUser&&!!ai.token));
+if(accountHost&&!AI_ON)document.documentElement?.classList.add('journal-no-ai');
 function aiSession(k=ai.date){
  if(!ai.sessions.has(k)){
   const saved=drafts['ai-explore:'+k]||{},messages=Array.isArray(saved.messages)?saved.messages.filter(m=>['user','assistant'].includes(m.role)&&typeof m.content==='string'):[];
@@ -90,7 +92,7 @@ function aiExploreView(s){
 }
 function vAI(){
  if(!ai.date){const k=new URLSearchParams(location.hash.split('?')[1]||'').get('day');ai.date=validDate(k)?k:sel;}const s=aiSession();aiHypRoute(s);
- return '<div class="ai-page"><div class="ai-tabs" role="tablist" aria-label="聊天方式">'+[['summary','总结'],['explore','探索']].map(([key,label])=>'<button type="button" role="tab" aria-selected="'+(s.tab===key)+'" data-act="aiTab" data-v="'+key+'">'+label+'</button>').join('')+'</div>'+(!navigator.onLine?'<p class="ai-error" role="status">需要联网。已有内容仍可阅读。</p>':'')+(!ai.token||ai.needsToken?aiTokenCard():'')+(ai.request&&ai.request.mode!==s.tab?'<p class="fine">'+(ai.request.mode==='summary'?'总结':'探索')+'正在生成 <button type="button" class="linkbtn" data-act="aiStop">停止</button></p>':'')+(s.tab==='summary'?aiSummaryView(s):aiExploreView(s))+'</div>';
+ return '<div class="ai-page"><div class="ai-tabs" role="tablist" aria-label="聊天方式">'+[['summary','总结'],['explore','探索']].map(([key,label])=>'<button type="button" role="tab" aria-selected="'+(s.tab===key)+'" data-act="aiTab" data-v="'+key+'">'+label+'</button>').join('')+'</div>'+(!navigator.onLine?'<p class="ai-error" role="status">需要联网。已有内容仍可阅读。</p>':'')+((!accountAdmin&&!ai.token)||ai.needsToken?aiTokenCard():'')+(ai.request&&ai.request.mode!==s.tab?'<p class="fine">'+(ai.request.mode==='summary'?'总结':'探索')+'正在生成 <button type="button" class="linkbtn" data-act="aiStop">停止</button></p>':'')+(s.tab==='summary'?aiSummaryView(s):aiExploreView(s))+'</div>';
 }
 function aiPrepareShell(){
  const active=route==='ai';document.body.classList.toggle('ai-mode',active);$('#ai-shell').hidden=!active;if(!active)return;
@@ -102,13 +104,13 @@ function aiDiagnostics(){
  const rows=[['接口',d.endpoint],['HTTP 状态',d.status??'未收到响应'],['耗时',(d.elapsed/1000).toFixed(1)+' 秒'],['收到结束事件',d.ended?'是':'否'],['收到思考内容',d.thinking?'是':'否'],['结束原因',d.stopReason||'未提供'],['力度是否生效',d.effort==='applied'?'已应用（applied）':d.effort==='dropped'?'中转站拒绝，已降级（dropped）':'未提供 / 未设置'],['input_tokens',d.input_tokens??'未提供'],['output_tokens',d.output_tokens??'未提供'],['cache_read_input_tokens',d.cache_read_input_tokens??'未提供'],['实际节点',d.node==='primary'?'主节点':d.node==='backup'?'备用节点':'未提供 / 未调用'],['发生跳转',d.redirected?'是':'否'],['跳转后的域名',d.redirected?aiDomain(d.domain):'—']];
  return '<dl class="ai-diagnostics">'+rows.map(([label,value])=>'<dt>'+label+'</dt><dd>'+esc(value)+'</dd>').join('')+'</dl><p class="fine">只存在内存，刷新即清空；不进入导出或同步。</p>';
 }
-function aiSettings(){if(!AI_ON)return '<section class="card" id="settings-ai"><h2 class="stage">AI</h2><p class="fine">AI 只在 zwgcb.cn 上可用。这个网址不会请求访问口令，也不会连接 AI 接口。</p></section>';return '<section class="card" id="settings-ai"><h2 class="stage">AI</h2><p class="fine">'+(ai.models?'总结：'+esc(ai.models.summary)+'<br>探索：'+esc(ai.models.explore):'模型：测试连接后显示')+'</p><div class="row"><button type="button" class="btn ghost sm" data-act="aiEditToken">修改口令</button><button type="button" class="btn ghost sm" data-act="aiHealth"'+(ai.authBusy?' disabled':'')+'>'+(ai.authBusy?'正在测试…':'测试连接')+'</button></div>'+(ai.settingsEdit?aiTokenCard():ai.authMessage?'<p class="fine" role="status">'+esc(ai.authMessage)+'</p>':'')+foldHTML('ai:diagnostic','ai-diagnostic','诊断信息',aiDiagnostics(),{close:'收起诊断信息'})+'</section>';}
+function aiSettings(){if(!AI_ON&&accountHost)return '';if(!AI_ON)return '<section class="card" id="settings-ai"><h2 class="stage">AI</h2><p class="fine">AI 只在 zwgcb.cn 上可用。这个网址不会请求访问口令，也不会连接 AI 接口。</p></section>';return '<section class="card" id="settings-ai"><h2 class="stage">AI</h2><p class="fine">'+(ai.models?'总结：'+esc(ai.models.summary)+'<br>探索：'+esc(ai.models.explore):'模型：测试连接后显示')+'</p><div class="row"><button type="button" class="btn ghost sm" data-act="aiEditToken">修改口令</button><button type="button" class="btn ghost sm" data-act="aiHealth"'+(ai.authBusy?' disabled':'')+'>'+(ai.authBusy?'正在测试…':'测试连接')+'</button></div>'+(ai.settingsEdit?aiTokenCard():ai.authMessage?'<p class="fine" role="status">'+esc(ai.authMessage)+'</p>':'')+foldHTML('ai:diagnostic','ai-diagnostic','诊断信息',aiDiagnostics(),{close:'收起诊断信息'})+'</section>';}
 function aiNewDiagnostic(endpoint){return ai.diag={endpoint,status:null,elapsed:0,ended:false,thinking:false,stopReason:null,effort:null,input_tokens:null,output_tokens:null,cache_read_input_tokens:null,node:null,redirected:false,domain:null};}
 function aiReadHeaders(d,r){d.status=r.status;const effort=r.headers.get('x-ai-effort');d.effort=['applied','dropped','not_requested'].includes(effort)?effort:null;const node=r.headers.get('x-ai-node');d.node=['primary','backup'].includes(node)?node:null;d.redirected=r.headers.get('x-ai-redirected')==='true';d.domain=d.redirected?aiDomain(r.headers.get('x-ai-redirect-domain')):null;}
 function aiReadUsage(d,usage){if(!usage)return;['input_tokens','output_tokens','cache_read_input_tokens'].forEach(key=>{if(Number.isFinite(usage[key])&&usage[key]>=0)d[key]=usage[key];});}
 async function aiHealth(saveToken=false){
  if(!AI_ON||ai.authBusy||ai.request||ai.hypRequest)return;if(!navigator.onLine){ai.authMessage=AI_ERRORS.offline;aiRender();return;}
- const value=saveToken?($('#ai-token')?.value||'').trim():ai.token;if(!value){ai.settingsEdit=true;ai.needsToken=true;ai.authMessage='请先输入访问口令。';aiRender();return;}
+ const value=saveToken?($('#ai-token')?.value||'').trim():ai.token;if(!value&&!accountAdmin){ai.settingsEdit=true;ai.needsToken=true;ai.authMessage='请先输入访问口令。';aiRender();return;}
  ai.authBusy=true;ai.authMessage='';const d=aiNewDiagnostic('/api/health'),start=performance.now();aiRender();
  try{
   const r=await fetch('/api/health',{headers:{Authorization:'Bearer '+value},cache:'no-store',signal:AbortSignal.timeout(20000)});aiReadHeaders(d,r);
@@ -137,7 +139,7 @@ function aiPrepare(mode){
  if(!navigator.onLine){s[mode+'Error']=AI_ERRORS.offline;aiRender();return;}
  if(mode==='explore'&&!s.input.trim()&&!s.retry){s.exploreError='写下一点想法，再发给 Claude。';aiRender();$('#ai-question')?.focus();return;}
  if(mode==='explore'&&(s.tokens>=30000||s.messages.length>=58)){s.exploreError='这轮内容已经很长了，保存后开新一轮吧。';aiRender();return;}
- if(!ai.token||ai.needsToken){ai.pending={date:s.date,mode};ai.needsToken=true;aiRender();$('#ai-token')?.focus();return;}
+ if((!accountAdmin&&!ai.token)||ai.needsToken){ai.pending={date:s.date,mode};ai.needsToken=true;aiRender();$('#ai-token')?.focus();return;}
  const ctx=aiComposeContext(s);if(!aiHasMaterial(ctx.materials)){aiShowConsent(mode);return;}
  if(s.consent!==aiSignature(s,ctx)){aiShowConsent(mode);return;}
  aiRun(mode,s,ctx);
@@ -264,7 +266,7 @@ function aiHypChat(id){
 }
 function aiHypConsent(id){
  if(!AI_ON||ai.request||ai.hypRequest||ai.authBusy)return;const chat=aiHypChat(id);if(!chat)return;
- if(!ai.token||ai.needsToken){ai.pending={mode:'hyps',chatId:id,date:chat.date};ai.needsToken=true;aiRender();$('#ai-token')?.focus();return;}
+ if((!accountAdmin&&!ai.token)||ai.needsToken){ai.pending={mode:'hyps',chatId:id,date:chat.date};ai.needsToken=true;aiRender();$('#ai-token')?.focus();return;}
  if(!navigator.onLine){toast(AI_ERRORS.offline);return;}aiShowConsent('hyps',chat);
 }
 function aiHypConsentDialog(chat){
@@ -302,7 +304,7 @@ async function aiHypAdd(el){
   row.text=text;row.added={id:h.id,no:h.no};delete row.edit;delete row.pendingHyp;
  }catch{row.error='没有保存成功，请保留页面并重试。';}finally{row.saving=false;aiRender();}
 }
-function aiHypSourceLabel(h){const src=h.src;return src?.type==='ai'&&validDate(src.date)&&typeof src.chatId==='string'?'<button type="button" class="linkbtn fine" data-act="aiHypSource" data-id="'+esc(h.id)+'">来自 '+src.date.slice(5).replace('-','/')+' 的对话</button>':'';}
+function aiHypSourceLabel(h){if(!AI_ON)return '';const src=h.src;return src?.type==='ai'&&validDate(src.date)&&typeof src.chatId==='string'?'<button type="button" class="linkbtn fine" data-act="aiHypSource" data-id="'+esc(h.id)+'">来自 '+src.date.slice(5).replace('-','/')+' 的对话</button>':'';}
 function aiHypRoute(s){
  const id=new URLSearchParams(location.hash.split('?')[1]||'').get('chat');if(!id||ai.sourceHash===location.hash)return;ai.sourceHash=location.hash;s.tab='explore';
  const exists=(S.days[s.date]?.ai?.explores||[]).some(x=>x.id===id);if(exists){setDisclosure('ai:history:'+s.date,true);ai.jumpChat=id;}else toast('来源对话已删除或不在这台设备上。');

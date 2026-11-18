@@ -4,7 +4,7 @@ const disk={db:null,backupUntil:0,persistent:'查询中',notice:''};
 function blankCols(){return Object.fromEntries(COLS.map(c=>[c,Object.create(null)]));}
 function openJournal(){
   return new Promise((resolve,reject)=>{
-    const req=indexedDB.open('zwgcb',1);
+    const req=indexedDB.open(accountUser?'zwgcb-u-'+accountUser.id:'zwgcb',1);
     let blocked=false;
     req.onblocked=()=>{blocked=true;reject(Error('blocked'));};
     req.onupgradeneeded=()=>{req.result.createObjectStore('docs');req.result.createObjectStore('control');};
@@ -109,7 +109,7 @@ async function startJournal(){
   await convertChatDrafts();ready=true;refresh();migrateHyps();
 }
 function diskInfo(){
-  if(!AI_ON)return '';
+  if(!accountHost)return '';
   let count=0,bytes=0;const enc=new TextEncoder();
   for(const c of COLS)for(const v of Object.values(S[c])){count++;bytes+=enc.encode(JSON.stringify(v)).length;}
   const size=bytes<1024?bytes+' B':bytes<1048576?(bytes/1024).toFixed(1)+' KiB':(bytes/1048576).toFixed(2)+' MiB';

@@ -679,6 +679,7 @@ to{transform:translateY(0);opacity:1}}
 .writing-mode #toast{bottom:calc(80px + var(--writing-inset,0px))}
 /* AI_CSS_START */
 /* AI_CSS_END */
+.journal-no-ai [data-act="copy"],.journal-no-ai [data-act="copyEvent"],.journal-no-ai [data-act="summaryCopy"]{display:none!important}
 </style>
 </head>
 <body>
@@ -728,8 +729,9 @@ to{transform:translateY(0);opacity:1}}
 <div id="view-status" class="sr-status" role="status" aria-live="polite" aria-atomic="true"></div>
 
 <script>
-(() => {
+(async () => {
 'use strict';
+/* ACCOUNT_BOOT */
 /* ---------- constants ---------- */
 const KINDS = { avoid:'最可能拖着不做的事', change:'最有可能做出改变的事', emotion:'最可能让我情绪起伏的', specific:'具体预测' };
 const SRC = { morning:'当天写', late:'当天写', eve:'前晚出题', chat:'聊天加入' };
@@ -1009,7 +1011,7 @@ async function useLocal(){
   mode = 'local';
   const l = lsRead();
   if (l){ const n = {}; COLS.forEach(c => { n[c] = (l[c] && typeof l[c] === 'object') ? l[c] : {}; }); S = n; }
-  if(AI_ON)await convertChatDrafts();
+  if(accountHost)await convertChatDrafts();
   ready = true; refresh(); migrateHyps();
 }
 function startCloud(db, uid){
@@ -1084,7 +1086,7 @@ function saveFile(filename, data){
 async function init(){
   dlNs = { save:({ filename, data }) => saveFile(filename, data) };
   requestPersistence();
-  if(AI_ON){render();await startJournal();}else useLocal();
+  if(accountHost){render();await startJournal();}else useLocal();
   syncLater(1500);
   window.addEventListener('online', () => syncLater(800));
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') syncLater(1000); else if (syncDirty) syncNow(); });
@@ -1808,7 +1810,7 @@ function openHypActions(id){
 }
 function vSettings(){
   const theme=['light','dark'].includes(uiPrefs.theme)?uiPrefs.theme:'system';
-  return copyBox()+'<h1 class="h">设置</h1><div class="settings-stack">'+syncCard()+dataCard()+aiSettings()+chatSettings()+'<section class="card"><h2 class="stage">显示</h2><div class="theme-options" role="group" aria-label="主题">'+[['system','跟随系统'],['light','浅色'],['dark','深色']].map(([v,label])=>'<button type="button" data-act="theme" data-v="'+v+'" aria-pressed="'+(theme===v)+'">'+label+'</button>').join('')+'</div></section><section class="card"><h2 class="stage">关于</h2><p class="fine">自我观察本 · <span class="mono">'+APP_VERSION+'</span></p><p class="fine">记录默认只存在这台设备。开启云端同步后，会额外保存一份加密备份；本机草稿与显示偏好不进入同步。</p></section></div>';
+  return copyBox()+'<h1 class="h">设置</h1><div class="settings-stack">'+accountCard()+(accountUser?'':syncCard())+dataCard()+aiSettings()+chatSettings()+'<section class="card"><h2 class="stage">显示</h2><div class="theme-options" role="group" aria-label="主题">'+[['system','跟随系统'],['light','浅色'],['dark','深色']].map(([v,label])=>'<button type="button" data-act="theme" data-v="'+v+'" aria-pressed="'+(theme===v)+'">'+label+'</button>').join('')+'</div></section><section class="card"><h2 class="stage">关于</h2><p class="fine">自我观察本 · <span class="mono">'+APP_VERSION+'</span></p><p class="fine">记录默认只存在这台设备。开启云端同步后，会额外保存一份加密备份；本机草稿与显示偏好不进入同步。</p></section></div>';
 }
 
 /* ---------- forms ---------- */
@@ -2532,7 +2534,7 @@ function rememberView(view){
   };
 }
 function render(force=false){
-  if(!ready&&AI_ON){$('#view').innerHTML='<p class="muted" role="status">'+(disk.notice||'正在打开记录本…')+'</p>';return;}
+  if(!ready&&accountHost){$('#view').innerHTML='<p class="muted" role="status">'+(disk.notice||'正在打开记录本…')+'</p>';return;}
   if((ai.request&&route==='ai'||chat.request&&route==='chat')&&!force)return;
   ai.texts.clear();
   const view = $('#view'), previous = rememberView(view);
@@ -2835,6 +2837,7 @@ function buildDocx(docXml){
   ], 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
 }
 
+/* ACCOUNT_UI */
 /* AI_UI_START */
 /* AI_UI_END */
 

@@ -4,8 +4,8 @@
   "scripts": {
     "build:page": "node tools/build-page.mjs",
     "build": "node build.mjs",
-    "test:worker": "node --test worker/worker.test.mjs worker/hyps.test.mjs worker/chat.test.mjs",
-    "test:ui": "node --test ui/ai.test.mjs ui/chat.test.mjs"
+    "test:worker": "node --test worker/worker.test.mjs worker/hyps.test.mjs worker/chat.test.mjs worker/accounts.test.mjs",
+    "test:ui": "node --test ui/ai.test.mjs ui/chat.test.mjs ui/account-crypto.test.mjs"
   },
   "devDependencies": {
     "terser": "5.51.2"

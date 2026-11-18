@@ -3,6 +3,9 @@ import {gzipSync} from 'node:zlib';
 import {minify} from 'terser';
 const root=new URL('../',import.meta.url);
 let html=await fs.readFile(new URL('ui/app.html',root),'utf8');
+for(const [tag,files] of [['/* ACCOUNT_BOOT */',['account-boot.js']],['/* ACCOUNT_UI */',['account-crypto.js','accounts.js']]]){
+ const chunks=await Promise.all(files.map(f=>fs.readFile(new URL('ui/'+f,root),'utf8')));html=html.replace(tag,()=>chunks.join('\n'));
+}
 const storage=await fs.readFile(new URL('ui/storage.js',root),'utf8');
 html=html.replace('/* LOCAL_DOCUMENT_STORE */',()=>storage);
 const js=(await fs.readFile(new URL('ui/ai.js',root),'utf8'))+'\n'+(await fs.readFile(new URL('ui/chat.js',root),'utf8')),css=(await fs.readFile(new URL('ui/ai.css',root),'utf8'))+'\n'+(await fs.readFile(new URL('ui/chat.css',root),'utf8'));

@@ -12,6 +12,16 @@
 - 构建脚本 `build.mjs` 由 wrangler 在部署时运行，仅复制页面、Service Worker、manifest 和图标到 `dist/`。
 - `.env*`、`.dev.vars*`、`.wrangler/`、`dist/` 已忽略。
 
+## 6b：账号数据库（验收分支，尚未上线）
+
+本地验收使用独立 D1，见[账号验收记录](../docs/accounts-6b.md)。正式上线前需在 Cloudflare 创建或选定 `zwgcb-vault`，给 Worker 添加 D1 绑定 `VAULT`，在 Wrangler 的 `d1_databases` 中填写该数据库实际 ID、`database_name: "zwgcb-vault"` 和 `migrations_dir: "worker/migrations"`。先对正确的库应用 `0001_accounts.sql`，确认成功后再部署应用。不要用本机测试库的占位 ID。未配置时账号接口返回 503，不会自动初始化或覆盖生产库。
+
+在控制台添加独立 Secret `AUTH_PEPPER`（至少 32 个随机字节，安全备份，不随意更换）。本机测试秘密只写入忽略的 `.dev.vars`，不打印。首个管理员以现有 `ACCESS_TOKEN` 注册；由于旧口令曾被分享，建议**在开放注册之前**更换它，再由所有者先完成管理员注册。等所有者在手机上验证账号登录和 AI、明确要求停用旧口令后，才删除过渡路径。
+
+账号接口：`GET /api/auth/salt?u=`、`GET /api/auth/me`，以及 `POST /api/auth/{register,login,logout,keys,password,recover/start,recover/finish}`。`keys` 要求当前会话和当前密码派生凭证，只返回包裹后的钥匙供改密。管理接口：`GET /api/admin/overview`、`POST /api/admin/{invite,revoke,user}`，仅管理员可用。所有 POST 校验 Origin。邀请码占用和注册由同一 SQL 写入及触发器完成；凭证更新与会话撤销使用 [D1 批量事务](https://developers.cloudflare.com/d1/worker-api/d1-database/#batch)。
+
+AI 接口（含 health）要求管理员会话，或在没有登录会话时使用过渡期旧 Bearer 口令，否则返回 403。有效普通用户会话不能用 Bearer 提升权限。绑定账号库后，管理员 Cookie 与旧口令共用同一管理员额度。6b 不提供云端记录同步接口。
+
 ## 接口行为
 
 | 接口 | 方法 | 行为 |

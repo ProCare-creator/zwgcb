@@ -160,19 +160,26 @@ function relayBytes(body,upstream,client,idleMs,totalMs){
   });
 }
 
+import {accounts,accountSession,withRenewal} from './accounts.mjs';
 export function createHandler({fetcher=(...args)=>fetch(...args),timeoutMs=60000,idleMs=120000,streamMs}={}){
   return async function handle(request,env){
     const path=new URL(request.url).pathname;
     if(path!=='/api'&&!path.startsWith('/api/'))return env.ASSETS.fetch(request);
+    if(path.startsWith('/api/auth/')||path.startsWith('/api/admin/'))return accounts(request,env,readBody);
     const mode=path==='/api/summary'?'summary':path==='/api/explore'?'explore':path==='/api/chat'?'chat':path==='/api/hyps'?'hyps':path==='/api/health'?'health':null;
     if(!mode)return error(404,'not_found');
     const method=mode==='health'?'GET':'POST';
     if(request.method!==method)return error(405,'method_not_allowed',{'allow':method});
     const origin=request.headers.get('origin');
     if((method==='POST'||origin)&&origin!==env.ALLOWED_ORIGIN)return error(403,'forbidden');
-    if(!await authorized(request,env.ACCESS_TOKEN))return error(401,'unauthorized');
+    let session;try{session=await accountSession(request,env);}catch{return error(503,'accounts_unavailable');}
+    if(session?session.user.role!=='admin':!await authorized(request,env.ACCESS_TOKEN))return error(403,'forbidden');
+    return withRenewal(await serveAI(),session);
+    async function serveAI(){
     if(!env.AI_RATE_LIMITER)return error(503,'not_configured');
-    const {success}=await env.AI_RATE_LIMITER.limit({key:'journal-owner'});
+    let owner=session?.user.id;
+    if(!owner&&env.VAULT){try{owner=(await env.VAULT.prepare("SELECT id FROM users WHERE role='admin' AND disabled=0").first())?.id;}catch{return error(503,'accounts_unavailable');}}
+    const {success}=await env.AI_RATE_LIMITER.limit({key:owner||'journal-owner'});
     if(!success)return error(429,'rate_limited',{'retry-after':'60'});
     if(mode==='health')return json({ok:true,models:{summary:env.MODEL_SUMMARY,explore:env.MODEL_EXPLORE}});
     let input;
@@ -247,6 +254,7 @@ export function createHandler({fetcher=(...args)=>fetch(...args),timeoutMs=60000
       }finally{clearTimeout(timer);}
     }
     return error(timedOut?504:502,timedOut?'timeout':'upstream_error');
+    }
   };
 }
 export default {fetch:createHandler()};

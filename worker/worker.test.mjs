@@ -52,7 +52,7 @@ test('routes, methods, origin, authorization and health avoid upstream calls',as
  assert.equal((await handler(req('/api/unknown'),e)).status,404);
  assert.equal((await handler(new Request('https://zwgcb.cn/api/summary'),e)).status,405);
  for(const origin of ['', 'https://evil.example'])assert.equal((await handler(req('/api/summary',body,{headers:{origin}}),e)).status,403);
- for(const authorization of ['', 'mock-access','Bearer wrong'])assert.equal((await handler(req('/api/summary',body,{headers:{authorization}}),e)).status,401);
+ for(const authorization of ['', 'mock-access','Bearer wrong'])assert.equal((await handler(req('/api/summary',body,{headers:{authorization}}),e)).status,403);
  const r=await handler(new Request('https://zwgcb.cn/api/health',{headers:{authorization:'Bearer mock-access'}}),e);
  assert.deepEqual(await r.json(),{ok:true,models:{summary:'summary-test',explore:'explore-test'}});
  assert.equal(r.headers.get('access-control-allow-origin'),null);

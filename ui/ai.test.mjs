@@ -8,7 +8,7 @@ const date='2026-11-13';
 const ctx={selection:{review:true},materials:{review:'虚构记录：今天写了十分钟。',preds:[],caps:[],hyps:[]}};
 function setup(fetcher=async()=>{throw Error('unexpected request');},wake){
  const document=new EventTarget();document.visibilityState='visible';
- const box={document,window:new EventTarget(),navigator:{onLine:true,wakeLock:wake},location:{origin:'http://localhost',hostname:'localhost'},localStorage:{getItem:()=>null},$:()=>({addEventListener(){}}),newId:()=> 'test-id',drafts:{},uiPrefs:{},saveDrafts:()=>true,clone:structuredClone,fetch:fetcher,AbortController,AbortSignal,TextEncoder,TextDecoder,performance,setTimeout,clearTimeout,requestAnimationFrame:fn=>setTimeout(fn,0),cancelAnimationFrame:clearTimeout,route:'ai',mode:'test',hm:()=> '12:00',S:{days:{[date]:{date}}},getDay:()=>box.S.days[date],put:async()=>{}};
+ const box={accountHost:true,accountUser:{role:'admin'},document,window:new EventTarget(),navigator:{onLine:true,wakeLock:wake},location:{origin:'http://localhost',hostname:'localhost'},localStorage:{getItem:()=>null},$:()=>({addEventListener(){}}),newId:()=> 'test-id',drafts:{},uiPrefs:{},saveDrafts:()=>true,clone:structuredClone,fetch:fetcher,AbortController,AbortSignal,TextEncoder,TextDecoder,performance,setTimeout,clearTimeout,requestAnimationFrame:fn=>setTimeout(fn,0),cancelAnimationFrame:clearTimeout,route:'ai',mode:'test',hm:()=> '12:00',S:{days:{[date]:{date}}},getDay:()=>box.S.days[date],put:async()=>{}};
  vm.createContext(box);vm.runInContext(source+`;aiRender=()=>{};aiPaint=()=>{};globalThis.api={ai,aiSession,aiRun,aiStreamEvent,aiNewDiagnostic,aiKeepAwake,aiSaveDraft,aiRunHyps,aiHypAdd,aiHypEdit,aiHypCards};`,box);
  box.api.ai.date=date;box.api.ai.token='mock-access';return box;
 }

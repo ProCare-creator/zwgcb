@@ -11,7 +11,7 @@ const model=(hyps=[proposal])=>({stop_reason:'end_turn',content:[{type:'thinking
 const response=data=>new Response(JSON.stringify(data),{headers:{'content-type':'application/json'}});
 test('hyps shares auth, origin, size and rate guards without inference',async()=>{
  const h=createHandler({fetcher:()=>{throw Error('must not infer');}});
- assert.equal((await h(req(input,{authorization:'Bearer wrong'}),env)).status,401);
+ assert.equal((await h(req(input,{authorization:'Bearer wrong'}),env)).status,403);
  assert.equal((await h(req(input,{origin:'https://wrong.example'}),env)).status,403);
  assert.equal((await h(req(),{...env,AI_RATE_LIMITER:{limit:async()=>({success:false})}})).status,429);
  assert.equal((await h(req({...input,messages:[{role:'user',content:'x'.repeat(65536)}]}),env)).status,413);
