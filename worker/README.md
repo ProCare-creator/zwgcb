@@ -7,6 +7,7 @@
 - `wrangler.jsonc` 只包含公开配置：节点、认证方式、模型、输出上限、Origin 和限流。
 - `AI_API_KEY`、`ACCESS_TOKEN` 由使用者在 Cloudflare 控制台添加为 **Secret**。不放进 `vars` 或会提交的文件。本机真实测试仅允许使用仓库根目录的 `.dev.vars`（已忽略），不输出密钥。
 - **正式发布 = 推送到 `main`**。Worker 已连接 Cloudflare Workers Builds（仓库 `ProCare-creator/zwgcb`，生产分支 `main`，Build command 留空，Deploy command `npx wrangler deploy --keep-vars`，Preview builds 关闭）。推送到 `main` 后 Cloudflare 自动构建并部署到 zwgcb.cn；其他分支不会部署。没验收的改动不要合并到 `main`。
+- **生产版本标签**：每次合并到 `main` 上线，先核对 Cloudflare 生产构建成功且构建记录中的提交就是本次发布的提交，再以该提交的 `APP_VERSION` 创建带说明的 Git 标签。推送标签后，核对远端标签指向同一提交。构建未成功不打标签；同名标签若已指向其他提交，不移动或覆盖。
 - 需要手动部署时（例如 Workers Builds 出问题），在本机用 Windows 用户环境变量中的 `CLOUDFLARE_API_TOKEN` 执行 `npx wrangler deploy --keep-vars`；不要把 Token 的值写进命令、脚本或仓库。
 - 构建脚本 `build.mjs` 由 wrangler 在部署时运行，仅复制页面、Service Worker、manifest 和图标到 `dist/`。
 - `.env*`、`.dev.vars*`、`.wrangler/`、`dist/` 已忽略。

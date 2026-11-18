@@ -804,7 +804,7 @@ body.has-chat .tabs .in{display:grid;grid-template-columns:repeat(6,minmax(0,1fr
 (()=>{"use strict";const t={avoid:"最可能拖着不做的事",change:"最有可能做出改变的事",emotion:"最可能让我情绪起伏的",specific:"具体预测"};const e={morning:"当天写",late:"当天写",eve:"前晚出题",chat:"聊天加入"};const a={hit:"对",
 miss:"落空",half:"一半"};const s=["焦虑","烦躁","委屈","失落","羞愧","愤怒","紧张","无力","不耐烦","兴奋","被认可","平静"];const n=["胸闷","肩颈紧","心跳快","胃里发紧","脸发热","坐不住","想逃开","没力气","呼吸浅","放松"]
 ;const i=["预测落空","不像自己","拖延","冲突","纠结","高光"];const o=["太累","忘了","不想面对","没时间","其他"];const r=["充实","好好","努力","认真","尽量","高效","顺利","不错","加油","开心","积极","争取","适当","多一点","少一点","状态好"]
-;const c=["情绪最强的一刻","最不像自己的一刻","最有劲的一刻","别的时刻"];const l="review-archive/v1";const d=true;const u="v6.12.1";const p="zwgcb-data-v1",f="zwgcb-drafts-v1"
+;const c=["情绪最强的一刻","最不像自己的一刻","最有劲的一刻","别的时刻"];const l="review-archive/v1";const d=true;const u="v6.13.0";const p="zwgcb-data-v1",f="zwgcb-drafts-v1"
 ;const h=t=>document.querySelector(t);const m=t=>String(t==null?"":t).replace(/[&<>"']/g,t=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[t]))
 ;const y=t=>String(t).padStart(2,"0");const v=t=>t.getFullYear()+"-"+y(t.getMonth()+1)+"-"+y(t.getDate());const g=t=>{const e=t.split("-").map(Number)
 ;return new Date(e[0],e[1]-1,e[2])};const b=(t=new Date)=>v(new Date(t.getTime()-4*36e5));const w=(t,e)=>{const a=g(t);a.setDate(a.getDate()+e);return v(a)};const k=t=>{
