@@ -1004,11 +1004,12 @@ async function syncNow(){
   if (syncAgain){ syncAgain = false; syncLater(1500); }
 }
 
-function useLocal(){
+async function useLocal(){
   if (mode === 'cloud') return;
   mode = 'local';
   const l = lsRead();
   if (l){ const n = {}; COLS.forEach(c => { n[c] = (l[c] && typeof l[c] === 'object') ? l[c] : {}; }); S = n; }
+  if(AI_ON)await convertChatDrafts();
   ready = true; refresh(); migrateHyps();
 }
 function startCloud(db, uid){

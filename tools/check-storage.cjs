@@ -2,7 +2,7 @@
 const {chromium}=require(process.env.PLAYWRIGHT_PATH||'playwright');
 const {execFileSync}=require('node:child_process'),fs=require('node:fs'),path=require('node:path'),http=require('node:http'),assert=require('node:assert/strict');
 const root=path.join(__dirname,'..'),out=process.env.QA_OUTPUT||require('node:os').tmpdir();
-const old=execFileSync('git',['show','f07610c:index.html'],{cwd:root,maxBuffer:2e6}).toString();
+const old=execFileSync('git',['show','97d55e7:index.html'],{cwd:root,maxBuffer:2e6}).toString();
 const current=fs.readFileSync(path.join(root,'index.html'),'utf8');
 let html=old;
 const server=http.createServer((req,res)=>{res.writeHead(200,{'content-type':'text/html;charset=utf-8','cache-control':'no-store'});res.end(html);});

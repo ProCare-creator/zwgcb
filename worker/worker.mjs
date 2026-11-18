@@ -129,7 +129,7 @@ export function upstreamBody(env, mode, input){
     const turns=input.messages.map((m,i)=>({role:m.role,content:[i===input.messages.length-1?cacheText(m.content):{type:'text',text:m.content}]}));
     // Older clients send a top-level attachment for the final turn.
     input.messages.forEach((m,i)=>{const ctx=m.ctx||(i===turns.length-1?input.materials:null);if(ctx)turns[i].content.unshift({type:'text',text:'<materials>\n'+escaped(ctx)+'\n</materials>'});});
-    if(input.hyps)turns.at(-1).content.splice(-1,0,{type:'text',text:'<hypotheses>\n'+escaped(input.hyps)+'\n</hypotheses>'});
+    if(input.hyps)turns.at(-1).content.push({type:'text',text:'<hypotheses>\n'+escaped(input.hyps)+'\n</hypotheses>'});
 
     const date=ms=>new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Shanghai',year:'numeric',month:'2-digit',day:'2-digit'}).format(ms);
     return {model,max_tokens:max,stream:true,thinking:{type:'adaptive',display:'summarized'},...(['low','medium','high','xhigh','max'].includes(effort)?{output_config:{effort}}:{}),system:[cacheText(CHAT_SYSTEM+'\n今天：'+date(Date.now())+'；明天：'+date(Date.now()+86400000)+(input.hyps?'':'\n用户关闭了假设清单，不要生成 ev 标记。'))],messages:turns};

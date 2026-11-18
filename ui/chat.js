@@ -3,13 +3,39 @@ const chat={doc:null,input:'',attachment:null,request:null,error:'',thoughts:new
 const chatDateLabel=k=>String(k??'').slice(5).replace('-','/');
 const chatDocs=()=>Object.entries(S.meta).filter(([k,v])=>k.startsWith('chat:')&&v&&typeof v.id==='string'&&Array.isArray(v.messages)).map(([,v])=>v).sort((a,b)=>String(b.updated).localeCompare(String(a.updated)));
 function chatNewDoc(){const now=new Date().toISOString();return {id:newId(),title:'新对话',created:now,updated:now,messages:[],cards:{}};}
+// Persist the authoritative part of a legacy draft before dropping its full copy.
+async function convertChatDrafts(){
+ for(const [key,d] of Object.entries(drafts)){
+  if(!key.startsWith('chat:')||!d?.doc)continue;
+  const old=d.doc,saved=S.meta[key];
+  try{
+   if(!saved||old.updated>=saved.updated)await chatPut('meta',key,old);
+   const rest={input:d.input||'',attachment:d.attachment||null};
+   if(rest.input||rest.attachment)drafts[key]=rest;else delete drafts[key];
+   if(!saveDrafts())drafts[key]=d;
+  }catch{ /* Keep the original recoverable until the store accepts it. */ }
+ }
+}
 function chatLoad(){
  const id=new URLSearchParams(location.hash.split('?')[1]||'').get('id');if(chat.doc&&(!id||chat.doc.id===id))return chat.doc;
  const saved=id&&S.meta['chat:'+id],draft=id&&drafts['chat:'+id];
  chat.doc=clone(draft?.doc&&(!saved||draft.doc.updated>=saved.updated)?draft.doc:saved)||chatNewDoc();chat.doc.cards||={};
+ if(!saved&&draft&&id)chat.doc.id=id;
+ const i=draft?.index,reply=draft?.reply;
+ if(reply?.role==='assistant'&&Number.isInteger(i)&&i>=0&&i===chat.doc.messages.length&&chat.doc.messages[i-1]?.at===draft.userAt)chat.doc.messages.push(clone(reply));
  chat.input=draft?.input||'';chat.attachment=draft?.attachment||null;chat.error=id&&!saved&&!draft?'这次对话已删除或不在这台设备上。':'';chat.follow=true;chat.scrollTop=0;return chat.doc;
 }
-function chatDraft(doc=chat.doc,flush=false){if(!doc)return;const r=chat.request?.doc===doc?chat.request:null;if(r&&!flush){const now=performance.now();if(now-r.lastDraft<1000)return;r.lastDraft=now;}const active=doc===chat.doc;drafts['chat:'+doc.id]={doc:clone(doc),input:active?chat.input:drafts['chat:'+doc.id]?.input||'',attachment:active?clone(chat.attachment):drafts['chat:'+doc.id]?.attachment||null};if(chat.request?.doc===doc){const m=drafts['chat:'+doc.id].doc.messages[chat.request.index];if(m&&!r.finishedAt)m.partial=true;}saveDrafts();if(active&&route==='chat'&&!new URLSearchParams(location.hash.split('?')[1]||'').has('id'))history.replaceState(null,'','#chat?id='+encodeURIComponent(doc.id));}
+function chatDraft(doc=chat.doc,flush=false){
+ if(!doc)return;const r=chat.request?.doc===doc?chat.request:null;
+ if(r&&!flush){const now=performance.now();if(now-r.lastDraft<1000)return;r.lastDraft=now;}
+ const key='chat:'+doc.id,d=drafts[key]||{},active=doc===chat.doc;
+ if(active){d.input=chat.input;d.attachment=clone(chat.attachment);}
+ if(r&&!r.preparing){
+  const reply=doc.messages[r.index];if(reply?.content){d.index=r.index;d.userAt=doc.messages[r.index-1]?.at;d.reply=clone(reply);if(!r.finishedAt)d.reply.partial=true;}
+ }
+ if(d.input||d.attachment||d.reply||d.doc)drafts[key]=d;else delete drafts[key];
+ saveDrafts();if(active&&route==='chat'&&!new URLSearchParams(location.hash.split('?')[1]||'').has('id'))history.replaceState(null,'','#chat?id='+encodeURIComponent(doc.id));
+}
 async function chatPut(col,id,value){const previous=S[col][id];try{await put(col,id,value);if(mode==='local'&&JSON.stringify(lsRead()?.[col]?.[id])!==JSON.stringify(S[col][id]))throw Error('local-save');}catch(e){if(previous)S[col][id]=previous;else delete S[col][id];throw e;}}
 async function chatRemove(col,id){
  const old=S[col][id],mark=mode==='local'?readDel()[col+'/'+id]:null;
@@ -19,7 +45,11 @@ async function chatRemove(col,id){
 function chatSave(doc){
  doc.updated=new Date().toISOString();const snapshot=clone(doc),id=doc.id;
  const p=(chat.queues.get(id)||Promise.resolve()).catch(()=>{}).then(()=>chatPut('meta','chat:'+id,snapshot));chat.queues.set(id,p);
- return p.then(()=>{const draft=drafts['chat:'+id];if(draft?.doc?.updated<=snapshot.updated){if(draft.input)draft.doc=clone(snapshot);else delete drafts['chat:'+id];saveDrafts();}if(chat.doc?.id===id&&chat.input)chatDraft(doc);});
+ return p.then(()=>{const k='chat:'+id,d=drafts[k];if(!d)return;
+  if(d.doc&&d.doc.updated<=snapshot.updated)delete d.doc;
+  if(d.reply&&JSON.stringify(snapshot.messages[d.index])===JSON.stringify(d.reply)){delete d.reply;delete d.index;delete d.userAt;}
+  if(!d.input&&!d.attachment&&!d.reply&&!d.doc)delete drafts[k];saveDrafts();
+ });
 }
 // Parse complete standalone lines. Incomplete streaming tags remain buffered;
 // malformed, oversized and unclosed final tags are rendered verbatim as text.
@@ -105,9 +135,17 @@ async function chatSend(text=chat.input,retry=false){
  const turns=(retry?doc.messages:[...doc.messages,user]).map(m=>({role:m.role,content:m.content,...(m.role==='user'&&m.ctx?{ctx:{date:m.ctx.date,materials:m.ctx.materials}}:{})})).filter(m=>m.content.trim());
  const payload={messages:turns,...(uiPrefs.chatHyps===false?{}:{hyps:Object.values(S.hyps).map(h=>({no:h.no,text:hypText(h)}))})};
  if(turns.length>200||new TextEncoder().encode(JSON.stringify(payload)).length>256*1024){chat.error='这次对话太长了，开一个新对话继续';render(true);return;}
- if(!retry){doc.messages.push(user);chat.attachment=null;if(doc.title==='新对话')doc.title=[...question].slice(0,20).join('');}chat.input='';chat.error='';chat.follow=true;
- history.replaceState(null,'','#chat?id='+encodeURIComponent(doc.id));chatDraft(doc);
+ const originalTitle=doc.title,previousInput=chat.input,selectedAttachment=chat.attachment;
+ if(!retry){doc.messages.push(user);if(doc.title==='新对话')doc.title=[...question].slice(0,20).join('');}
+ chat.error='';chat.follow=true;
+ history.replaceState(null,'','#chat?id='+encodeURIComponent(doc.id));
  const r={doc,index:doc.messages.length,ctl:new AbortController(),text:'',thinking:'',model:'',start:performance.now(),lastDraft:performance.now(),ended:false,stopReason:null};chat.request=r;
+ r.preparing=true;
+ // Commit the user turn (and any restored partial reply) before requesting a new reply.
+ try{await chatSave(doc);}catch{
+  if(!retry){doc.messages.pop();doc.title=originalTitle;}chat.input=question;chat.error='聊天没存成功，请保留页面后重试。';chat.request=null;chatDraft(doc);render(true);return;
+ }
+ if(chat.input===previousInput)chat.input='';if(!retry&&chat.attachment===selectedAttachment)chat.attachment=null;chatDraft(doc,true);r.preparing=false;
  const reply={role:'assistant',content:'',at:new Date().toISOString()};doc.messages.push(reply);const diagnostic=aiNewDiagnostic('/api/chat');
  let outcome='error',timedOut=false;const timer=setTimeout(()=>{timedOut=true;r.ctl.abort();},660000),release=aiKeepAwake(r);render(true);
  try{
@@ -178,7 +216,7 @@ const CHAT_ACTIONS={
  chatRename(el){chatRename(el.dataset.id||chat.doc.id);},async chatRenameSave(el){const title=$('#chat-name').value.trim();if(!title)return;const doc=el.dataset.id===chat.doc?.id?chat.doc:clone(S.meta['chat:'+el.dataset.id]);if(!doc)return;doc.title=title;try{if(doc.messages.length)await chatSave(doc);$('#chat-dialog').close();render(true);}catch{toast('改名没有保存成功。');}},
  chatDelete(el){const d=$('#chat-dialog');$('#chat-list').close();d.innerHTML='<h2>删除这次对话？</h2><p>已加入的假设、预测和证据会保留。</p><button type="button" class="btn" data-act="chatDeleteConfirm" data-id="'+esc(el.dataset.id)+'">删除对话</button><button type="button" class="linkbtn" data-act="chatDialogClose">取消</button>';d.showModal();},
  async chatDeleteConfirm(el){if(chat.request?.doc.id===el.dataset.id){toast('请先停止生成。');return;}try{await chatRemove('meta','chat:'+el.dataset.id);delete drafts['chat:'+el.dataset.id];saveDrafts();if(chat.doc?.id===el.dataset.id)chat.doc=null;$('#chat-dialog').close();history.replaceState(null,'','#chat');render(true);}catch{toast('删除没存成功。');}},
- chatOptions,chatDialogClose(){$('#chat-dialog').close();},chatChooseDate(){const date=$('#chat-date').value;if(!validDate(date))return;$('#chat-dialog').close();aiShowConsent('chat',{date});},chatDetach(){chat.attachment=null;render(true);},
+ chatOptions,chatDialogClose(){$('#chat-dialog').close();},chatChooseDate(){const date=$('#chat-date').value;if(!validDate(date))return;$('#chat-dialog').close();aiShowConsent('chat',{date});},chatDetach(){chat.attachment=null;chatDraft();render(true);},
  chatEdit(el){const key=el.dataset.key;if(chat.busy.has(chat.doc.id+':'+key))return;chat.edits.set(chat.doc.id+':'+key,chatCardAt(key).text);render(true);},chatAdd(el){chatAddCard(el.dataset.key);},chatUndo(el){chatUndoCard(el.dataset.key);},
  chatCardJump(el){const state=chat.doc.cards[el.dataset.key];if(state)chatGoto(state.type,state.ref);},chatExisting(el){const card=chatCardAt(el.dataset.key),item=chatDuplicate(card);if(item)chatGoto(card.type,card.type==='pred'?{id:item.id,date:card.date}:{id:item.id});},
  chatSource(el){location.hash='#chat?id='+encodeURIComponent(el.dataset.chat)+'&msg='+el.dataset.msg;}

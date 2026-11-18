@@ -16,13 +16,13 @@ function openJournal(){
 async function backupFingerprint(raw){
   return Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(raw))),b=>b.toString(16).padStart(2,'0')).join('');
 }
-function readOrMigrate(db,wasPrimary,legacy,hash){
+function readOrMigrate(db,wasPrimary,legacy,hash,skipMerge=false){
   return new Promise((resolve,reject)=>{
     const tx=db.transaction(['control','docs'],'readwrite'),docs=tx.objectStore('docs'),ctl=tx.objectStore('control');
-    let marker,source,raw,count=0,seen=0,error;const cols=blankCols();
+    let marker,source,raw,count=0,seen=0,error,mergedCount=null;let cols=blankCols();
     const abort=e=>{error=e;tx.abort();};
     tx.onabort=()=>reject(error||tx.error||Error('aborted'));
-    tx.oncomplete=()=>resolve({cols,marker});
+    tx.oncomplete=()=>resolve({cols,marker,mergedCount});
     const read=ctl.get('primary');
     read.onsuccess=()=>{try{
       marker=read.result;
@@ -43,6 +43,18 @@ function readOrMigrate(db,wasPrimary,legacy,hash){
         if(!marker){
           if(seen!==count||raw!==localStorage.getItem(LS_KEY))throw Error('verify');
           marker={until:raw===null?0:Date.now()+30*86400000,hash};ctl.put(marker,'primary');
+        }else if(!skipMerge&&legacy!==null&&hash!==marker.hash){
+          const old=JSON.parse(legacy);
+          if(!old||typeof old!=='object'||Array.isArray(old)||COLS.some(c=>c in old&&(!old[c]||typeof old[c]!=='object'||Array.isArray(old[c]))))throw Error('invalid-backup');
+          const del=readDel(),next=mergeSnap({cols,del},{cols:old,del}).cols;
+          mergedCount=0;
+          for(const c of COLS)for(const id of new Set([...Object.keys(cols[c]),...Object.keys(next[c])])){
+            if(JSON.stringify(cols[c][id])===JSON.stringify(next[c][id]))continue;
+            if(Object.hasOwn(next[c],id))docs.put(next[c][id],[c,id]);else docs.delete([c,id]);
+            mergedCount++;
+          }
+          if(legacy!==localStorage.getItem(LS_KEY))throw Error('backup-changed');
+          cols=next;marker={...marker,hash,until:marker.until||Date.now()+30*86400000};ctl.put(marker,'primary');
         }
       }catch(e){abort(e);}};
     }catch(e){abort(e);}};
@@ -66,17 +78,21 @@ async function startJournal(){
   try{
     wasPrimary=localStorage.getItem(PRIMARY_KEY)==='1';
     db=await openJournal();
-    const legacy=wasPrimary?null:localStorage.getItem(LS_KEY);
+    const legacy=localStorage.getItem(LS_KEY);
     const hash=legacy===null?null:await backupFingerprint(legacy);
-    const {cols,marker}=await readOrMigrate(db,wasPrimary,legacy,hash);
+    let result;
+    try{result=await readOrMigrate(db,wasPrimary,legacy,hash);}
+    catch(e){if(!wasPrimary)throw e;result=await readOrMigrate(db,true,legacy,hash,true);disk.notice='旧版页面的修改未合并，已保留旧存储，下次打开会重试。';}
+    const {cols,marker,mergedCount}=result;
+    if(mergedCount!==null)disk.notice='合并了旧版页面写入的 '+mergedCount+' 条修改。';
     S=cols;disk.db=db;mode='idb';
     try{localStorage.setItem(PRIMARY_KEY,'1');
       if(marker.until&&localStorage.getItem(LS_KEY)!==null){
         if(Date.now()<marker.until)disk.backupUntil=marker.until;
         else{
           const raw=localStorage.getItem(LS_KEY);
-          if(await backupFingerprint(raw)===marker.hash&&raw===localStorage.getItem(LS_KEY))localStorage.removeItem(LS_KEY);
-          else disk.notice='旧格式备份在迁移后有改动，已保留，不会自动删除。';
+          if(raw===legacy&&hash===marker.hash)localStorage.removeItem(LS_KEY);
+          else if(!disk.notice)disk.notice='旧格式备份有新改动，已保留，下次打开会重试。';
         }
       }
     }catch{/* IndexedDB remains authoritative even if localStorage is full. */}
@@ -88,9 +104,9 @@ async function startJournal(){
       if(raw!==null){const s=JSON.parse(raw);if(!s||typeof s!=='object'||Array.isArray(s)||COLS.some(c=>c in s&&(!s[c]||typeof s[c]!=='object'||Array.isArray(s[c]))))throw Error();}
     }catch{disk.notice='旧格式记录无法读取。原数据已保留，暂未开放写入，请检查浏览器存储后重试。';render();return;}
     disk.notice='IndexedDB 不可用或迁移未通过核对，继续使用原来的 localStorage。';
-    useLocal();return;
+    await useLocal();return;
   }
-  ready=true;refresh();migrateHyps();
+  await convertChatDrafts();ready=true;refresh();migrateHyps();
 }
 function diskInfo(){
   if(!AI_ON)return '';

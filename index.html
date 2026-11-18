@@ -812,8 +812,8 @@ const e=g(t);e.setDate(e.getDate()-(e.getDay()+6)%7);return v(e)};const x=t=>{co
 ;return+e[1]+"月"+ +e[2]+"日"};const D=t=>{const e=t.split("-");return e[1]+"·"+e[2]};const O=t=>"周"+"日一二三四五六"[g(t).getDay()]
 ;const C=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);const j=t=>t==null?t:JSON.parse(JSON.stringify(t));const q=t=>({date:t,preds:[],caps:[],evening:null,
 skip:null});const T=t=>j(S.days[t])||q(t);const _=t=>String(t.sit||"").trim().replace(/(的时候|时候|时)$/,"");const I=t=>String(t.rea||"").trim().replace(/^(我可能会|可能会)/,"")
-;const M=(t,e)=>"在"+_({sit:t})+"时，我可能会"+I({rea:e});const L=t=>t&&t.text&&String(t.text).trim()||M(t&&t.sit,t&&t.rea)
-;const N=t=>typeof t==="string"&&/^\d{4}-\d{2}-\d{2}$/.test(t)&&v(g(t))===t;const R=(t,e)=>{t=String(t||"");return t.length>e?t.slice(0,e)+"…":t};function H(t,e,a){
+;const M=(t,e)=>"在"+_({sit:t})+"时，我可能会"+I({rea:e});const N=t=>t&&t.text&&String(t.text).trim()||M(t&&t.sit,t&&t.rea)
+;const L=t=>typeof t==="string"&&/^\d{4}-\d{2}-\d{2}$/.test(t)&&v(g(t))===t;const R=(t,e)=>{t=String(t||"");return t.length>e?t.slice(0,e)+"…":t};function H(t,e,a){
 const s=e.split(".");let n=t;for(let t=0;t<s.length-1;t++){if(n[s[t]]==null||typeof n[s[t]]!=="object")n[s[t]]={};n=n[s[t]]}n[s[s.length-1]]=a}function P(t,e){
 return e.split(".").reduce((t,e)=>t==null?undefined:t[e],t)}let B=null;function U(t){const e=h("#toast");e.textContent=t;e.hidden=false;clearTimeout(B);B=setTimeout(()=>{
 e.hidden=true},3200)}function J(t){const e=t&&t.code;if(e==="quota_exceeded")return"存储空间满了，先在「记录」里导出一份备份。";if(e==="revoked"||e==="not_granted")return"这个页面暂时不能保存了，刷新试试。"
@@ -825,40 +825,46 @@ syncOff:false,syncChecking:false};let X={};try{X=JSON.parse(localStorage.getItem
 const a=indexedDB.open("zwgcb",1);let s=false;a.onblocked=()=>{s=true;e(Error("blocked"))};a.onupgradeneeded=()=>{a.result.createObjectStore("docs")
 ;a.result.createObjectStore("control")};a.onerror=()=>e(a.error);a.onsuccess=()=>{if(s){a.result.close();return}a.result.onversionchange=()=>a.result.close();t(a.result)}})}
 async function ot(t){return Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256",(new TextEncoder).encode(t))),t=>t.toString(16).padStart(2,"0")).join("")}
-function rt(t,e,a,s){return new Promise((n,i)=>{const o=t.transaction(["control","docs"],"readwrite"),r=o.objectStore("docs"),c=o.objectStore("control");let l,d,u,f=0,h=0,m
-;const y=nt();const v=t=>{m=t;o.abort()};o.onabort=()=>i(m||o.error||Error("aborted"));o.oncomplete=()=>n({cols:y,marker:l});const g=c.get("primary");g.onsuccess=()=>{try{
-l=g.result;if(!l){if(e)throw Error("primary-missing");u=a;d=u===null?{}:JSON.parse(u);if(!d||typeof d!=="object"||Array.isArray(d))throw Error("invalid-backup");for(const t of z){
-if(t in d&&(!d[t]||typeof d[t]!=="object"||Array.isArray(d[t])))throw Error("invalid-backup");for(const[e,a]of Object.entries(d[t]||{})){r.put(a,[t,e]);f++}}}const t=r.openCursor()
+function rt(t,e,a,s,n=false){return new Promise((i,o)=>{const r=t.transaction(["control","docs"],"readwrite"),c=r.objectStore("docs"),l=r.objectStore("control")
+;let d,u,f,h=0,m=0,y,v=null;let g=nt();const b=t=>{y=t;r.abort()};r.onabort=()=>o(y||r.error||Error("aborted"));r.oncomplete=()=>i({cols:g,marker:d,mergedCount:v})
+;const w=l.get("primary");w.onsuccess=()=>{try{d=w.result;if(!d){if(e)throw Error("primary-missing");f=a;u=f===null?{}:JSON.parse(f)
+;if(!u||typeof u!=="object"||Array.isArray(u))throw Error("invalid-backup");for(const t of z){
+if(t in u&&(!u[t]||typeof u[t]!=="object"||Array.isArray(u[t])))throw Error("invalid-backup");for(const[e,a]of Object.entries(u[t]||{})){c.put(a,[t,e]);h++}}}const t=c.openCursor()
 ;t.onsuccess=()=>{try{const e=t.result;if(e){const[t,a]=e.key;if(!z.includes(t)||typeof a!=="string")throw Error("unknown-key")
-;if(!l&&JSON.stringify(d[t]?.[a])!==JSON.stringify(e.value))throw Error("verify");y[t][a]=e.value;h++;e.continue();return}if(!l){
-if(h!==f||u!==localStorage.getItem(p))throw Error("verify");l={until:u===null?0:Date.now()+30*864e5,hash:s};c.put(l,"primary")}}catch(t){v(t)}}}catch(t){v(t)}}})}function ct(t){
-return new Promise((e,a)=>{const s=st.db.transaction("docs","readwrite"),n=s.objectStore("docs");s.oncomplete=e;s.onabort=()=>a(s.error||Error("aborted"));try{
+;if(!d&&JSON.stringify(u[t]?.[a])!==JSON.stringify(e.value))throw Error("verify");g[t][a]=e.value;m++;e.continue();return}if(!d){
+if(m!==h||f!==localStorage.getItem(p))throw Error("verify");d={until:f===null?0:Date.now()+30*864e5,hash:s};l.put(d,"primary")}else if(!n&&a!==null&&s!==d.hash){
+const t=JSON.parse(a);if(!t||typeof t!=="object"||Array.isArray(t)||z.some(e=>e in t&&(!t[e]||typeof t[e]!=="object"||Array.isArray(t[e]))))throw Error("invalid-backup")
+;const e=It(),n=Vt({cols:g,del:e},{cols:t,del:e}).cols;v=0;for(const t of z)for(const e of new Set([...Object.keys(g[t]),...Object.keys(n[t])])){
+if(JSON.stringify(g[t][e])===JSON.stringify(n[t][e]))continue;if(Object.hasOwn(n[t],e))c.put(n[t][e],[t,e]);else c.delete([t,e]);v++}
+if(a!==localStorage.getItem(p))throw Error("backup-changed");g=n;d={...d,hash:s,until:d.until||Date.now()+30*864e5};l.put(d,"primary")}}catch(t){b(t)}}}catch(t){b(t)}}})}
+function ct(t){return new Promise((e,a)=>{const s=st.db.transaction("docs","readwrite"),n=s.objectStore("docs");s.oncomplete=e;s.onabort=()=>a(s.error||Error("aborted"));try{
 for(const[e,a,s]of t){if(s===undefined)n.delete([e,a]);else n.put(s,[e,a])}}catch(t){s.abort();a(t)}})}async function lt(){try{
 st.persistent=navigator.storage?.persist?await navigator.storage.persist()?"已获准":"未获准":"浏览器不支持"}catch{st.persistent="未获准"}const t=h("#disk-persist")
-;if(t)t.textContent=st.persistent}async function dt(){let t,e=false;try{e=localStorage.getItem(at)==="1";t=await it();const a=e?null:localStorage.getItem(p)
-;const s=a===null?null:await ot(a);const{cols:n,marker:i}=await rt(t,e,a,s);S=n;st.db=t;F="idb";try{localStorage.setItem(at,"1");if(i.until&&localStorage.getItem(p)!==null){
-if(Date.now()<i.until)st.backupUntil=i.until;else{const t=localStorage.getItem(p)
-;if(await ot(t)===i.hash&&t===localStorage.getItem(p))localStorage.removeItem(p);else st.notice="旧格式备份在迁移后有改动，已保留，不会自动删除。"}}}catch{}}catch(a){if(t)t.close();if(e){
+;if(t)t.textContent=st.persistent}async function dt(){let t,e=false;try{e=localStorage.getItem(at)==="1";t=await it();const a=localStorage.getItem(p)
+;const s=a===null?null:await ot(a);let n;try{n=await rt(t,e,a,s)}catch(i){if(!e)throw i;n=await rt(t,true,a,s,true);st.notice="旧版页面的修改未合并，已保留旧存储，下次打开会重试。"}
+const{cols:i,marker:o,mergedCount:r}=n;if(r!==null)st.notice="合并了旧版页面写入的 "+r+" 条修改。";S=i;st.db=t;F="idb";try{localStorage.setItem(at,"1")
+;if(o.until&&localStorage.getItem(p)!==null){if(Date.now()<o.until)st.backupUntil=o.until;else{const t=localStorage.getItem(p)
+;if(t===a&&s===o.hash)localStorage.removeItem(p);else if(!st.notice)st.notice="旧格式备份有新改动，已保留，下次打开会重试。"}}}catch{}}catch(a){if(t)t.close();if(e){
 st.notice="本机数据库暂时打不开。请关闭其他标签页后重试；旧备份不会覆盖新记录。";render();return}try{const t=localStorage.getItem(p);if(t!==null){const e=JSON.parse(t)
 ;if(!e||typeof e!=="object"||Array.isArray(e)||z.some(t=>t in e&&(!e[t]||typeof e[t]!=="object"||Array.isArray(e[t]))))throw Error()}}catch{
-st.notice="旧格式记录无法读取。原数据已保留，暂未开放写入，请检查浏览器存储后重试。";render();return}st.notice="IndexedDB 不可用或迁移未通过核对，继续使用原来的 localStorage。";Xt();return}W=true;refresh();je()}function ut(){
-if(!ci)return"";let t=0,e=0;const a=new TextEncoder;for(const s of z)for(const n of Object.values(S[s])){t++;e+=a.encode(JSON.stringify(n)).length}
+st.notice="旧格式记录无法读取。原数据已保留，暂未开放写入，请检查浏览器存储后重试。";render();return}st.notice="IndexedDB 不可用或迁移未通过核对，继续使用原来的 localStorage。";await Xt();return}await ko();W=true;refresh();je()}
+function ut(){if(!ci)return"";let t=0,e=0;const a=new TextEncoder;for(const s of z)for(const n of Object.values(S[s])){t++;e+=a.encode(JSON.stringify(n)).length}
 const s=e<1024?e+" B":e<1048576?(e/1024).toFixed(1)+" KiB":(e/1048576).toFixed(2)+" MiB"
 ;return'<div id="disk-info"><p>本机存储：'+(F==="idb"?"IndexedDB":"localStorage")+" · "+t+" 条记录 · "+s+'</p><p class="fine">大小按记录内容计算。持久存储：<span id="disk-persist">'+st.persistent+"</span></p>"+(st.backupUntil?'<p class="fine">旧格式备份保留到 '+E(v(new Date(st.backupUntil)))+"，到期后首次打开时清理。</p>":"")+(st.notice?'<p class="warn">'+st.notice+"</p>":"")+"</div>"
 }function pt(){try{const t={savedAt:Date.now()};z.forEach(e=>{t[e]=S[e]});localStorage.setItem(p,JSON.stringify(t));return true}catch(t){return false}}function ft(){try{
 return JSON.parse(localStorage.getItem(p)||"null")}catch(t){return null}}function ht(t,e,a){const s=S[t][e];a=Object.assign({},a,{_t:Date.now()});S[t]=Object.assign({},S[t])
 ;S[t][e]=a;if(F==="cloud"){const s=t+"/"+e;const n=(et[s]||Promise.resolve()).catch(()=>{}).then(()=>tt.collection(t).doc(e).set(a));et[s]=n;return n.catch(t=>{U(J(t));throw t})}
-if(F==="idb")return ct([[t,e,a]]).then(()=>{Lt();yt()},n=>{if(S[t][e]===a){if(s===undefined)delete S[t][e];else S[t][e]=s}U("本机写入失败，请检查浏览器存储空间并重试。");throw n})
-;if(!pt())U("这个浏览器不允许保存，刷新后会丢失。");Lt();yt();return Promise.resolve()}let mt=false;function yt(){if(mt)return;mt=true;Promise.resolve().then(()=>{mt=false;refresh()})}
+if(F==="idb")return ct([[t,e,a]]).then(()=>{Nt();yt()},n=>{if(S[t][e]===a){if(s===undefined)delete S[t][e];else S[t][e]=s}U("本机写入失败，请检查浏览器存储空间并重试。");throw n})
+;if(!pt())U("这个浏览器不允许保存，刷新后会丢失。");Nt();yt();return Promise.resolve()}let mt=false;function yt(){if(mt)return;mt=true;Promise.resolve().then(()=>{mt=false;refresh()})}
 function vt(t,e){const a=S[t][e];S[t]=Object.assign({},S[t]);delete S[t][e];if(F==="cloud"){const a=t+"/"+e
 ;const s=(et[a]||Promise.resolve()).catch(()=>{}).then(()=>tt.collection(t).doc(e).delete());et[a]=s;return s.catch(t=>{U(J(t));throw t})}if(F==="idb")return ct([[t,e]]).then(()=>{
-const a=It();a[t+"/"+e]=Date.now();Mt(a);Lt();yt()},s=>{if(a!==undefined&&S[t][e]===undefined)S[t][e]=a;U("删除未保存，请重试。");throw s});const s=It();s[t+"/"+e]=Date.now();Mt(s);pt();Lt()
+const a=It();a[t+"/"+e]=Date.now();Mt(a);Nt();yt()},s=>{if(a!==undefined&&S[t][e]===undefined)S[t][e]=a;U("删除未保存，请重试。");throw s});const s=It();s[t+"/"+e]=Date.now();Mt(s);pt();Nt()
 ;yt();return Promise.resolve()}const gt=new Map;function bt(){clearTimeout(wt);const t=G?G.type+":"+G.key:null;try{localStorage.setItem(f,JSON.stringify(X))
 ;if(t&&X[t])gt.set(t,"草稿已存 "+x(new Date));vs();return true}catch(e){if(t)gt.set(t,"未存成功，请保留页面");vs();return false}}let wt=null;function kt(){if(G)gt.set(G.type+":"+G.key,"正在保存…")
 ;vs();clearTimeout(wt);wt=setTimeout(bt,400)}const xt="zwgcb-sync",St="zwgcb-del",Et="zwgcb-data.json";let Dt=null;try{Dt=JSON.parse(localStorage.getItem(xt)||"null")}catch(t){}
 let Ot=false,Ct=false,jt=null,qt=false,At=0;let Tt={ok:null,msg:"",at:null};function _t(){try{if(Dt)localStorage.setItem(xt,JSON.stringify(Dt));else localStorage.removeItem(xt)
 }catch(t){}}function It(){try{return JSON.parse(localStorage.getItem(St)||"{}")||{}}catch(t){return{}}}function Mt(t){try{localStorage.setItem(St,JSON.stringify(t))}catch(t){}}
-function Lt(){At++;qt=true;Nt()}function Nt(t){if(!d||!Dt||!Dt.token)return;clearTimeout(jt);jt=setTimeout(()=>Qt(),t||4e3)}const Rt=t=>{let e=""
+function Nt(){At++;qt=true;Lt()}function Lt(t){if(!d||!Dt||!Dt.token)return;clearTimeout(jt);jt=setTimeout(()=>Qt(),t||4e3)}const Rt=t=>{let e=""
 ;for(let a=0;a<t.length;a+=32768)e+=String.fromCharCode.apply(null,t.subarray(a,a+32768));return btoa(e)}
 ;const Ht=t=>Uint8Array.from(atob(String(t).replace(/\s/g,"")),t=>t.charCodeAt(0));async function Pt(t,e){
 const a=await crypto.subtle.importKey("raw",(new TextEncoder).encode(t),"PBKDF2",false,["deriveKey"]);return crypto.subtle.deriveKey({name:"PBKDF2",salt:e,iterations:2e5,
@@ -893,10 +899,10 @@ msg:"同步失败：同步密码和云端数据对不上。每台设备要填同
 ;const i=Vt(Yt(),e);if(i.changedLocal)await $t(i);if(!t.exists||i.changedRemote||a){const e=await Bt({cols:i.cols,del:i.del,at:Date.now()},a||Dt.pass)
 ;const s=await Wt(JSON.stringify(e),t.sha);if(s.conflict)continue}s=true}if(!s)throw{msg:"同步失败：另一台设备也在同步，稍后会自动再试。"};if(a){Dt.pass=a;if(Dt.newPass===a)delete Dt.newPass;_t()}
 if(At!==n)Ct=true;else qt=false;Gt(true,"");if(a)U("同步密码换好了，云端数据已经用新密码重新加密。其他设备也要改成新密码。")}catch(t){Gt(false,Kt(t))}Ot=false;if(V==="more"&&!G&&!Q.syncEdit&&Dt)render();if(Ct){
-Ct=false;Nt(1500)}}function Xt(){if(F==="cloud")return;F="local";const t=ft();if(t){const e={};z.forEach(a=>{e[a]=t[a]&&typeof t[a]==="object"?t[a]:{}});S=e}W=true;refresh();je()}
-function Zt(t,e){F="cloud";tt=t.doc("data/users/"+e+"/main");const a={},s={};const n=setTimeout(()=>{if(!z.every(t=>s[t])){K=true;ee()}},1e4);const i=()=>{if(z.every(t=>a[t])&&!W){
-W=true}if(z.every(t=>s[t])){clearTimeout(n);K=false;te().then(()=>je())}refresh()};const o=(t,e)=>e.onSnapshot(e=>{const n={};e.docs.forEach(t=>{if(t.exists)n[t.id]=t.data()})
-;S[t]=n;a[t]=true;if(!e.metadata.fromCache)s[t]=true;i()},e=>{clearTimeout(n);K=true;a[t]=true;s[t]=true;U(J(e));i()})
+Ct=false;Lt(1500)}}async function Xt(){if(F==="cloud")return;F="local";const t=ft();if(t){const e={};z.forEach(a=>{e[a]=t[a]&&typeof t[a]==="object"?t[a]:{}});S=e}if(ci)await ko()
+;W=true;refresh();je()}function Zt(t,e){F="cloud";tt=t.doc("data/users/"+e+"/main");const a={},s={};const n=setTimeout(()=>{if(!z.every(t=>s[t])){K=true;ee()}},1e4);const i=()=>{
+if(z.every(t=>a[t])&&!W){W=true}if(z.every(t=>s[t])){clearTimeout(n);K=false;te().then(()=>je())}refresh()};const o=(t,e)=>e.onSnapshot(e=>{const n={};e.docs.forEach(t=>{
+if(t.exists)n[t.id]=t.data()});S[t]=n;a[t]=true;if(!e.metadata.fromCache)s[t]=true;i()},e=>{clearTimeout(n);K=true;a[t]=true;s[t]=true;U(J(e));i()})
 ;o("days",tt.collection("days").orderBy("date","desc").limit(600));o("hyps",tt.collection("hyps"));o("weeks",tt.collection("weeks"));o("events",tt.collection("events"))
 ;o("archives",tt.collection("archives"));o("meta",tt.collection("meta"))}async function te(){if(Y)return;Y=true;const t=ft();if(!t)return;let e=0;for(const a of z){
 for(const s of Object.keys(t[a]||{})){if(!S[a][s]){try{await ht(a,s,t[a][s]);e++}catch(t){return}}}}try{localStorage.removeItem(p)}catch(t){}if(e)U("这台设备上之前的 "+e+" 条记录已同步。")}
@@ -909,8 +915,8 @@ const a=/\.docx$/.test(t)?"application/vnd.openxmlformats-officedocument.wordpro
 ;a.remove()},4e3);return{status:"saved"}};let i=null;try{i=new File([s],t,{type:a})}catch(t){}const o=!!(window.matchMedia&&window.matchMedia("(pointer: coarse)").matches)
 ;let r=false;if(o&&i&&navigator.share&&navigator.canShare){try{r=navigator.canShare({files:[i]})}catch(t){}}if(r){return navigator.share({files:[i],title:t}).then(()=>({
 status:"saved"}),t=>{if(t&&t.name==="AbortError")throw{code:"declined"};return n()})}return Promise.resolve(n())}async function se(){Z={save:({filename:t,data:e})=>ae(t,e)};lt()
-;if(ci){render();await dt()}else Xt();Nt(1500);window.addEventListener("online",()=>Nt(800));document.addEventListener("visibilitychange",()=>{
-if(document.visibilityState==="visible")Nt(1e3);else if(qt)Qt()});try{if(sessionStorage.getItem("zwgcb-updated")){sessionStorage.removeItem("zwgcb-updated")
+;if(ci){render();await dt()}else Xt();Lt(1500);window.addEventListener("online",()=>Lt(800));document.addEventListener("visibilitychange",()=>{
+if(document.visibilityState==="visible")Lt(1e3);else if(qt)Qt()});try{if(sessionStorage.getItem("zwgcb-updated")){sessionStorage.removeItem("zwgcb-updated")
 ;setTimeout(()=>U("已更新到新版本 "+u+"。"),400)}}catch(t){}}function ne(t,e){if(t>e)return"future";const a=S.days[t],s=ue(t).length+fe(t).length;if(!a)return s?"part":"none"
 ;if(a.evening)return a.evening.mode==="std"?"std":"min";if(a.skip)return"skip";if(a.preds&&a.preds.length||a.caps&&a.caps.length||s)return"part";return"none"}function ie(){
 let t=null;for(const e in S.days){const a=S.days[e];if(a.preds&&a.preds.some(t=>t.src!=="eve")||a.caps&&a.caps.length||a.evening||a.skip){if(!t||e<t)t=e}}return t}
@@ -939,13 +945,13 @@ if(!t)return null;const e=t.split("|"),a=S.days[e[0]],s=a&&(a.caps||[]).find(t=>
 const ve=t=>t&&t.no?"H"+t.no:"H?";function ge(t){let e=0;Object.values(t||{}).forEach(t=>{if(t&&t.no>e)e=t.no});return e}
 const be=()=>S.meta&&S.meta.counters&&S.meta.counters.hypSeq||0;const we=()=>Math.max(be(),ge(S.hyps))+1;function ke(){const t=we();ht("meta","counters",{hypSeq:t}).catch(()=>{})
 ;return t}function xe(t){return{id:C(),no:t.no||ke(),text:t.text||M(t.sit,t.rea),sit:t.sit||null,rea:t.rea||null,created:t.date||b(),updated:(new Date).toISOString(),status:"test",
-ev:t.ev||[],history:[],revisedOn:null,origin:t.origin||"app",...t.src?{src:t.src}:{},verBy:null}}function Se(t,e){t.history=(t.history||[]).concat([{text:L(t),sit:t.sit||null,
+ev:t.ev||[],history:[],revisedOn:null,origin:t.origin||"app",...t.src?{src:t.src}:{},verBy:null}}function Se(t,e){t.history=(t.history||[]).concat([{text:N(t),sit:t.sit||null,
 rea:t.rea||null,ev:t.ev||[],from:t.revisedOn||t.created,to:e,by:t.verBy||null,prevRevisedOn:t.revisedOn||null}])}function Ee(t){const e={sup:0,con:0,supW:0,conW:0}
 ;(t||[]).forEach(t=>{if(t.kind==="con"){e.con++;if(t.str==="weak")e.conW++}else{e.sup++;if(t.str==="weak")e.supW++}});return e}
-const De=t=>'<li class="'+(t.kind==="con"?"c":"")+'"><span class="mono">'+(t.date?D(t.date):"")+"</span> "+(t.kind==="con"?"反例":"支持")+'<span class="strg '+(t.str==="weak"?"weak":"strong")+'">'+(t.str==="weak"?"弱":"强")+"</span>"+(t.note?m(t.note):"")+Bo("ev",t)+"</li>"
+const De=t=>'<li class="'+(t.kind==="con"?"c":"")+'"><span class="mono">'+(t.date?D(t.date):"")+"</span> "+(t.kind==="con"?"反例":"支持")+'<span class="strg '+(t.str==="weak"?"weak":"strong")+'">'+(t.str==="weak"?"弱":"强")+"</span>"+(t.note?m(t.note):"")+Uo("ev",t)+"</li>"
 ;const Oe=()=>'<div class="f"><div class="lab">证据强度</div>'+ds("D.str",[["strong","强 · 当时记下或预测过"],["weak","弱 · 事后回想"]])+"</div>";let Ce=false;async function je(){if(Ce||!W)return
 ;Ce=true;const t=j(S.hyps)||{},e={},a=new Set;Object.values(t).forEach(s=>{if(s.status==="revised"||!s.parent||!t[s.parent])return;const n=[];let i=t[s.parent],o=0
-;while(i&&o++<50){n.unshift({text:L(i),sit:i.sit||null,rea:i.rea||null,ev:i.ev||[],from:i.created,to:i.revisedOn||s.created,by:null,prevRevisedOn:null});a.add(i.id)
+;while(i&&o++<50){n.unshift({text:N(i),sit:i.sit||null,rea:i.rea||null,ev:i.ev||[],from:i.created,to:i.revisedOn||s.created,by:null,prevRevisedOn:null});a.add(i.id)
 ;i=i.parent?t[i.parent]:null}s.history=n.concat(Array.isArray(s.history)?s.history:[]);s.revisedOn=s.revisedOn||s.created;s.parent=null;e[s.id]=s});Object.values(t).forEach(t=>{
 if(t.status==="revised"&&!a.has(t.id)){t.status="test";t.child=null;e[t.id]=t}});a.forEach(a=>{delete t[a];delete e[a]});let s=Math.max(be(),ge(t));const n=new Set
 ;Object.values(t).sort((t,e)=>String(t.created||"").localeCompare(String(e.created||""))||String(t.id).localeCompare(String(e.id))).forEach(t=>{if(!t.text){t.text=M(t.sit,t.rea)
@@ -966,9 +972,9 @@ n+='<li class="evform">'+De(t).replace(/^<li[^>]*>|<\/li>$/g,"")+'<p class="mute
 n+='<li class="'+(t.kind==="con"?"c":"")+'"><span class="evt">'+De(t).replace(/^<li[^>]*>|<\/li>$/g,"")+(t.note?"":'<span class="fine">（没写说明）</span>')+"</span>"+'<span class="evb"><button type="button" class="linkbtn" data-act="evEdit" data-i="'+a+'">改</button><button type="button" class="linkbtn" data-act="evDelAsk" data-i="'+a+'">删</button></span></li>'
 }});return n+'</ul><div class="row"><button type="button" class="btn ghost sm" data-act="hypClose">完成</button></div></div>'}function Ie(){const t=Q.hypOpen;if(!t||!t.draft)return
 ;const e=h("#ex-date"),a=h("#ex-note");if(e)t.draft.date=e.value;if(a)t.draft.note=a.value}function Me(t){const e=Q.hypOpen,a=e&&j(S.hyps[e.id]),s=a&&(a.ev||[])[t]
-;if(!s||JSON.stringify(s)!==e.fp){if(e){e.ei=null;e.del=null}render();U("这条证据刚被同步更新过，重新点「改」或「删」再试一次。");return null}return{o:e,h:a,cur:s}}function Le(){let t=null;try{
-t=localStorage.getItem("zwgcb-lastbackup")}catch(t){}if(!N(t))t=null;const e=Object.keys(S.days).filter(N).sort()[0]
-;const a=t?Math.round((g(b())-g(t))/864e5):e?Math.round((g(b())-g(e))/864e5):0;return{date:t,stale:a>14}}function Ne(){if(!d||Dt&&Dt.token)return"";const t=Le()
+;if(!s||JSON.stringify(s)!==e.fp){if(e){e.ei=null;e.del=null}render();U("这条证据刚被同步更新过，重新点「改」或「删」再试一次。");return null}return{o:e,h:a,cur:s}}function Ne(){let t=null;try{
+t=localStorage.getItem("zwgcb-lastbackup")}catch(t){}if(!L(t))t=null;const e=Object.keys(S.days).filter(L).sort()[0]
+;const a=t?Math.round((g(b())-g(t))/864e5):e?Math.round((g(b())-g(e))/864e5):0;return{date:t,stale:a>14}}function Le(){if(!d||Dt&&Dt.token)return"";const t=Ne()
 ;return t.stale?'<p class="warn" style="margin-top:24px">'+(t.date?"已经超过 14 天没导出备份。":"还没有导出过备份。")+'<a href="#settings">去设置里导出一份 ›</a></p>':""}function Re(t,e){
 let a=0,s=false,n=false;for(let i=e;i<t.length;i++){const e=t[i];if(s){if(n)n=false;else if(e==="\\")n=true;else if(e==='"')s=false;continue}
 if(e==='"')s=true;else if(e==="{")a++;else if(e==="}"){a--;if(a===0)return i}}return-1}function He(t,e){
@@ -984,7 +990,7 @@ error:"粘贴的内容里没有找到 JSON。存档是一段以 { 开头、以 }
 error:"JSON 不完整：开头的 { 找不到对应的 }，可能复制时少了结尾。"+(/[“”]/.test(t)?'另外，里面有中文引号“”，JSON 的引号必须是英文的 "。':"")}}const i=e.slice(s,n+1);try{return{obj:JSON.parse(i)}}catch(t){return{error:He(t,i)}
 }}function Be(t){const e=[],a=t=>typeof t==="string",s=Array.isArray,n=t=>s(t)&&t.every(a),i=t=>t&&typeof t==="object"&&!s(t);if(!i(t))return["最外层应该是一个 { } 对象。"]
 ;if(t.format!==l)e.push(t.format?"format 是「"+t.format+"」，这里只认 "+l+"。":'缺少 format 字段，应该写 "format": "'+l+'"。')
-;if(!N(t.date))e.push('date 应该是 YYYY-MM-DD 格式的日期，比如 "2026-11-02"'+(t.date?"，现在是「"+t.date+"」":"，现在缺失")+"。");else if(t.date>w(b(),1))e.push("date 是 "+t.date+"，比今天还晚，确认日期没写错。")
+;if(!L(t.date))e.push('date 应该是 YYYY-MM-DD 格式的日期，比如 "2026-11-02"'+(t.date?"，现在是「"+t.date+"」":"，现在缺失")+"。");else if(t.date>w(b(),1))e.push("date 是 "+t.date+"，比今天还晚，确认日期没写错。")
 ;["time","chat_link","if_then","tomorrow_prediction"].forEach(s=>{if(t[s]!=null&&!a(t[s]))e.push(s+" 应该是一段文字。")})
 ;if(!i(t.summary))e.push("缺少 summary（总结），里面应该有 headline 和 points。");else{if(!a(t.summary.headline)||!t.summary.headline.trim())e.push("summary.headline（一句话总结）是空的。")
 ;if(t.summary.points!=null&&!n(t.summary.points))e.push('summary.points 应该是一组文字，比如 ["要点 1", "要点 2"]。')}if(t.predictions!=null){
@@ -997,11 +1003,11 @@ e.push(r+"不是一个 { } 对象。");return}const c=a(t.id)&&/^\s*H\d+\s*$/i.t
 ;if(t.id!=null&&t.id!==""&&!c)e.push(r+"：id 应该是 H 加数字，比如 H1。");if((t.op==="update"||t.op==="evidence")&&!c)e.push(r+"："+t.op+' 必须写明要动的编号，比如 "id": "H1"。')
 ;if((t.op==="new"||t.op==="update")&&!(a(t.text)&&t.text.trim()))e.push(r+"："+t.op+" 需要 text（假设原文）。");["support","counter"].forEach(n=>{const o=t[n];if(o==null)return;if(!s(o)){
 e.push(r+"："+n+" 应该是一个列表。");return}o.forEach((t,s)=>{const o=r+"的"+(n==="support"?"支持":"反例")+"证据第 "+(s+1)+" 条";if(!i(t)||!a(t.text)||!t.text.trim()){e.push(o+"缺少 text。");return}
-if(t.date!=null&&t.date!==""&&!N(t.date))e.push(o+"：date「"+t.date+"」不是 YYYY-MM-DD。")
+if(t.date!=null&&t.date!==""&&!L(t.date))e.push(o+"：date「"+t.date+"」不是 YYYY-MM-DD。")
 ;if(t.strength!=null&&t.strength!==""&&!/^(强|弱|strong|weak)/i.test(String(t.strength).trim()))e.push(o+"：strength 是「"+t.strength+"」，只能是「强」或「弱」。")})})
 ;if(t.drafts!=null&&!n(t.drafts))e.push(r+"：drafts 应该是一组文字。")})}return e}const Ue=t=>{const e=/^\s*H(\d+)\s*$/i.exec(String(t||""));return e?+e[1]:null};const Je=(t,e)=>{
 const a=t=>String(t||"").replace(/[\s，。,.、；;：:！!？?「」“”"']/g,"");return a(t)===a(e)};function ze(t,e,a,s){
-return(Array.isArray(t)?t:[]).filter(t=>t&&String(t.text||"").trim()).map(t=>({date:N(t.date)?t.date:a,kind:e,note:String(t.text).trim(),
+return(Array.isArray(t)?t:[]).filter(t=>t&&String(t.text||"").trim()).map(t=>({date:L(t.date)?t.date:a,kind:e,note:String(t.text).trim(),
 str:/^(弱|weak)/i.test(String(t.strength||"").trim())?"weak":"strong",src:s}))}function Fe(t){const e=[],a=[];Object.keys(t).forEach(a=>{
 if(JSON.stringify(t[a])!==JSON.stringify(S.hyps[a]))e.push(a)});Object.keys(S.hyps).forEach(e=>{if(!t[e])a.push(e)});return{putIds:e,delIds:a}}function We(t,e,a){
 const s="arc:"+t.id,n=[];let i=0;Object.keys(e).forEach(t=>{const a=e[t];if(a.verBy===s&&(a.history||[]).length){const t=a.history[a.history.length-1]
@@ -1012,13 +1018,13 @@ const s="arc:"+t.id,n=[];let i=0;Object.keys(e).forEach(t=>{const a=e[t];if(a.ve
 const a=j(S.hyps)||{},s={},n=C(),i="arc:"+n,o=(new Date).toISOString();const r=[],c=[],l=e?We(e,a,s):[];let d=Math.max(be(),ge(S.hyps))
 ;const u=t=>Object.values(a).find(e=>e.no===t);(t.hypotheses||[]).forEach((e,s)=>{const n="第 "+(s+1)+" 条假设"+(e.id?"（"+e.id+"）":"")
 ;const l=Ue(e.id),p=l?u(l):null,f=String(e.text||"").trim(),h=(e.drafts||[]).filter(t=>String(t).trim());const m=ze(e.support,"sup",t.date,i).concat(ze(e.counter,"con",t.date,i))
-;if(e.op==="new"){if(p&&Je(L(p),f)){p.ev=(p.ev||[]).concat(m);p.updated=o;r.push({kind:"evidence",no:p.no,text:L(p),ev:m,drafts:h,note:ve(p)+" 已经是同一句话，只加证据"});return}
+;if(e.op==="new"){if(p&&Je(N(p),f)){p.ev=(p.ev||[]).concat(m);p.updated=o;r.push({kind:"evidence",no:p.no,text:N(p),ev:m,drafts:h,note:ve(p)+" 已经是同一句话，只加证据"});return}
 const e=l&&!p?l:++d;if(e>d)d=e;const s={id:C(),no:e,text:f,sit:null,rea:null,created:t.date,updated:o,status:"test",ev:m,history:[],revisedOn:null,origin:i,verBy:null};a[s.id]=s
-;r.push({kind:"new",no:e,text:f,ev:m,drafts:h,note:p?"H"+l+" 已经是「"+R(L(p),18)+"」，这条改存为 H"+e:!l?"没写编号，存为 H"+e:""})}else if(e.op==="update"){if(!p){
-c.push(n+"：要改写的 "+(e.id||"编号")+" 在清单里不存在。让 Claude 把 op 改成 new，或者核对编号。");return}const a=L(p);if(Je(a,f)){p.ev=(p.ev||[]).concat(m);p.updated=o;r.push({kind:"evidence",no:p.no,
+;r.push({kind:"new",no:e,text:f,ev:m,drafts:h,note:p?"H"+l+" 已经是「"+R(N(p),18)+"」，这条改存为 H"+e:!l?"没写编号，存为 H"+e:""})}else if(e.op==="update"){if(!p){
+c.push(n+"：要改写的 "+(e.id||"编号")+" 在清单里不存在。让 Claude 把 op 改成 new，或者核对编号。");return}const a=N(p);if(Je(a,f)){p.ev=(p.ev||[]).concat(m);p.updated=o;r.push({kind:"evidence",no:p.no,
 text:a,ev:m,drafts:h,note:"文字没变，按加证据处理"});return}Se(p,t.date);p.text=f;p.sit=null;p.rea=null;p.ev=m;p.revisedOn=t.date;p.verBy=i;p.status="test";p.updated=o;r.push({kind:"update",
 no:p.no,text:f,oldText:a,ev:m,drafts:h})}else if(e.op==="evidence"){if(!p){c.push(n+"：要加证据的 "+(e.id||"编号")+" 在清单里不存在。核对一下编号。");return}p.ev=(p.ev||[]).concat(m);p.updated=o;r.push({
-kind:"evidence",no:p.no,text:L(p),ev:m,drafts:h,note:m.length?"":"没有带证据"})}});const p=Fe(a);return{recId:n,hs:a,days:s,items:r,errors:c,notes:l,seq:d,putIds:p.putIds,
+kind:"evidence",no:p.no,text:N(p),ev:m,drafts:h,note:m.length?"":"没有带证据"})}});const p=Fe(a);return{recId:n,hs:a,days:s,items:r,errors:c,notes:l,seq:d,putIds:p.putIds,
 delIds:p.delIds}}function Ye(t){const e=String(t||"");if(/没中|不中|未中|落空|没对|错/.test(e))return"miss";if(/暂时|一半|部分|待定|还没/.test(e))return"half";if(/中|对|是|准/.test(e))return"hit";return""}
 function Ve(t){const e=Math.floor(t/5),a=t%5,s=["M2 2.5H12","M7 2.5V12.5","M7 7.5H11","M3.5 7.5V12.5","M1.5 12.5H12.5"]
 ;const n=t=>'<svg width="14" height="15" viewBox="0 0 14 15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="'+s.slice(0,t).join("")+'"/></svg>'
@@ -1026,15 +1032,15 @@ function Ve(t){const e=Math.floor(t/5),a=t%5,s=["M2 2.5H12","M7 2.5V12.5","M7 7.
 ;return i+'<span class="mono">'+t+"</span>"}function $e(t){let e='<span class="bars" aria-label="强度 '+(t||0)+'/5">';for(let a=1;a<=5;a++)e+='<i class="'+(a<=t?"on":"")+'"></i>'
 ;return e+"</span>"}function Ge(t,e=t.result){return t.kind==="change"&&e==="miss"?'<p class="fine pred-miss-hint">没做到也是信息：卡在了哪一步？</p>':""}function Qe(s,n,i){
 const o=s.result?" r-"+s.result:""
-;return'<li data-pred-id="'+m(s.id)+'" class="pred'+o+'"><div class="pk"><span>'+t[s.kind]+'</span><span class="mono">'+x(s.at)+" · "+e[s.src]+"</span></div>"+'<div class="pt">'+m(s.text)+"</div>"+Bo("pred",s)+(s.actual?'<div class="pa">实际：'+m(s.actual)+"</div>":"")+Ge(s)+(s.result?'<span class="pen '+s.result+'">'+a[s.result]+"</span>":"")+(i&&!s.result?'<button type="button" class="x" data-act="delPred" data-key="'+n+'" data-id="'+s.id+'" aria-label="删掉这条预测">×</button>':"")+"</li>"
+;return'<li data-pred-id="'+m(s.id)+'" class="pred'+o+'"><div class="pk"><span>'+t[s.kind]+'</span><span class="mono">'+x(s.at)+" · "+e[s.src]+"</span></div>"+'<div class="pt">'+m(s.text)+"</div>"+Uo("pred",s)+(s.actual?'<div class="pa">实际：'+m(s.actual)+"</div>":"")+Ge(s)+(s.result?'<span class="pen '+s.result+'">'+a[s.result]+"</span>":"")+(i&&!s.result?'<button type="button" class="x" data-act="delPred" data-key="'+n+'" data-id="'+s.id+'" aria-label="删掉这条预测">×</button>':"")+"</li>"
 }function Xe(t,e,a){if(Zs.has(Xs(e,t.id)))return"";a=a||{};const s=(t.emos||[]).join(" · ");const n=[];if(t.fact)n.push(["发生",t.fact])
 ;if(t.body&&t.body.length)n.push(["身体",t.body.join(" · ")]);if(t.did)n.push(["我做了",t.did]);if(t.wanted)n.push(["想做没做",t.wanted])
 ;return'<article class="cap'+(Q.fresh===t.id?" fresh":"")+'">'+'<div class="cap-top"><span class="mono">'+(a.date?D(e)+" ":"")+x(t.at)+"</span>"+(s?'<span class="emo">'+m(s)+" "+$e(t.inten||0)+"</span>":"")+(t.tags&&t.tags.length?'<span class="tagline">'+t.tags.map(t=>'<span class="tg">'+m(t)+"</span>").join("")+"</span>":"")+(t.hyp&&S.hyps[t.hyp]?'<span class="tg">'+ve(S.hyps[t.hyp])+" · "+(t.hypKind==="con"?"反例":"支持")+"</span>":"")+"</div>"+(t.quote?'<div class="quote">'+m(t.quote)+"</div>":"")+(n.length?'<dl class="kv">'+n.map(t=>"<dt>"+t[0]+"</dt><dd>"+m(t[1])+"</dd>").join("")+"</dl>":"")+(t.care?'<div class="care">碰到了我在乎的：<b>'+m(t.care)+"</b></div>":"")+(a.actions!==false?'<div class="row">'+(!t.done?'<span class="pending">还没理清</span>':"")+'<button type="button" class="linkbtn" data-act="editCap" data-key="'+e+'" data-id="'+t.id+'">'+(t.done?"修改":"接着理清")+"</button>"+Sa(e,t)+"</div>":"")+"</article>"
 }function Ze(t){
-if(t.sit&&t.rea&&L(t)===M(t.sit,t.rea))return'<div class="hs"><span class="pre">在</span>'+m(_(t))+'<span class="pre">时，</span><br><span class="pre">我可能会</span>'+m(I(t))+"</div>"
-;return'<div class="hs">'+m(L(t))+"</div>"}function ta(){
+if(t.sit&&t.rea&&N(t)===M(t.sit,t.rea))return'<div class="hs"><span class="pre">在</span>'+m(_(t))+'<span class="pre">时，</span><br><span class="pre">我可能会</span>'+m(I(t))+"</div>"
+;return'<div class="hs">'+m(N(t))+"</div>"}function ta(){
 const t=Object.values(S.hyps).filter(t=>t.status==="test").sort((t,e)=>String(e.updated||"").localeCompare(String(t.updated||"")))
-;return'<section class="card testing-hyps"><div class="stage">在测的假设</div>'+(t.length?'<ul class="pins">'+t.slice(0,3).map(t=>'<li><span class="hno">'+ve(t)+'</span><span class="pin-t">'+m(L(t))+"</span></li>").join("")+"</ul>":'<p class="fine">还没有在测的假设。可以从一条具体的观察开始。</p>')+'<a class="linkbtn" href="#hyps">打开假设清单 ›</a></section>'
+;return'<section class="card testing-hyps"><div class="stage">在测的假设</div>'+(t.length?'<ul class="pins">'+t.slice(0,3).map(t=>'<li><span class="hno">'+ve(t)+'</span><span class="pin-t">'+m(N(t))+"</span></li>").join("")+"</ul>":'<p class="fine">还没有在测的假设。可以从一条具体的观察开始。</p>')+'<a class="linkbtn" href="#hyps">打开假设清单 ›</a></section>'
 }function ea(t,e){const a={new:"新增",update:"改写",evidence:"加证据"}[t.kind]||""
 ;return'<div class="arc-h"><div class="hmeta"><span class="hno">H'+t.no+'</span><span class="st '+(t.kind==="update"?"revised":"test")+'">'+a+"</span>"+(t.note?"<span>"+m(t.note)+"</span>":"")+"</div>"+(t.kind==="update"?'<div class="old">'+m(t.oldText)+"</div>":"")+'<div class="hs">'+m(t.text)+"</div>"+((t.ev||[]).length?'<ul class="evs">'+t.ev.map(De).join("")+"</ul>":"")+((t.drafts||[]).length?'<details class="drafts"'+jn("archive:"+e+":hyp:"+t.no+":drafts")+"><summary>考虑过的其他说法 · "+t.drafts.length+"</summary><ul>"+t.drafts.map(t=>"<li>"+m(t)+"</li>").join("")+"</ul></details>":"")+"</div>"
 }function aa(t){const e=t.data||{},a=e.summary||{},s=e.deep_dive||{},n=t.resolvedQ||[]
@@ -1083,13 +1089,13 @@ const t=Object.values(S.events).filter(t=>!t.done&&t.date!==s&&t.date>=w(e,-14))
 ;const p=c.map(t=>ra("material-archive:"+t.id,t.time||"",t.data&&t.data.summary&&t.data.summary.headline||"对话复盘","已存档",aa(t))).join("")
 ;l+=oa(s,"archives","对话复盘",c.length+" 份",!c.length,p+'<div class="row"><button type="button" class="btn ghost sm" data-act="impOpen">导入对话复盘</button><button type="button" class="linkbtn" data-act="copy" data-key="'+s+'">复制材料给 Claude</button></div>')
 ;return l+"</section></div>"}const la={pred:"预测",capture:"随手记",review:"复盘",events:"单件复盘",archives:"对话存档"};function da(t=location.hash){if(!/^#more(?:\?|$)/.test(t||""))return{
-day:null,section:null};const e=new URLSearchParams((t||"").split("?")[1]||""),a=e.get("day"),s=e.get("section");const n=N(a)&&a<=w(b(),1);return{day:n?a:null,
+day:null,section:null};const e=new URLSearchParams((t||"").split("?")[1]||""),a=e.get("day"),s=e.get("section");const n=L(a)&&a<=w(b(),1);return{day:n?a:null,
 section:n&&Object.prototype.hasOwnProperty.call(la,s)?s:null}}function ua(t,e){return"#more?day="+t+(e?"&section="+e:"")}function pa(t,e){
 const a=S.days[t]||q(t),s=e==="pred"?(a.preds||[]).length:e==="capture"?(a.caps||[]).length:e==="events"?ue(t).length:e==="archives"?fe(t).length:null;const n={
 pred:"把当时的预期，和后来发生的事放在一起看。",capture:"一次看一个片段，慢慢回到当时。",review:"这一天写下的回看与发现。",events:"从一件具体的事，多认识自己一点。",archives:"已经收进本子里的对话。"};const i={pred:"去预测页",capture:"去随手记页",review:"去复盘页"}
 ;return Oa()+'<section class="more-reader"><button type="button" class="more-back" data-act="moreBack" data-key="'+t+'" data-section="'+e+'">‹ 返回日期概览</button><header class="more-reader-head"><p class="more-reader-date">'+t.slice(0,4)+" · "+E(t)+" · "+O(t)+'</p><h1 id="more-reader-heading" tabindex="-1">'+la[e]+(s!==null?"<small>共 "+s+" 条</small>":"")+"</h1><p>"+n[e]+"</p></header>"+On(t,e)+(i[e]?'<div class="row more-reader-tools"><button type="button" class="btn ghost sm" data-act="goDay" data-key="'+t+'" data-v="'+e+'">'+i[e]+"</button></div>":"")+"</section>"
 }function fa(){const t=da();if(t.section)return pa(t.day,t.section);const e=Q.moreMonth||b().slice(0,7),a=k(b())
-;return Oa()+Ia(e)+'<section class="card"><div class="stage">周复盘</div><p class="muted">把一周落空的预测排在一起看，找同一个方向的错，再更新假设清单。</p><div class="row"><button type="button" class="btn" data-act="goWeek" data-key="'+a+'">这周</button><button type="button" class="btn ghost" data-act="goWeek" data-key="'+w(a,-7)+'">上周</button></div></section>'+Ne()
+;return Oa()+Ia(e)+'<section class="card"><div class="stage">周复盘</div><p class="muted">把一周落空的预测排在一起看，找同一个方向的错，再更新假设清单。</p><div class="row"><button type="button" class="btn" data-act="goWeek" data-key="'+a+'">这周</button><button type="button" class="btn ghost" data-act="goWeek" data-key="'+w(a,-7)+'">上周</button></div></section>'+Le()
 }const ha=(t,e)=>{const a=new Date(+t.slice(0,4),+t.slice(5,7)-1+e,1);return a.getFullYear()+"-"+y(a.getMonth()+1)};function ma(t,e){const a=w(b(),1).slice(0,7)
 ;return'<div class="calhead"><button type="button" class="dnav" data-act="calMonth" data-v="-1" data-mode="'+e+'" aria-label="上个月">‹</button><span>'+t.slice(0,4)+"年"+ +t.slice(5,7)+'月</span><button type="button" class="dnav" data-act="calMonth" data-v="1" data-mode="'+e+'" aria-label="下个月"'+(t>=a?" disabled":"")+">›</button></div>"+Aa(t,e)+Ta()
 }function ya(t,e){if(window.matchMedia("(prefers-reduced-motion: reduce)").matches)return;document.querySelectorAll(t).forEach(t=>{if(t.animate)t.animate([{opacity:0,
@@ -1157,8 +1163,8 @@ const e=_a(t),a=ce(),s=a?Math.round((g(b())-g(a))/864e5):null
 ;if(s.length)d+='<div><p class="summary-section-title">随手记 · 最近 '+Math.min(3,s.length)+" 条</p>"+s.slice(0,3).map(e=>en(e,t)).join("")+(s.length>3?'<button type="button" class="summary-link" data-act="moreOpen" data-key="'+t+'" data-section="capture">查看全部 '+s.length+" 条 ›</button>":"")+"</div>"
 ;if(i.length)d+='<button type="button" class="summary-link" data-act="moreOpen" data-key="'+t+'" data-section="events">单件复盘 · '+i.length+" 件 ›</button>"
 ;return'<header class="summary-head"><div><h2 id="summary-date">'+E(t)+"<small>"+O(t)+'</small></h2><span class="day-status">'+l+'</span></div><button type="button" class="icon-button" data-act="summaryClose" aria-label="关闭当天摘要">×</button></header><div class="summary-body" id="summary-body">'+d+'</div><footer class="summary-actions">'+[["pred","去预测"],["capture","去随手记"],["review","去复盘"]].map(([e,a])=>'<button type="button" class="btn ghost" data-act="goDay" data-key="'+t+'" data-v="'+e+'">'+a+"</button>").join("")+'<button type="button" class="icon-button" id="summary-more" data-act="summaryMenu" aria-label="当天记录的更多操作" aria-haspopup="dialog">⋯</button></footer>'
-}let La=null,Na=0,Ra=null,Ha=false,Pa=false,Ba=false,Ua=null;const Ja=()=>V==="more"&&!G&&!da().section;const za=()=>window.matchMedia("(min-width:1024px)").matches;function Fa(){
-Na++;if(La){La.skipTransition();La=null}document.documentElement.classList.remove("summary-transition");["#day-summary","#summary-body","#summary-date"].forEach(t=>{const e=h(t)
+}let Na=null,La=0,Ra=null,Ha=false,Pa=false,Ba=false,Ua=null;const Ja=()=>V==="more"&&!G&&!da().section;const za=()=>window.matchMedia("(min-width:1024px)").matches;function Fa(){
+La++;if(Na){Na.skipTransition();Na=null}document.documentElement.classList.remove("summary-transition");["#day-summary","#summary-body","#summary-date"].forEach(t=>{const e=h(t)
 ;if(e)e.getAnimations().forEach(t=>t.cancel())})}function Wa(){document.querySelectorAll("#month-scroller .cday").forEach(t=>{const e=t.dataset.key===Q.moreDay
 ;t.classList.toggle("sel",e);t.setAttribute("aria-pressed",String(e))})}function Ka(){const t=h("#month-scroller");if(!t.clientWidth)return;Ha=true;t.scrollTo({left:t.clientWidth,
 behavior:"instant"});[...t.children].forEach((t,e)=>t.inert=e!==1);if(t.children[1])t.style.height=t.children[1].scrollHeight+"px"
@@ -1172,25 +1178,25 @@ const t=Q.moreMonth||b().slice(0,7),e=h("#month-scroller"),a=document.activeElem
 const o=a.dataset.day===Q.moreDay,r=In(a),c=o&&h("#summary-body")?h("#summary-body").scrollTop:0,l=Ma(Q.moreDay);if(a.innerHTML!==l){a.innerHTML=l;const t=Tn(a,r.focus)
 ;if(t)t.focus({preventScroll:true})}a.dataset.day=Q.moreDay;if(h("#summary-body"))h("#summary-body").scrollTop=c;h("#summary-placeholder").hidden=true
 ;document.body.classList.toggle("summary-open",!n);if(n){if(e.open)e.close()}else if(!e.open){const t=document.activeElement;e.show();if(t&&t.isConnected)t.focus({
-preventScroll:true});if(!Ls())e.animate([{transform:"translateY(100%)"},{transform:"translateY(0)"}],{duration:280,easing:"cubic-bezier(.2,.8,.2,1)"})}}function $a(){
+preventScroll:true});if(!Ns())e.animate([{transform:"translateY(100%)"},{transform:"translateY(0)"}],{duration:280,easing:"cubic-bezier(.2,.8,.2,1)"})}}function $a(){
 if(za()||!h("#day-summary").open)return;const t=h('#month-scroller .cday[data-key="'+Q.moreDay+'"]');if(!t||t.closest("[inert]"))return
 ;const e=t.getBoundingClientRect(),a=window.innerHeight-h("#day-summary").offsetHeight-12;if(e.bottom>a)window.scrollBy({top:e.bottom-a,behavior:"instant"
 });else if(e.top<8)window.scrollBy({top:e.top-8,behavior:"instant"})}function Ga(){const t=h("#more-shell"),e=t.hidden,a=Ja();t.hidden=!a;if(!a){Va();return}
 if(!Q.disclosureSeen.has("calendar:legend")){Cn("calendar:legend",!Vs.legendSeen);Vs.legendSeen=true;ja()}const s=Gs("calendar:legend","calendar-legend","图例",Ta())
-;if(h("#calendar-legend-wrap").innerHTML!==s)h("#calendar-legend-wrap").innerHTML=s;Ya();if(e)Ka();Va()}function Qa(t){if(!N(t)||t>w(b(),1))return;if(t===Q.moreDay){Xa();return}
-const e=Q.moreDay,a=e&&t<e?-1:1;Fa();const s=Na;Q.moreDay=t;history.replaceState(null,"",ua(t));Wa();const n=()=>{if(s!==Na)return;Va();$a()
+;if(h("#calendar-legend-wrap").innerHTML!==s)h("#calendar-legend-wrap").innerHTML=s;Ya();if(e)Ka();Va()}function Qa(t){if(!L(t)||t>w(b(),1))return;if(t===Q.moreDay){Xa();return}
+const e=Q.moreDay,a=e&&t<e?-1:1;Fa();const s=La;Q.moreDay=t;history.replaceState(null,"",ua(t));Wa();const n=()=>{if(s!==La)return;Va();$a()
 ;const e=h('#month-scroller .cday[data-key="'+t+'"]');if(e)e.focus({preventScroll:true});h("#view-status").textContent="已切换到 "+E(t)+" "+O(t)}
-;document.documentElement.dataset.dir=a<0?"prev":"next";if(e&&document.startViewTransition&&!Ls()){document.documentElement.classList.add("summary-transition")
-;const t=document.startViewTransition(n);La=t;t.ready.catch(()=>{});t.finished.catch(()=>{}).finally(()=>{if(s===Na){La=null
-;document.documentElement.classList.remove("summary-transition")}})}else{n();if(e){const t=h("#summary-body");if(t&&t.animate)t.animate(Ls()?[{opacity:0},{opacity:1}]:[{opacity:0,
-transform:"translateX("+a*24+"px)"},{opacity:1,transform:"translateX(0)"}],{duration:Ls()?100:200,easing:"ease-out"})}}const i=h('#month-scroller .cday[data-key="'+t+'"]')
-;if(i&&!Ls())i.animate([{transform:"scale(.85)"},{transform:"scale(1)"}],{duration:120,easing:"ease-out"})}function Xa(t=false,e=true){const a=Q.moreDay;if(!a)return;Fa()
-;const s=Na;Q.moreDay=null;if(V==="more"&&!da().section)history.replaceState(null,"","#more");Wa();const n=()=>{if(s!==Na)return;Va();if(e){
-const t=h('#month-scroller .cday[data-key="'+a+'"]');if(t)t.focus({preventScroll:true})}};const i=h("#day-summary");if(!t&&!Ls()&&i.open){const t=i.animate([{
+;document.documentElement.dataset.dir=a<0?"prev":"next";if(e&&document.startViewTransition&&!Ns()){document.documentElement.classList.add("summary-transition")
+;const t=document.startViewTransition(n);Na=t;t.ready.catch(()=>{});t.finished.catch(()=>{}).finally(()=>{if(s===La){Na=null
+;document.documentElement.classList.remove("summary-transition")}})}else{n();if(e){const t=h("#summary-body");if(t&&t.animate)t.animate(Ns()?[{opacity:0},{opacity:1}]:[{opacity:0,
+transform:"translateX("+a*24+"px)"},{opacity:1,transform:"translateX(0)"}],{duration:Ns()?100:200,easing:"ease-out"})}}const i=h('#month-scroller .cday[data-key="'+t+'"]')
+;if(i&&!Ns())i.animate([{transform:"scale(.85)"},{transform:"scale(1)"}],{duration:120,easing:"ease-out"})}function Xa(t=false,e=true){const a=Q.moreDay;if(!a)return;Fa()
+;const s=La;Q.moreDay=null;if(V==="more"&&!da().section)history.replaceState(null,"","#more");Wa();const n=()=>{if(s!==La)return;Va();if(e){
+const t=h('#month-scroller .cday[data-key="'+a+'"]');if(t)t.focus({preventScroll:true})}};const i=h("#day-summary");if(!t&&!Ns()&&i.open){const t=i.animate([{
 transform:"translateY(0)"},{transform:"translateY(100%)"}],{duration:200,easing:"cubic-bezier(.4,0,1,1)",fill:"forwards"});t.finished.then(()=>{t.cancel();n()}).catch(()=>{})
 }else n()}function Za(t){const e=ha(Q.moreMonth||b().slice(0,7),t);if(e>w(b(),1).slice(0,7)){Ka();return}Xa(true,false);Pa=false;Q.moreMonth=e;render();Ka()
-;[h("#month-scroller").children[1],h("#review-month")].forEach(e=>{if(e&&e.animate){e.getAnimations().forEach(t=>t.cancel());e.animate(Ls()?[{opacity:0},{opacity:1}]:[{opacity:0,
-transform:"translateX("+(t<0?-32:32)+"px)"},{opacity:1,transform:"translateX(0)"}],{duration:Ls()?100:180,easing:"ease-out"})}})
+;[h("#month-scroller").children[1],h("#review-month")].forEach(e=>{if(e&&e.animate){e.getAnimations().forEach(t=>t.cancel());e.animate(Ns()?[{opacity:0},{opacity:1}]:[{opacity:0,
+transform:"translateX("+(t<0?-32:32)+"px)"},{opacity:1,transform:"translateX(0)"}],{duration:Ns()?100:180,easing:"ease-out"})}})
 ;h("#view-status").textContent="已切换到 "+h("#review-month").textContent}function ts(){if(!Ja()||Ha||Ba)return;const t=h("#month-scroller"),e=Math.round(t.scrollLeft/t.clientWidth)
 ;if(!Pa){if(e!==1)Ka();return}Pa=false;if(e!==1)Za(e-1)}function es(){const t=h("#day-actions");if(t.open)t.close()
 ;const e=t.dataset.from==="review"?document.querySelector('[data-act="reviewMenu"]'):h("#summary-more");if(e)e.focus({preventScroll:true})}function as(t=true){
@@ -1198,7 +1204,7 @@ const e=h("#hyp-actions"),a=e.dataset.id;if(e.open)e.close();if(t){const t=Array
 preventScroll:true})}}function ss(t){const e=S.hyps[t];if(!e)return;const a=h("#hyp-actions");a.dataset.id=t
 ;a.innerHTML='<div class="row"><h2 id="hyp-actions-title">'+ve(e)+' · 更多操作</h2><button type="button" class="icon-button" data-act="hypMenuClose" aria-label="关闭假设操作面板">×</button></div><button type="button" class="btn ghost" data-act="hypAct" data-id="'+m(t)+'" data-v="evs">修改证据</button><button type="button" class="btn ghost" data-act="hypAct" data-id="'+m(t)+'" data-v="rev">缩小条件 / 改写</button><button type="button" class="btn ghost" data-act="hypStatus" data-id="'+m(t)+'" data-v="'+(e.status==="solid"?"test":"solid")+'">'+(e.status==="solid"?"退回待验证":"升为较可信")+'</button><button type="button" class="btn ghost danger" data-act="hypAct" data-id="'+m(t)+'" data-v="del">删除</button>'
 ;a.showModal()}function ns(){const t=["light","dark"].includes(Vs.theme)?Vs.theme:"system"
-;return Oa()+'<h1 class="h">设置</h1><div class="settings-stack">'+Dn()+xn()+Ri()+Jo()+'<section class="card"><h2 class="stage">显示</h2><div class="theme-options" role="group" aria-label="主题">'+[["system","跟随系统"],["light","浅色"],["dark","深色"]].map(([e,a])=>'<button type="button" data-act="theme" data-v="'+e+'" aria-pressed="'+(t===e)+'">'+a+"</button>").join("")+'</div></section><section class="card"><h2 class="stage">关于</h2><p class="fine">自我观察本 · <span class="mono">'+u+'</span></p><p class="fine">记录默认只存在这台设备。开启云端同步后，会额外保存一份加密备份；本机草稿与显示偏好不进入同步。</p></section></div>'
+;return Oa()+'<h1 class="h">设置</h1><div class="settings-stack">'+Dn()+xn()+Ri()+zo()+'<section class="card"><h2 class="stage">显示</h2><div class="theme-options" role="group" aria-label="主题">'+[["system","跟随系统"],["light","浅色"],["dark","深色"]].map(([e,a])=>'<button type="button" data-act="theme" data-v="'+e+'" aria-pressed="'+(t===e)+'">'+a+"</button>").join("")+'</div></section><section class="card"><h2 class="stage">关于</h2><p class="fine">自我观察本 · <span class="mono">'+u+'</span></p><p class="fine">记录默认只存在这台设备。开启云端同步后，会额外保存一份加密备份；本机草稿与显示偏好不进入同步。</p></section></div>'
 }function is(t,e,a){const s=t+":"+e;let n=X[s]?j(X[s]):null;if(!n){if(t==="morning")n={change:"",emotion:"",specific:"",hid:null};if(t==="evening"||t==="min"){const a=S.days[e]
 ;if(a&&a.evening&&a.evening.mode===(t==="evening"?"std":"min"))n=j(a.evening.raw||{});else n={R:{},A:{},C:{},D:{op:"new"},E:{},after:""};(a?a.preds:[]).forEach(t=>{
 if(!n.R[t.id])n.R[t.id]={r:t.result||"",a:t.actual||""}})}if(t==="capture"){if(a){n=j(a);n.more=true}else n={fact:"",emos:[],inten:0,quote:"",body:[],did:"",wanted:"",care:"",
@@ -1228,7 +1234,7 @@ const t=s.parentElement,e=document.createElement("div");e.id="writing-actions";e
 ;t.dataset.writingSection=String.fromCharCode(65+e);t.tabIndex=-1});h("#view").querySelectorAll(".hint:not(.why-note .hint)").forEach((t,e)=>{
 const a=parseFloat(getComputedStyle(t).lineHeight);if(t.getBoundingClientRect().height<=a+2)return
 ;const s="why:"+G.type+":"+G.key+":"+e,n=document.createElement("details"),i=document.createElement("summary");n.className="why-note";n.dataset.uiOpen=s;n.open=Q.open.has(s)
-;i.textContent="为什么这样问？";t.before(n);n.append(i,t)});bs();ur()}function bs(){if(!ys()||G.type!=="evening")return
+;i.textContent="为什么这样问？";t.before(n);n.append(i,t)});bs();pr()}function bs(){if(!ys()||G.type!=="evening")return
 ;const t=h("#writing-shell").getBoundingClientRect().bottom+24,e=Array.from(h("#view").querySelectorAll("[data-writing-section]"));let a="A"
 ;for(const s of e)if(s.getBoundingClientRect().top<=t)a=s.dataset.writingSection;h("#writing-steps").querySelectorAll("button").forEach(t=>{
 if(t.dataset.v===a)t.setAttribute("aria-current","step");else t.removeAttribute("aria-current")})}function ws(){if(!ys())return;const t=document.activeElement
@@ -1246,7 +1252,7 @@ const t=G.key,e=G.data,a=new Date,s=b(),n=a.getHours();const i=t===s&&(n>=12||n<
 ;r+=rs("change","今天最有可能做出改变的一件事","比如：下午 3 点前打开作业文档，写完第一段","写你真觉得会发生的，不是希望发生的。要能在今晚判对错。");r+=rs("emotion","最可能让我情绪起伏的场合或人","比如：下午的小组讨论")
 ;r+='<div class="f"><label for="f-specific">一条具体的预测</label><textarea id="f-specific" data-f="specific" data-live="vague" rows="2" placeholder="我会在 10 点前 ___ / 在 ___ 的时候，我会 ___">'+m(e.specific)+'</textarea><div class="warn" id="w-specific">'+us(e.specific)+"</div>"
 ;const c=de().filter(t=>t.status==="test").slice(0,6)
-;if(c.length)r+='<div class="hint">或者从清单里挑一条「待验证」的来测：</div><div class="chips">'+c.map(t=>'<button type="button" class="chip'+(e.hid===t.id?" on":"")+'" data-act="testHyp" data-id="'+t.id+'">'+ve(t)+" · "+m(L(t))+"</button>").join("")+"</div>"
+;if(c.length)r+='<div class="hint">或者从清单里挑一条「待验证」的来测：</div><div class="chips">'+c.map(t=>'<button type="button" class="chip'+(e.hid===t.id?" on":"")+'" data-act="testHyp" data-id="'+t.id+'">'+ve(t)+" · "+m(N(t))+"</button>").join("")+"</div>"
 ;r+='</div><p class="fine">唯一的要求：晚上能判对错。「今天会很充实」判不了；「组会上我不会主动发言」判得了。</p>';r+='<div class="row"><button type="button" class="btn" data-act="saveMorning">存下预测</button></div></div>'
 ;return r}function Es(){const a=G.key,s=G.data,n=S.days[a]||q(a),i=!!(n.evening&&n.evening.mode==="std");const o=(n.caps||[]).slice().sort((t,e)=>t.at.localeCompare(e.at))
 ;let r=fs("晚上复盘 · 标准版","先写事实，再对答案，最后只挑一个时刻挖深。",E(a)+" "+O(a));r+='<div class="card"><div class="sec">'
@@ -1266,7 +1272,7 @@ r+='<div class="hyp">'+n.evening.D.line+'</div><p class="fine">这条已经记�
 ;if(s.D.op==="new"){
 r+='<div class="pair"><span>在</span>'+cs("D.sit","什么情况下（比如：计划被临时打乱后）","hyp")+"<span>我可能会</span>"+cs("D.rea","怎样（比如：放弃当天剩下的全部计划）","hyp")+'</div><div class="warn" id="w-hyp">'+ps((s.D.sit||"")+(s.D.rea||""))+"</div>"
 ;r+=rs("D.ev","今日证据","一句话，指向上面的事实","",1)+Oe()}else if(s.D.op==="old"){if(!t.length)r+='<p class="fine">清单还是空的，先写一条新假设。</p>';else{
-r+='<div class="chips">'+t.map(t=>'<button type="button" class="chip'+(s.D.hid===t.id?" on":"")+'" data-act="pick" data-f="D.hid" data-v="'+t.id+'">'+ve(t)+" · "+m(L(t))+"</button>").join("")+"</div>"
+r+='<div class="chips">'+t.map(t=>'<button type="button" class="chip'+(s.D.hid===t.id?" on":"")+'" data-act="pick" data-f="D.hid" data-v="'+t.id+'">'+ve(t)+" · "+m(N(t))+"</button>").join("")+"</div>"
 ;r+='<div class="lab">今天的事对它来说是</div>'+ds("D.kind",[["sup","支持"],["con","反例"]]);r+=rs("D.ev","证据","一句话","",1)+Oe()}}}
 r+='<div class="sec-h"><span class="mono">E</span>明天<span class="t">30 秒 · 可选</span></div>';r+=rs("E.watch","明天留意：在什么情况下，我会不会怎样","","",1)
 ;r+=rs("E.tmr","给明天出一道题（一条能判对错的预测）","明早打开就能看到，不用再想","",1);r+='<div class="warn" id="w-tmr">'+us(s.E.tmr)+"</div>";r+=Ds()
@@ -1281,15 +1287,15 @@ i+='<div class="lab">预测对了吗（点一下就行）</div>'+s.preds.map(t=>
 ;i+='<p class="fine">没看出规律也没关系。这一栏可以空着，等以后再回来验证。</p></details>';i+=Ds();i+='<div class="row"><button type="button" class="btn" data-act="saveMin">收好这一页</button></div></div>'
 ;return i}function Cs(t,e,a,s){const n=V+":"+(V==="more"?da().day||Q.moreDay:$)+":"+t,i=Q.open.has(n)
 ;return'<div class="capture-fold"><button type="button" class="capture-toggle" data-act="captureToggle" data-ui-open="'+m(n)+'" data-open-label="'+m(e)+'" data-close-label="'+m(a)+'" aria-expanded="'+i+'" aria-controls="'+t+'"><span class="capture-label">'+m(i?a:e)+'</span><span class="capture-sign" aria-hidden="true">'+(i?"−":"＋")+'</span></button><div class="stack capture-overflow" id="'+t+'"'+(i?"":" hidden")+">"+s+"</div></div>"
-}let js=null,qs=0,As=null,Ts=null,_s=false,Is=false,Ms=false;const Ls=()=>window.matchMedia("(prefers-reduced-motion: reduce)").matches
-;const Ns=t=>parseFloat(getComputedStyle(document.documentElement).getPropertyValue(t))||200;function Rs(){
+}let js=null,qs=0,As=null,Ts=null,_s=false,Is=false,Ms=false;const Ns=()=>window.matchMedia("(prefers-reduced-motion: reduce)").matches
+;const Ls=t=>parseFloat(getComputedStyle(document.documentElement).getPropertyValue(t))||200;function Rs(){
 return["pred","review","capture"].includes(V)&&(!G||G.type==="capture"&&G.key==="new")}function Hs(){++qs;if(js){js.skipTransition();js=null}
 document.documentElement.classList.remove("day-transition");[h("#view"),h("#day-label")].forEach(t=>{t.classList.remove("enter-prev","enter-next")
 ;t.getAnimations().forEach(t=>t.cancel())})}function Ps(t){const e=t<0?"enter-prev":"enter-next";[h("#view"),h("#day-label")].forEach(t=>{
-t.classList.remove("enter-prev","enter-next");if(Ls()){if(t.animate)t.animate([{opacity:0},{opacity:1}],{duration:100})}else{void t.offsetWidth;t.classList.add(e)}})}
-function Bs(t,e=false){if(!N(t)||t>w(b(),1)||t===$)return;const a=t<$?-1:1;Hs();const s=qs;$=t;Q.cal=false;const n=h("#workspace").getBoundingClientRect().top+window.scrollY
+t.classList.remove("enter-prev","enter-next");if(Ns()){if(t.animate)t.animate([{opacity:0},{opacity:1}],{duration:100})}else{void t.offsetWidth;t.classList.add(e)}})}
+function Bs(t,e=false){if(!L(t)||t>w(b(),1)||t===$)return;const a=t<$?-1:1;Hs();const s=qs;$=t;Q.cal=false;const n=h("#workspace").getBoundingClientRect().top+window.scrollY
 ;if(window.scrollY>n)window.scrollTo({top:n,behavior:"instant"});document.documentElement.dataset.dir=a<0?"prev":"next";const i=()=>{if(s!==qs)return;Q.weekFromScroll=e;render()
-;Q.weekFromScroll=false};if(document.startViewTransition&&!Ls()){document.documentElement.classList.add("day-transition");const t=document.startViewTransition(i);js=t
+;Q.weekFromScroll=false};if(document.startViewTransition&&!Ns()){document.documentElement.classList.add("day-transition");const t=document.startViewTransition(i);js=t
 ;t.ready.catch(()=>{});t.finished.catch(()=>{}).finally(()=>{if(s===qs){js=null;document.documentElement.classList.remove("day-transition")}})}else{i();Ps(a)}}function Us(){
 return'<div class="week-page"><span class="week-selection" aria-hidden="true"></span>'+Array.from({length:7
 },()=>'<button type="button" class="week-day" data-act="weekPick"><span class="week-wd"></span><b></b><i aria-hidden="true"></i></button>').join("")+"</div>"}function Js(t,e){
@@ -1300,11 +1306,11 @@ const a=b(),s=w(a,1),n=Math.round((g($)-g(e))/864e5);const i=t.querySelector(".w
 ;t.setAttribute("aria-label",E(i)+" "+O(i)+(r?"，已选中":"")+(["std","min","part"].includes(o)?"，有记录":""));t.querySelector(".week-wd").textContent="一二三四五六日"[n]
 ;t.querySelector("b").textContent=+i.slice(8)})}function zs(t){const e=h("#week-scroller");As=t;Ts=null;_s=true;[...e.children].forEach((e,a)=>{Js(e,w(t,(a-1)*7));e.inert=a!==1})
 ;e.scrollTo({left:e.clientWidth,behavior:"instant"});requestAnimationFrame(()=>{_s=false})}function Fs(){const t=h("#week-shell"),e=h("#week-scroller"),a=k($)
-;if(!e.children.length)e.innerHTML=Us().repeat(3);if(t.hidden)return;if(Ts){zs(Ts.base)}if(!As||Q.weekFromScroll||Ls())zs(a);else if(a!==As){const t=a<As?0:2;Js(e.children[t],a)
+;if(!e.children.length)e.innerHTML=Us().repeat(3);if(t.hidden)return;if(Ts){zs(Ts.base)}if(!As||Q.weekFromScroll||Ns())zs(a);else if(a!==As){const t=a<As?0:2;Js(e.children[t],a)
 ;Ts={base:a};e.scrollTo({left:t*e.clientWidth,behavior:"smooth"})}else[...e.children].forEach((t,e)=>Js(t,w(a,(e-1)*7)));h("#week-range").textContent=D(a)+" – "+D(w(a,6))
 ;h("#week-next").disabled=a>=k(w(b(),1))}function Ws(){const t=h("#week-scroller");if(_s||Ms||h("#week-shell").hidden||!t.clientWidth)return;if(Ts){zs(Ts.base);return}if(!Is){
 if(Math.abs(t.scrollLeft-t.clientWidth)>1)zs(k($));return}Is=false;const e=Math.round(t.scrollLeft/t.clientWidth);if(e!==1){const t=w($,(e-1)*7),a=w(b(),1);Bs(t>a?a:t,true)
-;if(t===$)zs(k($))}}function Ks(t){const e=h("#week-scroller");if(Ts)zs(Ts.base);const a=w($,t*7),s=w(b(),1);if(t>0&&k($)>=k(s))return;if(Ls())Bs(a>s?s:a,true);else{Is=true
+;if(t===$)zs(k($))}}function Ks(t){const e=h("#week-scroller");if(Ts)zs(Ts.base);const a=w($,t*7),s=w(b(),1);if(t>0&&k($)>=k(s))return;if(Ns())Bs(a>s?s:a,true);else{Is=true
 ;e.scrollTo({left:(t<0?0:2)*e.clientWidth,behavior:"smooth"})}}function Ys(){const t=Rs(),e=t&&V!=="capture",a=h("#day-shell");const s=h("#week-shell").hidden;a.hidden=!t
 ;h("#week-shell").hidden=!e;if(e&&s)As=null;h("#workspace").classList.toggle("has-week",e);h("#app").dataset.route=V;if(!t)return
 ;const n=b(),i=$===n?"今天":$===w(n,-1)?"昨天":$===w(n,1)?"明天":"";h("#day-number").textContent=E($);h("#day-weekday").textContent=O($);h("#day-relative").textContent=i
@@ -1317,7 +1323,7 @@ Vs=JSON.parse(localStorage.getItem("zwgcb-ui")||"{}")||{}}catch(t){}if(typeof Vs
 }function Qs(t,e){const a=document.getElementById(t.getAttribute("aria-controls"));if(!a)return;Cn(t.dataset.uiOpen,e);t.setAttribute("aria-expanded",String(e))
 ;a.classList.toggle("is-open",e);if(a.id==="capture-moods-more")a.parentElement.dataset.expanded=String(e);a.setAttribute("aria-hidden",String(!e));a.firstElementChild.inert=!e
 ;const s=t.querySelector(".fold-label");if(s)s.textContent=e?t.dataset.closeLabel:t.dataset.openLabel;if(e)setTimeout(()=>{
-if(a.isConnected&&a.classList.contains("is-open")&&a.getBoundingClientRect().top>window.innerHeight-100)t.scrollIntoView({block:"nearest",behavior:"auto"})},Ls()?0:Ns("--t-base"))}
+if(a.isConnected&&a.classList.contains("is-open")&&a.getBoundingClientRect().top>window.innerHeight-100)t.scrollIntoView({block:"nearest",behavior:"auto"})},Ns()?0:Ls("--t-base"))}
 function Xs(t,e){return t+"|"+e}const Zs=new Map;function tn(t,e){return!Zs.has(Xs(t,e.id))}function en(t,e){if(!tn(e,t))return""
 ;const a="cap:"+Xs(e,t.id),s=Q.open.has(a),n="cap-panel-"+encodeURIComponent(Xs(e,t.id));const i=t.fact||t.quote||"留下了一点感受",o=(t.emos||[]).join(" · ")
 ;return'<div class="cap-row-shell" data-cap-ref="'+m(Xs(e,t.id))+'"><div class="cap-row-clip"><article class="cap-row'+(Q.fresh===t.id?" just-saved":"")+'"><button type="button" class="cap-compact" data-act="capExpand" data-ui-open="'+m(a)+'" data-key="'+e+'" data-id="'+m(t.id)+'" aria-expanded="'+s+'" aria-controls="'+n+'"><time class="cap-time">'+x(t.at)+'</time><span class="cap-excerpt"><span class="cap-feeling">'+m(o||"未标情绪")+$e(t.inten||0)+'</span><span class="cap-first-line">'+m(i.split("\n")[0])+'</span></span><span class="cap-mark">'+(!t.done?'<i class="pending-dot" aria-label="还没理清"></i>':"")+'<span class="fold-chevron" aria-hidden="true">›</span></span></button><div class="fold-grid'+(s?" is-open":"")+'" id="'+n+'" aria-hidden="'+!s+'"><div class="fold-inner"'+(s?"":" inert")+">"+Xe(t,e,{
@@ -1334,7 +1340,7 @@ return rs("quote","那一刻脑子里的原话，逐字","比如：反正也来�
 ;r+='<div class="capture-emotion" data-expanded="'+d+'" role="group" aria-label="情绪"><div class="capture-moods"><span class="lab">情绪</span>'+ls("emos",s.slice(0,6),true).replace(/^<div class="chips">/,"").replace(/<\/div>$/,"")+'<button type="button" class="chip mood-more" data-act="fold" data-ui-open="'+m(o+":moods")+'" aria-expanded="'+d+'" aria-controls="capture-moods-more">更多 <span class="fold-chevron" aria-hidden="true">›</span></button>'+u+'</div><div class="fold-grid'+(d?" is-open":"")+'" id="capture-moods-more" aria-hidden="'+!d+'"><div class="fold-inner"'+(d?"":" inert")+">"+ls("emos",l,true)+"</div></div></div>"
 ;r+='<div class="capture-intensity" role="group" aria-label="情绪强度"><span class="lab">强度</span>'+ds("inten",[[1,"1"],[2,"2"],[3,"3"],[4,"4"],[5,"5"]])+"</div>"
 ;const p=de().slice().sort((t,e)=>(t.no||0)-(e.no||0));if(t.hyp&&!S.hyps[t.hyp])t.hyp=null;if(t.hyp&&!t.hypKind)t.hypKind="sup"
-;let f=p.length?'<div class="chips">'+p.map(e=>'<button type="button" class="chip'+(t.hyp===e.id?" on":"")+'" data-act="pick" data-f="hyp" data-v="'+e.id+'">'+ve(e)+" · "+m(R(L(e),16))+"</button>").join("")+"</div>":'<p class="fine">清单里还没有假设，这一项可以空着。</p>'
+;let f=p.length?'<div class="chips">'+p.map(e=>'<button type="button" class="chip'+(t.hyp===e.id?" on":"")+'" data-act="pick" data-f="hyp" data-v="'+e.id+'">'+ve(e)+" · "+m(R(N(e),16))+"</button>").join("")+"</div>":'<p class="fine">清单里还没有假设，这一项可以空着。</p>'
 ;if(t.hyp)f+='<div class="lab">这件事对它来说是</div>'+ds("hypKind",[["sup","支持"],["con","反例"]])+'<p class="fine">存下时会给它记一条强证据。</p>'
 ;r+='<div class="capture-optionals">'+Gs(o+":hyp","capture-hyp","关联一条假设（可选）",f,{open:!!t.hyp})+Gs(o+":extra","capture-extra","补充原话、身体、在乎的（可选）",an(t),{open:e||!!t.more})+"</div>"
 ;r+='<div class="capture-save"><button type="button" class="btn" data-act="saveCap"'+(Q.capSaving?" disabled":"")+">"+(Q.capSaving?"正在保存…":Q.capSaved?"已存下 ✓":e?"存好":"先存下")+"</button>"+(e?'<button type="button" class="linkbtn cap-delete" data-act="delCap">删掉这条</button>':"")+"</div></section>"
@@ -1353,10 +1359,10 @@ if(!G||G.type!=="capture")return;const t=h("#f-fact");if(!t)return;const e=getCo
 block:"nearest",behavior:"auto"})}let rn=null,cn=null;function ln(){Q.capSaved=true;clearTimeout(rn);clearTimeout(cn);rn=setTimeout(()=>{Q.capSaved=false
 ;const t=h('[data-act="saveCap"]');if(t&&!Q.capSaving)t.textContent=G&&G.key==="new"?"先存下":"存好"},1200);cn=setTimeout(()=>{Q.fresh=null
 ;document.querySelectorAll(".just-saved").forEach(t=>t.classList.remove("just-saved"))},1500)}function dn(){const t=h("#undo-toast");t.hidden=!Zs.size
-;h("#undo-text").textContent=Zs.size>1?"已删除 "+Zs.size+" 条":"已删除"}function un(t,e){if(!Qo()||Zs.has(Xs(t,e)))return;const a=Xs(t,e),s=S.days[t]
+;h("#undo-text").textContent=Zs.size>1?"已删除 "+Zs.size+" 条":"已删除"}function un(t,e){if(!Xo()||Zs.has(Xs(t,e)))return;const a=Xs(t,e),s=S.days[t]
 ;if(!s||!(s.caps||[]).some(t=>t.id===e))return;const n={k:t,id:e,timer:setTimeout(()=>pn(a),5e3)};Zs.set(a,n);document.querySelectorAll("[data-cap-ref]").forEach(t=>{
 if(t.dataset.capRef===a){t.classList.add("is-removing");t.inert=true}});if(G&&G.type==="capture"&&G.key===a){G=null;render()}else setTimeout(()=>{if(Zs.has(a))render()
-},Ls()?0:Ns("--t-base"));dn();h("#undo-cap").focus({preventScroll:true})}async function pn(t){const e=Zs.get(t);if(!e)return;Zs.delete(t);dn()
+},Ns()?0:Ls("--t-base"));dn();h("#undo-cap").focus({preventScroll:true})}async function pn(t){const e=Zs.get(t);if(!e)return;Zs.delete(t);dn()
 ;const a=T(e.k),s=(a.caps||[]).find(t=>t.id===e.id);try{if(s){const n=qe(e.k,{id:e.id,hyp:null},s);a.caps=a.caps.filter(t=>t.id!==e.id);await ht("days",e.k,a)
 ;await Promise.all(n.map(t=>t()));delete X["capture:"+t];bt()}}catch(t){U("这次没删成功，请稍后重试。")}render()}function fn(){Zs.forEach(t=>clearTimeout(t.timer));Zs.clear();dn();render()
 ;U("已撤销删除。");const t=h(".cap-compact");if(t)t.focus({preventScroll:true})}function hn(){const s=G.key,n=w(s,6),i=re(s),o=G.data,r=b();const c=Object.keys(S.days).filter(t=>{
@@ -1391,7 +1397,7 @@ function mn(t,e){if(e&&e.op!=="none"&&e.line)return'<div class="hyp">'+e.line+'<
 ;let s=ds("D.op",[["new","新假设"],["old","给已有的一条记证据"],["none","没看出新东西"]]);if(t.D.op==="new"){
 s+='<div class="pair"><span>在</span>'+cs("D.sit","什么情况下","hyp")+"<span>我可能会</span>"+cs("D.rea","怎样","hyp")+'</div><div class="warn" id="w-hyp">'+ps((t.D.sit||"")+(t.D.rea||""))+"</div>"
 ;s+=rs("D.ev","证据","一句话，指向上面的慢放","",1)+Oe()}else if(t.D.op==="old"){
-if(!a.length)s+='<p class="fine">清单还是空的，先写一条新假设。</p>';else s+='<div class="chips">'+a.map(e=>'<button type="button" class="chip'+(t.D.hid===e.id?" on":"")+'" data-act="pick" data-f="D.hid" data-v="'+e.id+'">'+ve(e)+" · "+m(L(e))+"</button>").join("")+'</div><div class="lab">这件事对它来说是</div>'+ds("D.kind",[["sup","支持"],["con","反例"]])+rs("D.ev","证据","一句话","",1)+Oe()
+if(!a.length)s+='<p class="fine">清单还是空的，先写一条新假设。</p>';else s+='<div class="chips">'+a.map(e=>'<button type="button" class="chip'+(t.D.hid===e.id?" on":"")+'" data-act="pick" data-f="D.hid" data-v="'+e.id+'">'+ve(e)+" · "+m(N(e))+"</button>").join("")+'</div><div class="lab">这件事对它来说是</div>'+ds("D.kind",[["sup","支持"],["con","反例"]])+rs("D.ev","证据","一句话","",1)+Oe()
 }return s}function yn(){const t=G.data,e=b(),a=S.events[G.key],i=!!a;let o=fs(i?"单件复盘":"复盘一件事","不用等到晚上。挑一件事慢放一遍，找到你做选择的那个时刻。大约 10 分钟，每一栏都可以空着，没写完可以先存。",i?E(a.date)+" 的事":"")
 ;if(t.inten>=4)o+='<section class="card cool" style="margin-bottom:12px"><p class="muted">情绪强度'+t.inten+"：这时候深挖，容易越想越沉。先写完「慢放」就够了，其余等情绪降下来再补，草稿会自动保留。全程用第三人称写，也会轻一些。</p></section>"
 ;o+='<div class="card"><div class="sec">';o+='<div class="sec-h"><span class="mono">1</span>这件事<span class="t">1 分钟</span></div>';if(!i&&!t.capRef){const t=[]
@@ -1436,7 +1442,7 @@ e+='<div class="stage">一句话总结</div><p style="margin:0">'+m(r.headline)+
 ;const p=o.errors.length||n.length&&!t.mode
 ;e+='<div class="row"><button type="button" class="btn" data-act="impCommit"'+(p?" disabled":"")+'>确认写入</button><button type="button" class="btn ghost" data-act="impBack">重新粘贴</button></div></div>'
 ;return e}function bn(t){const e=new FileReader;e.onload=async()=>{let t=null;try{t=JSON.parse(e.result)}catch(t){}if(t&&t.format===l){U("这是一份对话复盘存档，请用「导入对话复盘」，把内容粘贴进去。");return}
-if(!t||typeof t!=="object"||!t.days||typeof t.days!=="object"){U("这个文件里没有自我观察本的数据。确认是用「全部数据导出」得到的 JSON。");return}if(!Qo())return;let a=0,s=0;const n=[];z.forEach(e=>{
+if(!t||typeof t!=="object"||!t.days||typeof t.days!=="object"){U("这个文件里没有自我观察本的数据。确认是用「全部数据导出」得到的 JSON。");return}if(!Xo())return;let a=0,s=0;const n=[];z.forEach(e=>{
 const i=t[e]&&typeof t[e]==="object"?t[e]:{};Object.keys(i).forEach(t=>{if(S[e]&&S[e][t])s++;else{n.push(ht(e,t,i[t]));a++}})});try{await Promise.all(n)}catch(t){return}Ce=false
 ;await je();U("导入了 "+a+" 条"+(s?"，跳过 "+s+" 条这里已经有的":"")+"。");render()};e.onerror=()=>U("这个文件读不出来。");e.readAsText(t)}function wn(){
 const t=Object.values(S.hyps),e=Q.hypFilter||"test",a=t=>t.status==="solid"?"solid":"test"
@@ -1447,7 +1453,7 @@ const t=Object.values(S.hyps),e=Q.hypFilter||"test",a=t=>t.status==="solid"?"sol
 ;if(!t.length)s+='<div class="hyp example"><div class="hmeta"><span class="st test">示例</span></div><div class="hs"><span class="pre">在</span>计划被临时打乱后<span class="pre">时，</span><br><span class="pre">我可能会</span>放弃当天剩下的全部计划</div><p class="fine">复盘里留下的假设，也会出现在这里。</p></div>'
 ;return s}function kn(t){
 const e=oe(t,"sup"),a=oe(t,"con"),s=Ee(t.ev),n=Q.hypOpen&&Q.hypOpen.id===t.id?Q.hypOpen.act:null,i=t.status==="solid"?"solid":"test",o=t.history||[],r=(t.ev||[]).slice().sort((t,e)=>String(t.date||"").localeCompare(String(e.date||""))),c=r.slice(-2).reverse()
-;let l='<article class="hyp '+i+'" data-hyp-id="'+m(t.id)+'"><div class="hmeta"><span class="hno">'+ve(t)+'</span><span class="st '+i+'">'+(i==="solid"?"较可信":"待验证")+"</span><span>首次 "+E(t.created)+"</span></div>"+Ze(t)+mo(t)+Bo("hyp",t)
+;let l='<article class="hyp '+i+'" data-hyp-id="'+m(t.id)+'"><div class="hmeta"><span class="hno">'+ve(t)+'</span><span class="st '+i+'">'+(i==="solid"?"较可信":"待验证")+"</span><span>首次 "+E(t.created)+"</span></div>"+Ze(t)+mo(t)+Uo("hyp",t)
 ;l+='<div class="hmeta evidence-counts"><span class="tally">支持 '+Ve(e)+'</span><span aria-hidden="true">｜</span><span class="tally con">反例 '+Ve(a)+"</span>"+(s.supW+s.conW?"<span>其中弱证据 "+(s.supW+s.conW)+"</span>":"")+"</div>"
 ;if(n==="evs")l+=_e(t);else if(c.length){l+='<ul class="evs recent-evidence">'+c.map(De).join("")+"</ul>"
 ;if(r.length>2)l+='<details class="all-evidence"'+jn("hyp:"+t.id+":evidence")+"><summary>全部 "+r.length+' 条证据 ›</summary><ul class="evs">'+r.slice().reverse().map(De).join("")+"</ul></details>"
@@ -1458,9 +1464,9 @@ const e=oe(t,"sup"),a=oe(t,"con"),s=Ee(t.ev),n=Q.hypOpen&&Q.hypOpen.id===t.id?Q.
 }).join("")+"</ol></details>";if(n==="sup"||n==="con"){const e=Q.hypOpen&&Q.hypOpen.str||"strong"
 ;l+='<div class="inline"><input type="text" id="hx-note" placeholder="'+(n==="sup"?"支持它的事实":"和它对不上的事实")+'（一句话）"><div class="seg">'+[["strong","强 · 当时记下或预测过"],["weak","弱 · 事后回想"]].map(t=>'<button type="button" class="'+(e===t[0]?"on":"")+'" data-act="hypStr" data-v="'+t[0]+'" aria-pressed="'+(e===t[0])+'">'+t[1]+"</button>").join("")+'</div><div class="row"><button type="button" class="btn sm'+(n==="con"?" red":"")+'" data-act="hypEv" data-id="'+t.id+'" data-v="'+n+'">记下'+(n==="con"?"反例":"支持")+'</button><button type="button" class="btn ghost sm" data-act="hypClose">算了</button></div></div>'
 }
-if(n==="rev")l+='<div class="inline"><div class="lab">改写后的版本（编号不变，旧版存进历史）</div><textarea id="hx-text" rows="3">'+m(L(t))+'</textarea><p class="fine">比如「计划被打乱后会放弃」遇到反例，可能改成「计划被打乱、而且当时已经很累时，会放弃」。条件越精确，你就越了解自己。改写后支持数和反例数从零算起。</p><div class="row"><button type="button" class="btn sm" data-act="hypRevise" data-id="'+t.id+'">改写</button><button type="button" class="btn ghost sm" data-act="hypClose">算了</button></div></div>'
+if(n==="rev")l+='<div class="inline"><div class="lab">改写后的版本（编号不变，旧版存进历史）</div><textarea id="hx-text" rows="3">'+m(N(t))+'</textarea><p class="fine">比如「计划被打乱后会放弃」遇到反例，可能改成「计划被打乱、而且当时已经很累时，会放弃」。条件越精确，你就越了解自己。改写后支持数和反例数从零算起。</p><div class="row"><button type="button" class="btn sm" data-act="hypRevise" data-id="'+t.id+'">改写</button><button type="button" class="btn ghost sm" data-act="hypClose">算了</button></div></div>'
 ;if(n==="del")l+='<div class="inline"><p class="muted">删掉后找不回来。确定删除这条？</p><div class="row"><button type="button" class="btn sm red" data-act="hypDel" data-id="'+t.id+'">删除</button><button type="button" class="btn ghost sm" data-act="hypClose">算了</button></div></div>'
-;return l+"</article>"}function xn(){const t=Le()
+;return l+"</article>"}function xn(){const t=Ne()
 ;return'<section class="card" id="settings-data"><h2 class="stage">数据</h2>'+ut()+'<p class="'+(t.stale?"warn":"fine")+'">'+(t.date?"上次导出："+t.date:"还没有导出过备份。")+'</p><p class="fine">导出 JSON 可以备份或迁移全部记录。导入会保留已有记录；本机草稿、访问口令和显示偏好不进入导出。保存某一天的 Word，可到回顾页点选日期后打开“⋯”。</p><div class="row">'+(Z?'<button type="button" class="btn ghost" data-act="export">全部数据导出</button>':"")+'<button type="button" class="btn ghost" data-act="importPick">全部数据导入</button><button type="button" class="btn ghost" data-act="copyAll">复制全部为文字</button></div><input type="file" id="importFile" accept=".json,application/json" hidden></section>'
 }function Sn(){if(Tt.msg)return Tt.msg;const t=Tt.at||Dt&&Dt.lastAt;if(!t)return"还没同步过。";const e=new Date(t),a=v(e)
 ;return"上次同步："+(a===v(new Date)?"今天":E(a))+" "+y(e.getHours())+":"+y(e.getMinutes())}function En(){
@@ -1502,9 +1508,9 @@ if((ai.request&&V==="ai"||chat.request&&V==="chat")&&!t)return;ai.texts.clear();
 ;if(e)t.setAttribute("aria-current","page");else t.removeAttribute("aria-current")});if(!G&&V==="capture")G={type:"capture",key:"new",data:X["capture:new"]?j(X["capture:new"]):{
 fact:"",emos:[],inten:0,quote:"",body:[],did:"",wanted:"",care:"",tags:[],more:false},dirty:false};if(!G&&V==="week"){const t=Q.weekKey||k(b());const e=S.weeks[t];G={type:"week",
 key:t,data:X["week:"+t]?j(X["week:"+t]):e?j(e):{dir:"",said:["","",""],did:["","",""],was:"",saw:""},dirty:false}}let n;if(G){n={morning:Ss,evening:Es,min:Os,capture:sn,week:hn,
-event:yn,import:gn}[G.type]()}else{const t={pred:na,review:ca,hyps:wn,more:fa,settings:ns,ai:Ii,chat:_o};n=(t[V]||na)()}const i={route:V,type:G?G.type:"",form:G,
+event:yn,import:gn}[G.type]()}else{const t={pred:na,review:ca,hyps:wn,more:fa,settings:ns,ai:Ii,chat:Io};n=(t[V]||na)()}const i={route:V,type:G?G.type:"",form:G,
 date:V==="more"?da().day||Q.moreDay||Q.moreMonth:$};const o=_n&&_n.route===i.route&&_n.type===i.type;e.dataset.view=G?G.type:V
-;e.dataset.writing=String(!!G&&!(G.type==="capture"&&G.key==="new"));Ys();e.innerHTML=n;Ga();gs();Mi();Si();Io();Vo();nn();const r=h("#review-excerpt"),c=h(".excerpt-toggle")
+;e.dataset.writing=String(!!G&&!(G.type==="capture"&&G.key==="new"));Ys();e.innerHTML=n;Ga();gs();Mi();Si();Mo();$o();nn();const r=h("#review-excerpt"),c=h(".excerpt-toggle")
 ;if(r&&c&&!r.classList.contains("expanded"))c.hidden=r.scrollHeight<=r.clientHeight+1;if(o){if(_n.form===G&&_n.date===i.date)a.inputs.forEach(t=>{const a=Tn(e,t.identity)
 ;if(a&&a.id!=="copyArea"&&!a.id.startsWith("ai-")&&!a.id.startsWith("chat-")&&!a.hasAttribute("data-chat-hyps")){a.value=t.value;if(typeof t.checked==="boolean")a.checked=t.checked
 }});const t=Tn(e,a.focus);if(t&&!t.disabled&&t.getClientRects().length){t.focus({preventScroll:true})
@@ -1518,11 +1524,11 @@ const t=h("#view-status");t.textContent=i.date.length===10?"已切换到 "+E(i.d
 }const r=i.evening;if(r&&r.raw){const t=r.raw;if(r.mode==="std"){const A=t.A||{};const e=[A.b0,A.b1,A.b2].filter(Boolean);if(e.length)o.push("时间最多的三块："+e.join(" / "))
 ;if(A.self)o.push("主动做的事："+A.self);if(t.surprise)o.push("意外回看："+t.surprise);const a=t.C||{}
 ;if(a.fact||a.quote)o.push("已写的深挖："+[a.fact,a.quote&&"原话「"+a.quote+"」",a.body&&"身体："+a.body,a.did,a.care&&"在乎："+a.care].filter(Boolean).join("；"))}else{
-if(t.q1)o.push("不一样的一刻："+t.q1);if(t.q2)o.push("在乎的："+t.q2)}if(r.D&&r.D.text)o.push("今天的假设："+r.D.text)}n.forEach(t=>o.push(ti(t)));return o.join("\n")}function Ln(){
+if(t.q1)o.push("不一样的一刻："+t.q1);if(t.q2)o.push("在乎的："+t.q2)}if(r.D&&r.D.text)o.push("今天的假设："+r.D.text)}n.forEach(t=>o.push(ti(t)));return o.join("\n")}function Nn(){
 const t=de().slice().sort((t,e)=>(t.no||0)-(e.no||0));const e="当前假设清单（编号固定。改写或加证据用原编号；新增的假设用下一个编号 H"+we()+"，再新增就依次往后排）：";if(!t.length)return e+"\n还是空的。";return e+"\n"+t.map(t=>{
 const e=Ee(t.ev)
-;return"- "+ve(t)+" ["+(t.status==="solid"?"较可信":"待验证")+"｜支持 "+e.sup+(e.supW?"（弱 "+e.supW+"）":"")+"｜反例 "+e.con+(e.conW?"（弱 "+e.conW+"）":"")+((t.history||[]).length?"｜改写过 "+t.history.length+" 次":"")+"] "+L(t)
-}).join("\n")}const Nn="请按 B、C、D 的顺序问我：先对照预测，再挑一个时刻深挖，最后写成一条假设。只问事实，不安慰，不给建议，每次只问一个问题。我开始解释原因或评价自己时，把我拉回「当时发生了什么」。最后帮我把发现写成「在___时，我可能会___」，并指出它和清单里哪一条有关，是支持还是反例。"
+;return"- "+ve(t)+" ["+(t.status==="solid"?"较可信":"待验证")+"｜支持 "+e.sup+(e.supW?"（弱 "+e.supW+"）":"")+"｜反例 "+e.con+(e.conW?"（弱 "+e.conW+"）":"")+((t.history||[]).length?"｜改写过 "+t.history.length+" 次":"")+"] "+N(t)
+}).join("\n")}const Ln="请按 B、C、D 的顺序问我：先对照预测，再挑一个时刻深挖，最后写成一条假设。只问事实，不安慰，不给建议，每次只问一个问题。我开始解释原因或评价自己时，把我拉回「当时发生了什么」。最后帮我把发现写成「在___时，我可能会___」，并指出它和清单里哪一条有关，是支持还是反例。"
 ;const Rn=`review-archive/v1 格式说明（字段名照抄，值换成这次复盘的内容）：\n{\n  "format": "review-archive/v1",\n  "date": "复盘的是哪一天，YYYY-MM-DD",\n  "time": "对话起止时间，比如 19:11-19:37，不知道就留空",\n  "chat_link": "这次对话的链接，没有就留空字符串",\n  "summary": {\n    "headline": "一句话总结",\n    "points": ["要点 1", "要点 2"]\n  },\n  "predictions": [\n    {"text": "预测原文", "actual": "实际情况", "result": "中 / 没中 / 暂时中"}\n  ],\n  "deep_dive": {\n    "note_time": "深挖的那一刻，比如 18:02",\n    "moment": "那一刻是什么事",\n    "timeline": ["按时间顺序的事实，一条一句"],\n    "gaps": ["记不清或缺失的地方"]\n  },\n  "hypotheses": [\n    {\n      "op": "new（新增）/ update（改写已有的一条）/ evidence（只给已有的一条加证据）",\n      "id": "H 编号。update 和 evidence 用清单里的原编号；new 用清单给出的下一个编号",\n      "text": "在___时，我可能会___（new 和 update 必填；evidence 可以不写）",\n      "support": [{"date": "YYYY-MM-DD，不确定就留空", "text": "支持它的事实", "strength": "强 或 弱（事后回忆的算弱）"}],\n      "counter": [{"date": "", "text": "和它对不上的事实", "strength": "强 或 弱"}],\n      "drafts": ["考虑过但没采用的其他说法"]\n    }\n  ],\n  "if_then": "如果___，我就___",\n  "tomorrow_prediction": "给明天的一条能判对错的预测",\n  "open_questions": ["还没解决的问题"],\n  "claude_view": ["你自己的推测和看法"]\n}\n规则：\n- support 和 counter 只放我亲口说过的事实，不放你的推测。你的推测和看法写进 claude_view，这部分永远不会计入证据。\n- 某个字段没有内容，就给空字符串 "" 或空列表 []，不要删掉字段。\n- 整段必须是合法 JSON：用英文双引号，最后一项后面不加逗号。`
 ;const Hn="复盘结束时，按 review-archive/v1 格式输出一段 JSON 存档，放在代码块里。\n\n"+Rn;function Pn(t){const e=()=>U("已复制，粘贴给 Claude 就行");const a=()=>{Q.copy=t;render();window.scrollTo(0,0)};try{
 const s=navigator.clipboard&&navigator.clipboard.writeText(t);if(s)s.then(e,a);else a()}catch(t){a()}}
@@ -1547,7 +1553,7 @@ o.push(Fn("C 深挖一个时刻"),Kn("选的时刻",Yn(s,a.src)),Kn("那一刻",
 if(i.D&&i.D.text)o.push(Fn("D 写成一条假设"),Wn(i.D.text));if(n.watch||n.tmr)o.push(Fn("E 明天"),Kn("留意",n.watch),Kn("给明天出的题",n.tmr))}else{
 o.push(Kn("哪一刻的我，和以为的自己不一样",t.q1),Kn("那一刻在乎的",t.q2));if(i.D&&i.D.text)o.push(Kn("假设",i.D.text))}o.push(Kn("写完的感觉",{light:"轻一点",same:"差不多",heavy:"更沉了"}[i.after]))}const c=ue(s)
 ;if(c.length){o.push(zn("单件复盘"));c.forEach(t=>{o.push.apply(o,Qn(t,true))})}o.push(zn("当前的自我假设清单"));const l=de();if(l.length)l.slice().sort((t,e)=>(t.no||0)-(e.no||0)).forEach(t=>{
-o.push(Wn(ve(t)+"　"+L(t)),Wn((t.status==="solid"?"较可信":"待验证")+" · 支持 "+oe(t,"sup")+" 次 · 反例 "+oe(t,"con")+" 次","Small"))});else o.push(Wn("清单还是空的。","Small"))
+o.push(Wn(ve(t)+"　"+N(t)),Wn((t.status==="solid"?"较可信":"待验证")+" · 支持 "+oe(t,"sup")+" 次 · 反例 "+oe(t,"con")+" 次","Small"))});else o.push(Wn("清单还是空的。","Small"))
 ;o.push(Wn("导出于 "+v(new Date)+" "+x((new Date).toISOString()),"Small"))
 ;return'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>'+o.filter(Boolean).join("")+'<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1440" w:right="1304" w:bottom="1440" w:left="1304" w:header="708" w:footer="708" w:gutter="0"/></w:sectPr></w:body></w:document>'
 }const $n={light:"轻一点",same:"差不多",heavy:"更沉了"};function Gn(t){const e=t.data||{},a=e.summary||{},s=e.deep_dive||{},n=[],i=t.resolvedQ||[];const o={new:"新增",update:"改写",
@@ -1570,7 +1576,7 @@ return'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:
 }function Zn(t){
 const e=[Wn("自我观察本 · 单件复盘","Small"),Wn(t.title||"单件复盘","Title"),Wn(t.date.slice(0,4)+"年"+E(t.date)+" "+O(t.date)+" 的事"+(t.created?" · 复盘于 "+E(v(new Date(t.created)))+" "+x(t.created):""),"Small")].concat(Qn(t,false))
 ;const a=t.Dres&&t.Dres.hid&&S.hyps[t.Dres.hid]
-;if(a)e.push(Fn("相关的假设"),Wn(ve(a)+"　"+L(a)),Wn((a.status==="solid"?"较可信":a.status==="revised"?"已改写":"待验证")+" · 支持 "+oe(a,"sup")+" 次 · 反例 "+oe(a,"con")+" 次","Small"))
+;if(a)e.push(Fn("相关的假设"),Wn(ve(a)+"　"+N(a)),Wn((a.status==="solid"?"较可信":a.status==="revised"?"已改写":"待验证")+" · 支持 "+oe(a,"sup")+" 次 · 反例 "+oe(a,"con")+" 次","Small"))
 ;e.push(Wn("导出于 "+v(new Date)+" "+x((new Date).toISOString()),"Small"));return Xn(e)}function ti(t){const e=["【单件复盘 "+t.date+" "+O(t.date)+"】"+(t.title||"")];const a=(t,a)=>{
 if(a&&String(a).trim())e.push(t+"："+String(a).trim())};a("经过",t.facts);a("原话",t.quote&&"「"+t.quote+"」");a("情绪",(t.emos||[]).join("、")+(t.inten?" "+t.inten+"/5":""))
 ;a("身体",(t.body||[]).join("、"));a("事前以为（事后回想）",t.expect);a("实际差在",t.gap);a("做选择的那一刻",t.fork);a("别的做法",t.alt);a("没选它的理由",t.why);a("碰到了我在乎的",t.care);a("换成好朋友，我会怎么看他",t.friend)
@@ -1613,7 +1619,7 @@ caps:true,events:false,archives:false,hyps:false},Vs.aiMaterials||{})}function f
 ;const i=Object.values(S.hyps).filter(e=>n.has(e.id)||(e.ev||[]).some(e=>e.date===t));return{review:fi(e),preds:(e.preds||[]).map(t=>({text:t.text||"",result:t.result||"",
 actual:t.actual||""})),caps:(e.caps||[]).filter(e=>tn(t,e)).map(t=>({time:x(t.at),fact:t.fact||"",emos:t.emos||[],inten:t.inten||0,quote:t.quote||"",care:t.care||""})),
 events:a.map(ti).join("\n\n"),archives:s.map(t=>{const e=t.data||{},a=e.summary||{},s=e.deep_dive||{}
-;return[a.headline,...a.points||[],s.moment,...s.timeline||[],...e.open_questions||[]].filter(Boolean).join("\n")}).join("\n\n"),hyps:i.map(t=>({no:t.no||0,text:L(t),
+;return[a.headline,...a.points||[],s.moment,...s.timeline||[],...e.open_questions||[]].filter(Boolean).join("\n")}).join("\n\n"),hyps:i.map(t=>({no:t.no||0,text:N(t),
 sup:oe(t,"sup"),con:oe(t,"con")}))}}function mi(t,e){const a=hi(t),s=[];["review","events","archives"].forEach(t=>{if(e[t]&&a[t])s.push(di.find(e=>e[0]===t)[1]+"\n"+a[t])});return{
 review:s.join("\n\n"),preds:e.preds?a.preds:[],caps:e.caps?a.caps:[],hyps:e.hyps?a.hyps:[]}}function yi(t){if(t.materials){const e=t.materials
 ;return[e.review?"当天文字材料":"",e.preds.length?"预测 "+e.preds.length+" 条":"",e.caps.length?"随手记 "+e.caps.length+" 条":"",e.hyps.length?"当天关联假设 "+e.hyps.length+" 条":""].filter(Boolean).join("、")+"（本轮已固定）"
@@ -1633,7 +1639,7 @@ model:t.roundModel};const a=bt();if(!a)t.exploreNotice="草稿未存成功，请
 });t.replaceChildren(a)}function Si(){vo();ai.texts.forEach((t,e)=>xi(document.getElementById(e),t));if(V==="ai")Ei()}function Ei(){const t=ai.request
 ;if(!t||V!=="ai"||t.session.date!==ai.date)return;const e=h("#ai-live-"+t.mode);if(!e)return;const a=window.innerHeight+window.scrollY>=document.documentElement.scrollHeight-160
 ;xi(e,t.text);e.classList.toggle("is-streaming",true);if(a&&t.mode==="explore")h("#ai-stream-anchor")?.scrollIntoView({block:"nearest",behavior:"auto"})}function Di(){render(true)}
-function Oi(t,e="summary"){if(!ci||!N(t))return;if(ai.request)ai.request.ctl.abort();ai.date=t;ui(t).tab=e;$=t;const a="#ai?day="+t;if(location.hash===a){V="ai";Di()
+function Oi(t,e="summary"){if(!ci||!L(t))return;if(ai.request)ai.request.ctl.abort();ai.date=t;ui(t).tab=e;$=t;const a="#ai?day="+t;if(location.hash===a){V="ai";Di()
 }else location.hash=a}function Ci(){
 return'<section class="card ai-token"><span class="ai-eyebrow">先连接，再慢慢聊</span><h2>只需输入一次访问口令</h2><p class="fine">保存在这台设备，不进入数据导出或云端同步。</p><label for="ai-token">访问口令</label><div class="ai-token-row"><input id="ai-token" type="password" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="输入你设置的口令"><button type="button" class="btn" data-act="aiTokenSave"'+(ai.authBusy?" disabled":"")+">"+(ai.authBusy?"正在测试…":"保存并测试")+"</button></div>"+(ai.authMessage?'<p class="ai-error" role="status">'+m(ai.authMessage)+"</p>":"")+"</section>"
 }function ji(t){return t?.stopReason==="max_tokens"?'<p class="fine" role="status">回答到上限被截断了</p>':""}function qi(t,e){const a=t[e+"Error"]
@@ -1655,19 +1661,19 @@ n+='<div class="ai-messages">'+t.messages.map((t,e)=>'<article class="ai-message
 ;if(t.messages.length)n+='<div class="ai-round-actions"><button type="button" class="btn ghost" data-act="aiSaveExplore"'+(ai.request?" disabled":"")+">保存这次探索</button>"+io(t.roundId,t.messages.filter(t=>t.role==="assistant").length>=2)+'<button type="button" class="linkbtn" data-act="aiNewRound"'+(ai.request?" disabled":"")+">开新一轮</button></div>"+oo(t.roundId)
 ;const i=s.length?s.slice().reverse().map((e,a)=>'<article class="ai-history-item" data-chat-id="'+m(e.id)+'"><div class="row"><span class="fine">'+E(t.date)+" · "+x(e.at)+" · "+e.messages.filter(t=>t.role==="user").length+" 次追问</span>"+io(e.id,true)+'<button type="button" class="linkbtn" data-act="aiDeleteExplore" data-id="'+m(e.id)+'">删除</button></div>'+oo(e.id)+e.messages.map((t,e)=>'<div class="ai-message '+t.role+'"><span class="ai-eyebrow">'+(t.role==="user"?"我":"Claude")+"</span>"+wi("ai-history-"+a+"-"+e,t.content)+ji(t)+"</div>").join("")+"</article>").join(""):'<p class="fine">保存后，这一轮会收进当天记录。</p>'
 ;return n+Gs("ai:history:"+t.date,"ai-history","之前的探索（"+s.length+"）",i,{close:"收起之前的探索（"+s.length+"）",className:"ai-history"})+"</section>"}function Ii(){if(!ai.date){
-const t=new URLSearchParams(location.hash.split("?")[1]||"").get("day");ai.date=N(t)?t:$}const t=ui();yo(t)
+const t=new URLSearchParams(location.hash.split("?")[1]||"").get("day");ai.date=L(t)?t:$}const t=ui();yo(t)
 ;return'<div class="ai-page"><div class="ai-tabs" role="tablist" aria-label="聊天方式">'+[["summary","总结"],["explore","探索"]].map(([e,a])=>'<button type="button" role="tab" aria-selected="'+(t.tab===e)+'" data-act="aiTab" data-v="'+e+'">'+a+"</button>").join("")+"</div>"+(!navigator.onLine?'<p class="ai-error" role="status">需要联网。已有内容仍可阅读。</p>':"")+(!ai.token||ai.needsToken?Ci():"")+(ai.request&&ai.request.mode!==t.tab?'<p class="fine">'+(ai.request.mode==="summary"?"总结":"探索")+'正在生成 <button type="button" class="linkbtn" data-act="aiStop">停止</button></p>':"")+(t.tab==="summary"?Ti(t):_i(t))+"</div>"
 }function Mi(){const t=V==="ai";document.body.classList.toggle("ai-mode",t);h("#ai-shell").hidden=!t;if(!t)return;document.body.classList.add("writing-mode")
-;h("#writing-shell").hidden=true;h("#ai-title").textContent="和 Claude 聊一聊 · "+E(ai.date);h("#day-shell").hidden=true;h("#week-shell").hidden=true}function Li(t){
-return typeof t==="string"&&t.length<=253&&/^[a-z0-9.-]+$/i.test(t)?t:"—"}function Ni(){const t=ai.diag;if(!t)return'<p class="fine">还没有请求记录。诊断仅在本次打开期间保留。</p>'
-;const e=[["接口",t.endpoint],["HTTP 状态",t.status??"未收到响应"],["耗时",(t.elapsed/1e3).toFixed(1)+" 秒"],["收到结束事件",t.ended?"是":"否"],["收到思考内容",t.thinking?"是":"否"],["结束原因",t.stopReason||"未提供"],["力度是否生效",t.effort==="applied"?"已应用（applied）":t.effort==="dropped"?"中转站拒绝，已降级（dropped）":"未提供 / 未设置"],["input_tokens",t.input_tokens??"未提供"],["output_tokens",t.output_tokens??"未提供"],["cache_read_input_tokens",t.cache_read_input_tokens??"未提供"],["实际节点",t.node==="primary"?"主节点":t.node==="backup"?"备用节点":"未提供 / 未调用"],["发生跳转",t.redirected?"是":"否"],["跳转后的域名",t.redirected?Li(t.domain):"—"]]
+;h("#writing-shell").hidden=true;h("#ai-title").textContent="和 Claude 聊一聊 · "+E(ai.date);h("#day-shell").hidden=true;h("#week-shell").hidden=true}function Ni(t){
+return typeof t==="string"&&t.length<=253&&/^[a-z0-9.-]+$/i.test(t)?t:"—"}function Li(){const t=ai.diag;if(!t)return'<p class="fine">还没有请求记录。诊断仅在本次打开期间保留。</p>'
+;const e=[["接口",t.endpoint],["HTTP 状态",t.status??"未收到响应"],["耗时",(t.elapsed/1e3).toFixed(1)+" 秒"],["收到结束事件",t.ended?"是":"否"],["收到思考内容",t.thinking?"是":"否"],["结束原因",t.stopReason||"未提供"],["力度是否生效",t.effort==="applied"?"已应用（applied）":t.effort==="dropped"?"中转站拒绝，已降级（dropped）":"未提供 / 未设置"],["input_tokens",t.input_tokens??"未提供"],["output_tokens",t.output_tokens??"未提供"],["cache_read_input_tokens",t.cache_read_input_tokens??"未提供"],["实际节点",t.node==="primary"?"主节点":t.node==="backup"?"备用节点":"未提供 / 未调用"],["发生跳转",t.redirected?"是":"否"],["跳转后的域名",t.redirected?Ni(t.domain):"—"]]
 ;return'<dl class="ai-diagnostics">'+e.map(([t,e])=>"<dt>"+t+"</dt><dd>"+m(e)+"</dd>").join("")+'</dl><p class="fine">只存在内存，刷新即清空；不进入导出或同步。</p>'}function Ri(){
 if(!ci)return'<section class="card" id="settings-ai"><h2 class="stage">AI</h2><p class="fine">AI 只在 zwgcb.cn 上可用。这个网址不会请求访问口令，也不会连接 AI 接口。</p></section>'
-;return'<section class="card" id="settings-ai"><h2 class="stage">AI</h2><p class="fine">'+(ai.models?"总结："+m(ai.models.summary)+"<br>探索："+m(ai.models.explore):"模型：测试连接后显示")+'</p><div class="row"><button type="button" class="btn ghost sm" data-act="aiEditToken">修改口令</button><button type="button" class="btn ghost sm" data-act="aiHealth"'+(ai.authBusy?" disabled":"")+">"+(ai.authBusy?"正在测试…":"测试连接")+"</button></div>"+(ai.settingsEdit?Ci():ai.authMessage?'<p class="fine" role="status">'+m(ai.authMessage)+"</p>":"")+Gs("ai:diagnostic","ai-diagnostic","诊断信息",Ni(),{
+;return'<section class="card" id="settings-ai"><h2 class="stage">AI</h2><p class="fine">'+(ai.models?"总结："+m(ai.models.summary)+"<br>探索："+m(ai.models.explore):"模型：测试连接后显示")+'</p><div class="row"><button type="button" class="btn ghost sm" data-act="aiEditToken">修改口令</button><button type="button" class="btn ghost sm" data-act="aiHealth"'+(ai.authBusy?" disabled":"")+">"+(ai.authBusy?"正在测试…":"测试连接")+"</button></div>"+(ai.settingsEdit?Ci():ai.authMessage?'<p class="fine" role="status">'+m(ai.authMessage)+"</p>":"")+Gs("ai:diagnostic","ai-diagnostic","诊断信息",Li(),{
 close:"收起诊断信息"})+"</section>"}function Hi(t){return ai.diag={endpoint:t,status:null,elapsed:0,ended:false,thinking:false,stopReason:null,effort:null,input_tokens:null,
 output_tokens:null,cache_read_input_tokens:null,node:null,redirected:false,domain:null}}function Pi(t,e){t.status=e.status;const a=e.headers.get("x-ai-effort")
 ;t.effort=["applied","dropped","not_requested"].includes(a)?a:null;const s=e.headers.get("x-ai-node");t.node=["primary","backup"].includes(s)?s:null
-;t.redirected=e.headers.get("x-ai-redirected")==="true";t.domain=t.redirected?Li(e.headers.get("x-ai-redirect-domain")):null}function Bi(t,e){if(!e)return
+;t.redirected=e.headers.get("x-ai-redirected")==="true";t.domain=t.redirected?Ni(e.headers.get("x-ai-redirect-domain")):null}function Bi(t,e){if(!e)return
 ;["input_tokens","output_tokens","cache_read_input_tokens"].forEach(a=>{if(Number.isFinite(e[a])&&e[a]>=0)t[a]=e[a]})}async function Ui(t=false){
 if(!ci||ai.authBusy||ai.request||ai.hypRequest)return;if(!navigator.onLine){ai.authMessage=li.offline;Di();return}const e=t?(h("#ai-token")?.value||"").trim():ai.token;if(!e){
 ai.settingsEdit=true;ai.needsToken=true;ai.authMessage="请先输入访问口令。";Di();return}ai.authBusy=true;ai.authMessage="";const a=Hi("/api/health"),s=performance.now();Di();try{
@@ -1676,7 +1682,7 @@ const s=await fetch("/api/health",{headers:{Authorization:"Bearer "+e},cache:"no
 localStorage.setItem("zwgcb-ai",JSON.stringify({token:e}))}catch{ai.authMessage="口令未能存入本机，请检查浏览器存储设置。";return}}ai.token=e;ai.needsToken=false;ai.settingsEdit=false
 ;ai.models=n.models||null;ai.authMessage="连接正常。"}catch(t){if(t.code==="unauthorized"){ai.needsToken=true;ai.settingsEdit=true}
 ai.authMessage=li[t.code]||li[t.name==="TimeoutError"?"timeout":"upstream_error"]}finally{a.elapsed=performance.now()-s;ai.authBusy=false;Di()}
-if(!ai.needsToken&&chat.pending&&V==="chat"){const t=chat.pending;chat.pending=null;No(t.text,t.retry)}if(!ai.needsToken&&ai.pending&&V==="ai"){const t=ai.pending;ai.pending=null
+if(!ai.needsToken&&chat.pending&&V==="chat"){const t=chat.pending;chat.pending=null;Ro(t.text,t.retry)}if(!ai.needsToken&&ai.pending&&V==="ai"){const t=ai.pending;ai.pending=null
 ;if(t.date===ai.date){if(t.mode==="hyps")co(t.chatId);else Yi(t.mode)}}}function Ji(t){return{selection:t.selection||pi(),materials:t.materials||mi(t.date,pi())}}function zi(t){
 return!!(t.review.trim()||t.preds.length||t.caps.length||t.hyps.length)}function Fi(t=null,chat=null){if(t==="hyps"){lo(chat);return}const e=t==="chat"?{date:chat.date
 }:ui(),a=t==="chat"?{selection:pi(),materials:mi(e.date,pi())}:Ji(e),s=hi(e.date),n=!!e.materials;ai.confirm={mode:t,selection:j(a.selection),...t==="chat"?{chatDate:e.date}:{}}
@@ -1741,7 +1747,7 @@ aiGenerate(){Yi("summary")},aiSend(){Yi("explore")},aiStop(){if(ai.request){ai.r
 ui().input=t.querySelector("span").textContent;ui().tab="explore";vi(ui());Di();h("#ai-question")?.focus()},aiTokenSave(){Ui(true)},aiHealth(){Ui()},aiEditToken(){
 ai.settingsEdit=!ai.settingsEdit;ai.authMessage="";Di();h("#ai-token")?.focus()},aiMaterials(){Fi()},aiConsentCancel(){eo()},aiConsentAccept(){const t=ui(),e=ai.confirm
 ;if(!e)return;if(e.mode==="hyps"){eo();uo(e);return}if(e.chatDate){const t=mi(e.chatDate,e.selection);if(!zi(t)){h("#ai-consent-error").textContent="至少选择一项有内容的材料。";return}
-chat.attachment={date:e.chatDate,materials:t};eo();render(true);return}const a={selection:e.selection,materials:t.materials||mi(t.date,e.selection)};if(!zi(a.materials)){
+chat.attachment={date:e.chatDate,materials:t};So();eo();render(true);return}const a={selection:e.selection,materials:t.materials||mi(t.date,e.selection)};if(!zi(a.materials)){
 h("#ai-consent-error").textContent="至少选择一项有内容的材料。";return}Vs.aiMaterials=j(e.selection);ja();t.consent=Ki(t,a);const s=e.mode;eo();if(s)Xi(s,t,a);else Di()},aiSaveExplore(){Zi()},
 aiNewRound(){ao()},async aiSaveAndNew(){if(await Zi())eo()},aiDiscardRound(){to(ui());eo();Di()},aiDeleteExplore(t){const e=t.dataset.id;ai.confirm={deleteId:e}
 ;const a=h("#ai-confirm")
@@ -1762,7 +1768,7 @@ function oo(t){const e=ai.hypResults.get(no(t));if(!e)return"";const a=' data-ch
 }).join("")+"</div>"}function ro(t){const e=ui(),a=(S.days[e.date]?.ai?.explores||[]).find(e=>e.id===t);if(t===e.roundId)return{id:t,date:e.date,model:e.roundModel,
 messages:j(e.messages)};return a?{...j(a),date:e.date}:null}function co(t){if(!ci||ai.request||ai.hypRequest||ai.authBusy)return;const chat=ro(t);if(!chat)return
 ;if(!ai.token||ai.needsToken){ai.pending={mode:"hyps",chatId:t,date:chat.date};ai.needsToken=true;Di();h("#ai-token")?.focus();return}if(!navigator.onLine){U(li.offline);return}
-Fi("hyps",chat)}function lo(chat){const t={messages:chat.messages.map(t=>({role:t.role,content:t.content})),hyps:Object.values(S.hyps).map(t=>({no:t.no,text:L(t)}))};ai.confirm={
+Fi("hyps",chat)}function lo(chat){const t={messages:chat.messages.map(t=>({role:t.role,content:t.content})),hyps:Object.values(S.hyps).map(t=>({no:t.no,text:N(t)}))};ai.confirm={
 mode:"hyps",chat:chat,payload:t};const e=h("#ai-confirm")
 ;e.innerHTML='<header class="row"><h2 id="ai-confirm-title">提炼前，确认发送内容</h2><button type="button" class="icon-button" data-act="aiConsentCancel" aria-label="关闭发送确认">×</button></header><p class="fine">会发送这次对话的全文和现有假设的文字。提炼结果只在本次打开期间保留，你确认加入后才会写入记录。</p><details class="ai-preview"><summary>查看实际发送的文字</summary><div id="ai-material-preview" class="ai-prose"></div></details><button type="button" class="btn" data-act="aiConsentAccept">确认并提炼</button>'
 ;h("#ai-material-preview").textContent=JSON.stringify(t,null,2);e.showModal()}async function uo(t){if(ai.hypRequest||ai.request)return
@@ -1776,14 +1782,14 @@ code:"upstream_error"};s.hyps=a.hyps.map(e=>({text:e.text,why:e.why,near:Number.
 s.error=i.ctl.signal.aborted?"提炼已中止，可以重新提炼。":li[e.code]||li.upstream_error;if(e.code==="unauthorized"){ai.needsToken=true;ai.pending={mode:"hyps",date:t.chat.date,chatId:t.chat.id}
 }}finally{clearTimeout(c);l();s.busy=false;o.elapsed=performance.now()-r;if(ai.hypRequest===i)ai.hypRequest=null;if(V==="ai")Di()}}function po(t){
 return ai.hypResults.get(no(t.dataset.chat))?.hyps?.[Number(t.dataset.index)]}function fo(t){const e=po(t);if(!e||e.added||e.saving)return;e.edit=e.text;e.error="";Di()}
-async function ho(t){const e=ai.hypResults.get(no(t.dataset.chat)),a=po(t);if(!e||!a||a.added||a.saving||a.edit===undefined||!Qo())return;const s=a.edit.trim()
+async function ho(t){const e=ai.hypResults.get(no(t.dataset.chat)),a=po(t);if(!e||!a||a.added||a.saving||a.edit===undefined||!Xo())return;const s=a.edit.trim()
 ;if(!s||s.length>300){a.error="请写下 1–300 字的假设。";Di();return}a.saving=true;a.error="";Di();try{const chat=e.chat,t=j(T(chat.date)),n=t.ai||{}
 ;if(e.sourcePending||!(n.explores||[]).some(t=>t.id===chat.id)){e.sourcePending=true;t.ai={...n,explores:[...(n.explores||[]).filter(t=>t.id!==chat.id),{id:chat.id,
 at:(new Date).toISOString(),model:chat.model||"",messages:chat.messages.map(t=>({role:t.role,content:t.content}))}]};await Vi(t);e.sourcePending=false}
 const i=a.pendingHyp||(a.pendingHyp=xe({text:s,src:{type:"ai",date:chat.date,chatId:chat.id}}));i.text=s;await ht("hyps",i.id,i)
 ;if(F==="local"&&ft()?.hyps?.[i.id]?.text!==s)throw Error("local-save");a.text=s;a.added={id:i.id,no:i.no};delete a.edit;delete a.pendingHyp}catch{a.error="没有保存成功，请保留页面并重试。"
 }finally{a.saving=false;Di()}}function mo(t){const e=t.src
-;return e?.type==="ai"&&N(e.date)&&typeof e.chatId==="string"?'<button type="button" class="linkbtn fine" data-act="aiHypSource" data-id="'+m(t.id)+'">来自 '+e.date.slice(5).replace("-","/")+" 的对话</button>":""
+;return e?.type==="ai"&&L(e.date)&&typeof e.chatId==="string"?'<button type="button" class="linkbtn fine" data-act="aiHypSource" data-id="'+m(t.id)+'">来自 '+e.date.slice(5).replace("-","/")+" 的对话</button>":""
 }function yo(t){const e=new URLSearchParams(location.hash.split("?")[1]||"").get("chat");if(!e||ai.sourceHash===location.hash)return;ai.sourceHash=location.hash;t.tab="explore"
 ;const a=(S.days[t.date]?.ai?.explores||[]).some(t=>t.id===e);if(a){Cn("ai:history:"+t.date,true);ai.jumpChat=e}else U("来源对话已删除或不在这台设备上。")}function vo(){
 const t=V==="hyps"?ai.jumpHyp:V==="ai"?ai.jumpChat:null;if(!t)return;ai.jumpHyp=null;ai.jumpChat=null;requestAnimationFrame(()=>{
@@ -1791,30 +1797,34 @@ const e=V==="hyps"?"data-hyp-id":"data-chat-id",a=Array.from(document.querySelec
 ;a.scrollIntoView({block:"start"})}})}const chat={doc:null,input:"",attachment:null,request:null,error:"",thoughts:new Map,edits:new Map,busy:new Set,queues:new Map,follow:true,
 search:"",pending:null,jump:null};const go=t=>String(t??"").slice(5).replace("-","/")
 ;const bo=()=>Object.entries(S.meta).filter(([t,e])=>t.startsWith("chat:")&&e&&typeof e.id==="string"&&Array.isArray(e.messages)).map(([,t])=>t).sort((t,e)=>String(e.updated).localeCompare(String(t.updated)))
-;function wo(){const t=(new Date).toISOString();return{id:C(),title:"新对话",created:t,updated:t,messages:[],cards:{}}}function ko(){
-const t=new URLSearchParams(location.hash.split("?")[1]||"").get("id");if(chat.doc&&(!t||chat.doc.id===t))return chat.doc;const e=t&&S.meta["chat:"+t],a=t&&X["chat:"+t]
-;chat.doc=j(a?.doc&&(!e||a.doc.updated>=e.updated)?a.doc:e)||wo();chat.doc.cards||={};chat.input=a?.input||"";chat.attachment=a?.attachment||null
-;chat.error=t&&!e&&!a?"这次对话已删除或不在这台设备上。":"";chat.follow=true;chat.scrollTop=0;return chat.doc}function xo(t=chat.doc,e=false){if(!t)return
-;const a=chat.request?.doc===t?chat.request:null;if(a&&!e){const t=performance.now();if(t-a.lastDraft<1e3)return;a.lastDraft=t}const s=t===chat.doc;X["chat:"+t.id]={doc:j(t),
-input:s?chat.input:X["chat:"+t.id]?.input||"",attachment:s?j(chat.attachment):X["chat:"+t.id]?.attachment||null};if(chat.request?.doc===t){
-const e=X["chat:"+t.id].doc.messages[chat.request.index];if(e&&!a.finishedAt)e.partial=true}bt()
-;if(s&&V==="chat"&&!new URLSearchParams(location.hash.split("?")[1]||"").has("id"))history.replaceState(null,"","#chat?id="+encodeURIComponent(t.id))}async function So(t,e,a){
+;function wo(){const t=(new Date).toISOString();return{id:C(),title:"新对话",created:t,updated:t,messages:[],cards:{}}}async function ko(){for(const[t,e]of Object.entries(X)){
+if(!t.startsWith("chat:")||!e?.doc)continue;const a=e.doc,s=S.meta[t];try{if(!s||a.updated>=s.updated)await Eo("meta",t,a);const n={input:e.input||"",attachment:e.attachment||null}
+;if(n.input||n.attachment)X[t]=n;else delete X[t];if(!bt())X[t]=e}catch{}}}function xo(){const t=new URLSearchParams(location.hash.split("?")[1]||"").get("id")
+;if(chat.doc&&(!t||chat.doc.id===t))return chat.doc;const e=t&&S.meta["chat:"+t],a=t&&X["chat:"+t];chat.doc=j(a?.doc&&(!e||a.doc.updated>=e.updated)?a.doc:e)||wo()
+;chat.doc.cards||={};if(!e&&a&&t)chat.doc.id=t;const s=a?.index,n=a?.reply
+;if(n?.role==="assistant"&&Number.isInteger(s)&&s>=0&&s===chat.doc.messages.length&&chat.doc.messages[s-1]?.at===a.userAt)chat.doc.messages.push(j(n));chat.input=a?.input||""
+;chat.attachment=a?.attachment||null;chat.error=t&&!e&&!a?"这次对话已删除或不在这台设备上。":"";chat.follow=true;chat.scrollTop=0;return chat.doc}function So(t=chat.doc,e=false){if(!t)return
+;const a=chat.request?.doc===t?chat.request:null;if(a&&!e){const t=performance.now();if(t-a.lastDraft<1e3)return;a.lastDraft=t}const s="chat:"+t.id,n=X[s]||{},i=t===chat.doc;if(i){
+n.input=chat.input;n.attachment=j(chat.attachment)}if(a&&!a.preparing){const e=t.messages[a.index];if(e?.content){n.index=a.index;n.userAt=t.messages[a.index-1]?.at;n.reply=j(e)
+;if(!a.finishedAt)n.reply.partial=true}}if(n.input||n.attachment||n.reply||n.doc)X[s]=n;else delete X[s];bt()
+;if(i&&V==="chat"&&!new URLSearchParams(location.hash.split("?")[1]||"").has("id"))history.replaceState(null,"","#chat?id="+encodeURIComponent(t.id))}async function Eo(t,e,a){
 const s=S[t][e];try{await ht(t,e,a);if(F==="local"&&JSON.stringify(ft()?.[t]?.[e])!==JSON.stringify(S[t][e]))throw Error("local-save")}catch(a){if(s)S[t][e]=s;else delete S[t][e]
-;throw a}}async function Eo(t,e){const a=S[t][e],s=F==="local"?It()[t+"/"+e]:null;try{await vt(t,e);if(F==="local"){const a=ft();if(!a||a[t]?.[e])throw Error("local-remove")}
-}catch(n){if(a)S[t][e]=a;if(F==="local"){const a=It();if(s===undefined)delete a[t+"/"+e];else a[t+"/"+e]=s;Mt(a)}throw n}}function Do(t){t.updated=(new Date).toISOString()
-;const e=j(t),a=t.id;const s=(chat.queues.get(a)||Promise.resolve()).catch(()=>{}).then(()=>So("meta","chat:"+a,e));chat.queues.set(a,s);return s.then(()=>{const s=X["chat:"+a]
-;if(s?.doc?.updated<=e.updated){if(s.input)s.doc=j(e);else delete X["chat:"+a];bt()}if(chat.doc?.id===a&&chat.input)xo(t)})}function Oo(t,e=true){const a=[],s=[];let n=0
-;const i=String(t).split("\n");const o=t=>{if(a.at(-1)?.type==="text")a.at(-1).text+=t;else a.push({type:"text",text:t})};for(let t=0;t<i.length;t++){
-const r=i[t],c=r.trim(),l=t<i.length-1?"\n":"";const d=/^<(hyp|pred|ev|ask)(\s[^>]*)?>(.*?)<\/\1>$/.exec(c);if(!d){
+;throw a}}async function Do(t,e){const a=S[t][e],s=F==="local"?It()[t+"/"+e]:null;try{await vt(t,e);if(F==="local"){const a=ft();if(!a||a[t]?.[e])throw Error("local-remove")}
+}catch(n){if(a)S[t][e]=a;if(F==="local"){const a=It();if(s===undefined)delete a[t+"/"+e];else a[t+"/"+e]=s;Mt(a)}throw n}}function Oo(t){t.updated=(new Date).toISOString()
+;const e=j(t),a=t.id;const s=(chat.queues.get(a)||Promise.resolve()).catch(()=>{}).then(()=>Eo("meta","chat:"+a,e));chat.queues.set(a,s);return s.then(()=>{const t="chat:"+a,s=X[t]
+;if(!s)return;if(s.doc&&s.doc.updated<=e.updated)delete s.doc;if(s.reply&&JSON.stringify(e.messages[s.index])===JSON.stringify(s.reply)){delete s.reply;delete s.index
+;delete s.userAt}if(!s.input&&!s.attachment&&!s.reply&&!s.doc)delete X[t];bt()})}function Co(t,e=true){const a=[],s=[];let n=0;const i=String(t).split("\n");const o=t=>{
+if(a.at(-1)?.type==="text")a.at(-1).text+=t;else a.push({type:"text",text:t})};for(let t=0;t<i.length;t++){const r=i[t],c=r.trim(),l=t<i.length-1?"\n":""
+;const d=/^<(hyp|pred|ev|ask)(\s[^>]*)?>(.*?)<\/\1>$/.exec(c);if(!d){
 if(!e&&t===i.length-1&&(/^<(?:hyp|pred|ev|ask)\b/.test(c)||["<","<h","<hy","<p","<pr","<pre","<e","<a","<as"].includes(c)))continue;o(r+l);continue}const[,u,p="",f]=d,h={}
 ;let m=true,y=p;y=y.replace(/\s+([a-z]+)="([^"]*)"/g,(t,e,a)=>{if(Object.hasOwn(h,e))m=false;h[e]=a;return""});m=m&&!y.trim()&&f.trim().length>0&&[...f].length<=300
-;if(u==="hyp"||u==="ask")m=m&&!Object.keys(h).length;if(u==="pred")m=m&&Object.keys(h).length===1&&N(h.date)
+;if(u==="hyp"||u==="ask")m=m&&!Object.keys(h).length;if(u==="pred")m=m&&Object.keys(h).length===1&&L(h.date)
 ;if(u==="ev")m=m&&Object.keys(h).length===2&&/^[1-9]\d*$/.test(h.no||"")&&Number.isSafeInteger(+h.no)&&["sup","con"].includes(h.kind);if(u==="ask"){
 m=m&&s.length<2&&i.slice(t+1).every(t=>!t.trim()||/^<ask>[^\n]*<\/ask>$/.test(t.trim()));if(m){s.push(f.trim());continue}}else if(m&&n<2){a.push({type:u,text:f.trim(),...h,
-index:n++});continue}o(r+l)}return{parts:a,asks:s}}function Co(t){if(t.type==="hyp")return Object.values(S.hyps).find(e=>Je(L(e),t.text))
-;if(t.type==="pred")return(S.days[t.date]?.preds||[]).find(e=>Je(e.text,t.text));return null}function jo(t){
-const[e,a]=t.split(":").map(Number),s=Oo(chat.doc.messages[e]?.content||"").parts.find(t=>t.type!=="text"&&t.index===a);if(s&&chat.doc.cards[t]?.text)s.text=chat.doc.cards[t].text
-;return s}function qo(t,e,a=false){const s=chat.doc.cards[e];if(s?.text)t={...t,text:s.text};const n=Co(t),i=t.type==="ev"?Object.values(S.hyps).find(e=>e.no===+t.no):null
+index:n++});continue}o(r+l)}return{parts:a,asks:s}}function jo(t){if(t.type==="hyp")return Object.values(S.hyps).find(e=>Je(N(e),t.text))
+;if(t.type==="pred")return(S.days[t.date]?.preds||[]).find(e=>Je(e.text,t.text));return null}function qo(t){
+const[e,a]=t.split(":").map(Number),s=Co(chat.doc.messages[e]?.content||"").parts.find(t=>t.type!=="text"&&t.index===a);if(s&&chat.doc.cards[t]?.text)s.text=chat.doc.cards[t].text
+;return s}function Ao(t,e,a=false){const s=chat.doc.cards[e];if(s?.text)t={...t,text:s.text};const n=jo(t),i=t.type==="ev"?Object.values(S.hyps).find(e=>e.no===+t.no):null
 ;const o=t.type==="hyp"?"假设":t.type==="pred"?t.date===w(b(),1)?"明天的预测":go(t.date)+" 的预测":"给 H"+t.no+" 加"+(t.kind==="sup"?"支持证据":"反例")
 ;const r=' data-key="'+e+'"',c=chat.busy.has(chat.doc.id+":"+e),l=chat.edits.get(chat.doc.id+":"+e)
 ;let d='<article class="chat-card '+(s?.status==="added"?"is-added":"")+'" data-card-key="'+e+'"><span class="ai-eyebrow">'+m(o)+"</span>"
@@ -1824,106 +1834,108 @@ const[e,a]=t.split(":").map(Number),s=Oo(chat.doc.messages[e]?.content||"").part
 ;if(s.undoUntil>Date.now())d+='<button class="linkbtn" type="button" data-act="chatUndo"'+r+(c?" disabled":"")+">撤销</button>"}else if(n&&l===undefined){
 d+='<button class="linkbtn" type="button" data-act="chatExisting"'+r+">"+m(t.type==="hyp"?"已有 H"+n.no:"已有 "+go(t.date)+" 的预测")+" ›</button>"
 }else if(t.type==="ev"&&!i)d+='<span class="fine">找不到 H'+m(t.no)+"</span>";else d+='<div class="row"><button type="button" class="btn sm" data-act="chatAdd"'+r+(c||a||chat.request?" disabled":"")+">"+(c?"正在加入…":"加入")+'</button><button type="button" class="linkbtn" data-act="chatEdit"'+r+(c||a||chat.request?" disabled":"")+">改一下</button></div>"
-;return d+"</article>"}function Ao(t,e){const a=e?chat.request:chat.thoughts.get(chat.doc.id+":"+t);if(!a)return""
+;return d+"</article>"}function To(t,e){const a=e?chat.request:chat.thoughts.get(chat.doc.id+":"+t);if(!a)return""
 ;const s=a.thinking||"",n=Math.max(1,Math.round(((a.firstText||a.finishedAt||performance.now())-a.start)/1e3))
 ;if(e&&!a.text)return'<div class="chat-thinking is-thinking" role="status"><span>正在想</span><div>'+m(s||"正在读你说的话…")+"</div></div>";if(!s)return""
-;return'<details class="chat-thinking"'+(a.open?" open":"")+' data-thought="'+t+'"><summary>想了 '+n+" 秒</summary><div>"+m(s)+"</div></details>"}function To(){
+;return'<details class="chat-thinking"'+(a.open?" open":"")+' data-thought="'+t+'"><summary>想了 '+n+" 秒</summary><div>"+m(s)+"</div></details>"}function _o(){
 const t=chat.doc,e=t.messages.map(t=>t.role).lastIndexOf("assistant");return t.messages.map((a,s)=>{
-const n=chat.request?.doc===t&&chat.request.index===s,i=a.role==="assistant"?Oo(a.content,!n):null
-;let o=i?i.parts.map(t=>t.type==="text"?'<div class="ai-prose">'+m(t.text)+"</div>":qo(t,s+":"+t.index,n)).join(""):'<div class="ai-prose">'+m(a.content)+"</div>"
+const n=chat.request?.doc===t&&chat.request.index===s,i=a.role==="assistant"?Co(a.content,!n):null
+;let o=i?i.parts.map(t=>t.type==="text"?'<div class="ai-prose">'+m(t.text)+"</div>":Ao(t,s+":"+t.index,n)).join(""):'<div class="ai-prose">'+m(a.content)+"</div>"
 ;if(i&&s===e&&!n)o+='<div class="chat-asks">'+i.asks.map(t=>'<button type="button" class="chip" data-act="chatAsk" data-text="'+m(t)+'">'+m(t)+"</button>").join("")+"</div>"
-;return'<article class="chat-message '+(a.role==="assistant"?"assistant":"user")+'" data-message="'+s+'">'+(a.ctx?'<span class="chat-context">带了 '+m(go(a.ctx.date))+" 的记录</span>":"")+(a.role==="assistant"?Ao(s,n):"")+o+(a.stopReason==="max_tokens"?'<p class="fine">回答到上限被截断了</p>':"")+(a.partial?'<p class="fine">这条回复未完成，已保留收到的文字。</p>':"")+"</article>"
-}).join("")}function _o(){ko()
+;return'<article class="chat-message '+(a.role==="assistant"?"assistant":"user")+'" data-message="'+s+'">'+(a.ctx?'<span class="chat-context">带了 '+m(go(a.ctx.date))+" 的记录</span>":"")+(a.role==="assistant"?To(s,n):"")+o+(a.stopReason==="max_tokens"?'<p class="fine">回答到上限被截断了</p>':"")+(a.partial?'<p class="fine">这条回复未完成，已保留收到的文字。</p>':"")+"</article>"
+}).join("")}function Io(){xo()
 ;const t=chat.doc.messages.some(t=>t.role==="user")?'<button type="button" class="chat-title" data-act="chatRename">'+m(chat.doc.title)+"</button>":'<span aria-hidden="true"></span>'
-;return'<section class="chat-page"><header class="chat-top"><button type="button" class="linkbtn" data-act="chatList">对话列表</button>'+t+'<button type="button" class="linkbtn" data-act="chatNew">新对话</button></header><div id="chat-feed" tabindex="0" aria-label="聊天消息">'+(!ai.token||ai.needsToken?Ci():"")+(chat.doc.messages.length?To():'<div class="chat-empty"><span class="ai-eyebrow">和 Claude 聊聊</span><h1>从此刻想到的说起。</h1><p>不必先整理好。默认不会发送当天记录。</p>'+["有件事让我反复想，想和你理一理。","我发现自己有个重复的反应。","帮我把一个想法变成可以验证的小尝试。"].map(t=>'<button type="button" data-act="chatAsk" data-text="'+m(t)+'">'+t+" <span>↗</span></button>").join("")+"</div>")+'</div><button type="button" id="chat-latest" class="chip" data-act="chatLatest"'+(chat.follow?" hidden":"")+'>回到最新 ↓</button><footer class="chat-composer">'+(chat.error?'<p class="ai-error" role="status">'+m(chat.error)+(chat.doc.messages.at(-1)?.role==="user"?'<button type="button" class="linkbtn" data-act="chatRetry">重试</button>':"")+"</p>":"")+(chat.attachment?'<div class="chat-context">下一条带上 '+m(go(chat.attachment.date))+' 的记录 <button type="button" class="linkbtn" data-act="chatDetach">移除</button></div>':"")+'<div class="chat-input-row"><button type="button" class="icon-button" data-act="chatOptions" aria-label="添加记录和聊天设置">＋</button><label class="sr-only" for="chat-input">给 Claude 发消息</label><textarea id="chat-input" rows="1" placeholder="聊聊你想到的…">'+m(chat.input)+'</textarea><button type="button" class="btn sm" data-act="'+(chat.request?"chatStop":"chatSend")+'">'+(chat.request?"停止":"发送")+'</button></div><p class="fine">'+(Vs.chatHyps===false?"未发送假设清单":"会带上假设编号和文字")+' · <button type="button" class="linkbtn" data-act="chatOptions">设置</button></p></footer></section>'
-}function Io(){document.body.classList.toggle("chat-mode",V==="chat");const t=h('[data-r="chat"]');if(t)t.hidden=!ci;document.body.classList.toggle("has-chat",ci)
+;return'<section class="chat-page"><header class="chat-top"><button type="button" class="linkbtn" data-act="chatList">对话列表</button>'+t+'<button type="button" class="linkbtn" data-act="chatNew">新对话</button></header><div id="chat-feed" tabindex="0" aria-label="聊天消息">'+(!ai.token||ai.needsToken?Ci():"")+(chat.doc.messages.length?_o():'<div class="chat-empty"><span class="ai-eyebrow">和 Claude 聊聊</span><h1>从此刻想到的说起。</h1><p>不必先整理好。默认不会发送当天记录。</p>'+["有件事让我反复想，想和你理一理。","我发现自己有个重复的反应。","帮我把一个想法变成可以验证的小尝试。"].map(t=>'<button type="button" data-act="chatAsk" data-text="'+m(t)+'">'+t+" <span>↗</span></button>").join("")+"</div>")+'</div><button type="button" id="chat-latest" class="chip" data-act="chatLatest"'+(chat.follow?" hidden":"")+'>回到最新 ↓</button><footer class="chat-composer">'+(chat.error?'<p class="ai-error" role="status">'+m(chat.error)+(chat.doc.messages.at(-1)?.role==="user"?'<button type="button" class="linkbtn" data-act="chatRetry">重试</button>':"")+"</p>":"")+(chat.attachment?'<div class="chat-context">下一条带上 '+m(go(chat.attachment.date))+' 的记录 <button type="button" class="linkbtn" data-act="chatDetach">移除</button></div>':"")+'<div class="chat-input-row"><button type="button" class="icon-button" data-act="chatOptions" aria-label="添加记录和聊天设置">＋</button><label class="sr-only" for="chat-input">给 Claude 发消息</label><textarea id="chat-input" rows="1" placeholder="聊聊你想到的…">'+m(chat.input)+'</textarea><button type="button" class="btn sm" data-act="'+(chat.request?"chatStop":"chatSend")+'">'+(chat.request?"停止":"发送")+'</button></div><p class="fine">'+(Vs.chatHyps===false?"未发送假设清单":"会带上假设编号和文字")+' · <button type="button" class="linkbtn" data-act="chatOptions">设置</button></p></footer></section>'
+}function Mo(){document.body.classList.toggle("chat-mode",V==="chat");const t=h('[data-r="chat"]');if(t)t.hidden=!ci;document.body.classList.toggle("has-chat",ci)
 ;if(V!=="chat")return;const e=h("#chat-feed");e.addEventListener("scroll",()=>{chat.scrollTop=e.scrollTop;chat.follow=e.scrollHeight-e.scrollTop-e.clientHeight<90
 ;h("#chat-latest").hidden=chat.follow},{passive:true});Lo();const a=new URLSearchParams(location.hash.split("?")[1]||""),s=a.get("msg");if(s!==null&&chat.jump!==location.hash){
 chat.jump=location.hash;requestAnimationFrame(()=>h('#chat-feed [data-message="'+Number(s)+'"]')?.scrollIntoView({block:"start"}))
-}else e.scrollTop=chat.follow?e.scrollHeight:chat.scrollTop||0}function Mo(){if(V!=="chat"||chat.request?.doc!==chat.doc)return;const t=h("#chat-feed");if(!t)return
-;const e=t.scrollTop,a=chat.follow,s=new Set(Array.from(t.querySelectorAll("[data-card-key]"),t=>t.dataset.cardKey));t.innerHTML=To()
+}else e.scrollTop=chat.follow?e.scrollHeight:chat.scrollTop||0}function No(){if(V!=="chat"||chat.request?.doc!==chat.doc)return;const t=h("#chat-feed");if(!t)return
+;const e=t.scrollTop,a=chat.follow,s=new Set(Array.from(t.querySelectorAll("[data-card-key]"),t=>t.dataset.cardKey));t.innerHTML=_o()
 ;t.querySelectorAll(".chat-message").forEach(t=>t.style.animation="none");t.querySelectorAll("[data-card-key]").forEach(t=>{if(s.has(t.dataset.cardKey))t.style.animation="none"})
 ;const n=t.querySelector(".is-thinking>div");if(n)n.scrollTop=n.scrollHeight;t.scrollTop=a?t.scrollHeight:e;h("#chat-latest").hidden=a}function Lo(){const t=h("#chat-input")
-;if(!t)return;t.style.height="auto";t.style.height=Math.min(128,t.scrollHeight)+"px"}async function No(t=chat.input,e=false){
-if(!ci||chat.request||ai.request||ai.hypRequest||!Qo())return;const a=ko(),s=String(t||"").trim();if(!e&&!s)return;if(!navigator.onLine){chat.error=li.offline;render(true);return}
+;if(!t)return;t.style.height="auto";t.style.height=Math.min(128,t.scrollHeight)+"px"}async function Ro(t=chat.input,e=false){
+if(!ci||chat.request||ai.request||ai.hypRequest||!Xo())return;const a=xo(),s=String(t||"").trim();if(!e&&!s)return;if(!navigator.onLine){chat.error=li.offline;render(true);return}
 if(!ai.token||ai.needsToken){chat.pending={text:s,retry:e};ai.needsToken=true;render(true);h("#ai-token")?.focus();return}const n=e?a.messages.at(-1):{role:"user",content:s,
 at:(new Date).toISOString(),...chat.attachment?{ctx:j(chat.attachment)}:{}};const i=(e?a.messages:[...a.messages,n]).map(t=>({role:t.role,content:t.content,
 ...t.role==="user"&&t.ctx?{ctx:{date:t.ctx.date,materials:t.ctx.materials}}:{}})).filter(t=>t.content.trim());const o={messages:i,...Vs.chatHyps===false?{}:{
-hyps:Object.values(S.hyps).map(t=>({no:t.no,text:L(t)}))}};if(i.length>200||(new TextEncoder).encode(JSON.stringify(o)).length>256*1024){chat.error="这次对话太长了，开一个新对话继续";render(true)
-;return}if(!e){a.messages.push(n);chat.attachment=null;if(a.title==="新对话")a.title=[...s].slice(0,20).join("")}chat.input="";chat.error="";chat.follow=true
-;history.replaceState(null,"","#chat?id="+encodeURIComponent(a.id));xo(a);const r={doc:a,index:a.messages.length,ctl:new AbortController,text:"",thinking:"",model:"",
-start:performance.now(),lastDraft:performance.now(),ended:false,stopReason:null};chat.request=r;const c={role:"assistant",content:"",at:(new Date).toISOString()};a.messages.push(c)
-;const l=Hi("/api/chat");let d="error",u=false;const p=setTimeout(()=>{u=true;r.ctl.abort()},66e4),f=Qi(r);render(true);try{const t=await fetch("/api/chat",{method:"POST",headers:{
-"Content-Type":"application/json",Authorization:"Bearer "+ai.token},body:JSON.stringify(o),signal:r.ctl.signal});Pi(l,t);if(!t.ok){const e=await t.json().catch(()=>({}));throw{
+hyps:Object.values(S.hyps).map(t=>({no:t.no,text:N(t)}))}};if(i.length>200||(new TextEncoder).encode(JSON.stringify(o)).length>256*1024){chat.error="这次对话太长了，开一个新对话继续";render(true)
+;return}const r=a.title,c=chat.input,l=chat.attachment;if(!e){a.messages.push(n);if(a.title==="新对话")a.title=[...s].slice(0,20).join("")}chat.error="";chat.follow=true
+;history.replaceState(null,"","#chat?id="+encodeURIComponent(a.id));const d={doc:a,index:a.messages.length,ctl:new AbortController,text:"",thinking:"",model:"",
+start:performance.now(),lastDraft:performance.now(),ended:false,stopReason:null};chat.request=d;d.preparing=true;try{await Oo(a)}catch{if(!e){a.messages.pop();a.title=r}
+chat.input=s;chat.error="聊天没存成功，请保留页面后重试。";chat.request=null;So(a);render(true);return}if(chat.input===c)chat.input="";if(!e&&chat.attachment===l)chat.attachment=null;So(a,true)
+;d.preparing=false;const u={role:"assistant",content:"",at:(new Date).toISOString()};a.messages.push(u);const p=Hi("/api/chat");let f="error",m=false;const y=setTimeout(()=>{m=true
+;d.ctl.abort()},66e4),v=Qi(d);render(true);try{const t=await fetch("/api/chat",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+ai.token},
+body:JSON.stringify(o),signal:d.ctl.signal});Pi(p,t);if(!t.ok){const e=await t.json().catch(()=>({}));throw{
 code:t.status===413?"chat_large":t.status===401?"unauthorized":e.error?.code||"upstream_error"}}if(!t.body||!t.headers.get("content-type")?.includes("text/event-stream"))throw{
-code:"upstream_error"};const e=t.body.getReader(),s=new TextDecoder;let n="",i=0;const u=t=>{
-const e=t.split(/\r?\n/).filter(t=>t.startsWith("data:")).map(t=>t.slice(5).trimStart()).join("\n");if(!e)return;const s=JSON.parse(e);Gi(r,l,s)
-;if(r.text&&!r.firstText)r.firstText=performance.now();c.content=r.text;if(performance.now()-i>80){i=performance.now();Mo()}if(performance.now()-r.lastDraft>=1e3){
-a.updated=(new Date).toISOString();xo(a)}};try{for(;;){const{done:t,value:a}=await e.read();if(t)break;n+=s.decode(a,{stream:true});let i;while(i=/\r?\n\r?\n/.exec(n)){
-u(n.slice(0,i.index));n=n.slice(i.index+i[0].length)}}n+=s.decode();if(n.trim())u(n)}finally{e.releaseLock()}if(r.stopReason==="max_tokens"&&!r.text.trim())throw{
-code:"thinking_limit"};if(!r.text.trim()||!r.ended&&r.stopReason!=="max_tokens")throw{code:"upstream_error"};d="complete"}catch(t){
-if(chat.doc===a)chat.error=r.stopped?"已停止，收到的文字已保留。":t.code==="chat_large"?"这次对话太长了，开一个新对话继续":t.code==="thinking_limit"?"这次想得太久，没来得及回答，请重试":li[u?"timeout":t.code]||"连接中断，收到的文字已保留。"
-;if(t.code==="unauthorized")ai.needsToken=true}finally{clearTimeout(p);f();r.finishedAt=performance.now();r.ctl.abort();l.elapsed=r.finishedAt-r.start
-;chat.thoughts.set(a.id+":"+r.index,r);c.content=r.text;if(r.stopReason)c.stopReason=r.stopReason;if(d!=="complete")c.partial=true;if(!r.text.trim())a.messages.pop()
-;a.updated=(new Date).toISOString();xo(a,true);try{await Do(a)}catch{if(chat.doc===a)chat.error="聊天没存成功，已保留草稿。请先保留这个页面。"}if(chat.request===r)chat.request=null
-;if(V==="chat"&&chat.doc===a)render(true)}}async function Ro(t){const e=chat.doc,a=jo(t),s=e.id+":"+t
-;if(!a||chat.request||chat.busy.has(s)||e.cards[t]?.status==="added"||!Qo())return;const n=chat.edits.get(s);if(n!==undefined)a.text=n.trim();if(!a.text||[...a.text].length>300){
-U("请保留 1–300 字的文字。");return}const i=Co(a);if(i){e.cards[t]={status:"added",type:a.type,text:a.text,existing:true,ref:a.type==="hyp"?{id:i.id,no:i.no}:{id:i.id,date:a.date}}
-;chat.edits.delete(s);try{await Do(e)}catch{xo(e)}render(true);return}chat.busy.add(s);render(true);let o;try{const n=(new Date).toISOString(),i=b();if(a.type==="hyp"){const t=xe({
-text:a.text,src:{type:"chat",chatId:e.id,date:i}});o={id:t.id,no:t.no};await So("hyps",t.id,t)}else if(a.type==="pred"){const t=j(T(a.date)),s={id:C(),kind:"specific",text:a.text,
-hid:null,at:n,src:"chat",chatId:e.id,result:"",actual:""};t.preds.push(s);o={id:s.id,date:a.date};await So("days",t.date,t)}else{const s=Object.values(S.hyps).find(t=>t.no===+a.no)
+code:"upstream_error"};const e=t.body.getReader(),s=new TextDecoder;let n="",i=0;const r=t=>{
+const e=t.split(/\r?\n/).filter(t=>t.startsWith("data:")).map(t=>t.slice(5).trimStart()).join("\n");if(!e)return;const s=JSON.parse(e);Gi(d,p,s)
+;if(d.text&&!d.firstText)d.firstText=performance.now();u.content=d.text;if(performance.now()-i>80){i=performance.now();No()}if(performance.now()-d.lastDraft>=1e3){
+a.updated=(new Date).toISOString();So(a)}};try{for(;;){const{done:t,value:a}=await e.read();if(t)break;n+=s.decode(a,{stream:true});let i;while(i=/\r?\n\r?\n/.exec(n)){
+r(n.slice(0,i.index));n=n.slice(i.index+i[0].length)}}n+=s.decode();if(n.trim())r(n)}finally{e.releaseLock()}if(d.stopReason==="max_tokens"&&!d.text.trim())throw{
+code:"thinking_limit"};if(!d.text.trim()||!d.ended&&d.stopReason!=="max_tokens")throw{code:"upstream_error"};f="complete"}catch(t){
+if(chat.doc===a)chat.error=d.stopped?"已停止，收到的文字已保留。":t.code==="chat_large"?"这次对话太长了，开一个新对话继续":t.code==="thinking_limit"?"这次想得太久，没来得及回答，请重试":li[m?"timeout":t.code]||"连接中断，收到的文字已保留。"
+;if(t.code==="unauthorized")ai.needsToken=true}finally{clearTimeout(y);v();d.finishedAt=performance.now();d.ctl.abort();p.elapsed=d.finishedAt-d.start
+;chat.thoughts.set(a.id+":"+d.index,d);u.content=d.text;if(d.stopReason)u.stopReason=d.stopReason;if(f!=="complete")u.partial=true;if(!d.text.trim())a.messages.pop()
+;a.updated=(new Date).toISOString();So(a,true);try{await Oo(a)}catch{if(chat.doc===a)chat.error="聊天没存成功，已保留草稿。请先保留这个页面。"}if(chat.request===d)chat.request=null
+;if(V==="chat"&&chat.doc===a)render(true)}}async function Ho(t){const e=chat.doc,a=qo(t),s=e.id+":"+t
+;if(!a||chat.request||chat.busy.has(s)||e.cards[t]?.status==="added"||!Xo())return;const n=chat.edits.get(s);if(n!==undefined)a.text=n.trim();if(!a.text||[...a.text].length>300){
+U("请保留 1–300 字的文字。");return}const i=jo(a);if(i){e.cards[t]={status:"added",type:a.type,text:a.text,existing:true,ref:a.type==="hyp"?{id:i.id,no:i.no}:{id:i.id,date:a.date}}
+;chat.edits.delete(s);try{await Oo(e)}catch{So(e)}render(true);return}chat.busy.add(s);render(true);let o;try{const n=(new Date).toISOString(),i=b();if(a.type==="hyp"){const t=xe({
+text:a.text,src:{type:"chat",chatId:e.id,date:i}});o={id:t.id,no:t.no};await Eo("hyps",t.id,t)}else if(a.type==="pred"){const t=j(T(a.date)),s={id:C(),kind:"specific",text:a.text,
+hid:null,at:n,src:"chat",chatId:e.id,result:"",actual:""};t.preds.push(s);o={id:s.id,date:a.date};await Eo("days",t.date,t)}else{const s=Object.values(S.hyps).find(t=>t.no===+a.no)
 ;if(!s){U("找不到 H"+a.no);return}const r=j(s),c="chat:"+e.id+":"+t;o={id:c,hypId:r.id,no:r.no};if(!(r.ev||[]).some(t=>t.id===c)){r.ev=(r.ev||[]).concat({id:c,date:i,kind:a.kind,
-note:a.text,str:"weak",src:"chat:"+e.id});r.updated=n;await So("hyps",r.id,r)}}e.cards[t]={status:"added",type:a.type,text:a.text,ref:o,undoUntil:Date.now()+1e4}
-;chat.edits.delete(s);await Do(e);setTimeout(()=>{if(chat.doc===e&&V==="chat")render(true)},10100)}catch{chat.error="没有保存成功，请保留页面后重试。";xo(e)}finally{chat.busy.delete(s)
-;render(true)}}async function Ho(t){const e=chat.doc,a=e.cards[t],s=e.id+":"+t
+note:a.text,str:"weak",src:"chat:"+e.id});r.updated=n;await Eo("hyps",r.id,r)}}e.cards[t]={status:"added",type:a.type,text:a.text,ref:o,undoUntil:Date.now()+1e4}
+;chat.edits.delete(s);await Oo(e);setTimeout(()=>{if(chat.doc===e&&V==="chat")render(true)},10100)}catch{chat.error="没有保存成功，请保留页面后重试。";So(e)}finally{chat.busy.delete(s)
+;render(true)}}async function Po(t){const e=chat.doc,a=e.cards[t],s=e.id+":"+t
 ;if(!a||a.status!=="added"||a.existing||!Number.isFinite(a.undoUntil)||Date.now()>a.undoUntil||chat.busy.has(s))return;chat.busy.add(s);try{const t=a.ref;if(a.type==="hyp"){
-if(S.hyps[t.id]?.src?.chatId===e.id)await Eo("hyps",t.id)}else if(a.type==="pred"){const e=j(T(t.date));e.preds=e.preds.filter(e=>e.id!==t.id);await So("days",e.date,e)}else{
-const e=j(S.hyps[t.hypId]);if(e){e.ev=(e.ev||[]).filter(e=>e.id!==t.id);await So("hyps",e.id,e)}}a.status="undone";delete a.undoUntil;await Do(e)}catch{chat.error="撤销没存成功，请保留页面重试。"
-;xo(e)}finally{chat.busy.delete(s);render(true)}}function Po(t,e){if(t==="pred"){if(!N(e?.date))return;$=e.date;chat.target={type:t,id:e.id};location.hash="#pred?date="+e.date
-}else{Q.hypFilter="all";chat.target={type:"hyp",id:e.hypId||e.id};location.hash="#hyps"}}function Bo(t,e){
+if(S.hyps[t.id]?.src?.chatId===e.id)await Do("hyps",t.id)}else if(a.type==="pred"){const e=j(T(t.date));e.preds=e.preds.filter(e=>e.id!==t.id);await Eo("days",e.date,e)}else{
+const e=j(S.hyps[t.hypId]);if(e){e.ev=(e.ev||[]).filter(e=>e.id!==t.id);await Eo("hyps",e.id,e)}}a.status="undone";delete a.undoUntil;await Oo(e)}catch{chat.error="撤销没存成功，请保留页面重试。"
+;So(e)}finally{chat.busy.delete(s);render(true)}}function Bo(t,e){if(t==="pred"){if(!L(e?.date))return;$=e.date;chat.target={type:t,id:e.id};location.hash="#pred?date="+e.date
+}else{Q.hypFilter="all";chat.target={type:"hyp",id:e.hypId||e.id};location.hash="#hyps"}}function Uo(t,e){
 const a=t==="hyp"&&e.src?.type==="chat"?e.src.chatId:t==="pred"&&e.src==="chat"?e.chatId:t==="ev"&&typeof e.src==="string"&&e.src.startsWith("chat:")?e.src.slice(5):null
 ;if(!a)return"";const s=S.meta["chat:"+a];if(!s)return'<span class="fine chat-source">对话已删除</span>'
 ;const n=Object.keys(s.cards||{}).find(t=>s.cards[t].ref?.id===e.id),i=t==="hyp"?e.src.date:t==="ev"?e.date:v(new Date(e.at))
 ;return'<button type="button" class="linkbtn fine chat-source" data-act="chatSource" data-chat="'+m(a)+'" data-msg="'+(n?Number(n.split(":")[0]):0)+'">来自 '+m(go(i))+" 的聊天</button>"
-}function Uo(){const t=t=>(new TextEncoder).encode(JSON.stringify(t)).length,e=bo(),a=t(e),s=t(S),n=e.length?a/e.length:8192;return{count:e.length,size:a,total:s,
-days:Math.max(0,Math.floor((3*1024*1024-s)/(2*n)))}}function Jo(){if(!ci)return"";const t=Uo()
+}function Jo(){const t=t=>(new TextEncoder).encode(JSON.stringify(t)).length,e=bo(),a=t(e),s=t(S),n=e.length?a/e.length:8192;return{count:e.length,size:a,total:s,
+days:Math.max(0,Math.floor((3*1024*1024-s)/(2*n)))}}function zo(){if(!ci)return"";const t=Jo()
 ;return'<section class="card" id="settings-chat"><h2 class="stage">Claude 聊天</h2><p>聊天记录共 '+t.count+" 次、约 "+(t.size/1024).toFixed(1)+" KB</p>"+(F==="idb"?"":'<p class="fine">全部记录约 '+(t.total/1024).toFixed(1)+" KB。按每天 2 次、"+(t.count?"当前对话平均大小":"每次约 8 KB 的假设")+"估算，约 "+t.days+" 天达到 3 MB。</p>"+(t.total>3*1024*1024?'<p class="ai-error">总数据已超过 3 MB，请导出备份并清理不再需要的聊天；本机存储和云端同步都有容量上限。</p>':""))+'<label class="chat-toggle"><input type="checkbox" data-chat-hyps'+(Vs.chatHyps!==false?" checked":"")+'>让 Claude 看到我的假设清单</label><p class="fine">只带编号和文字，不含证据。</p></section>'
-}function zo(){const t=chat.search.trim().toLowerCase(),e=bo().filter(e=>!t||(e.title+" "+e.messages.map(t=>t.content).join(" ")).toLowerCase().includes(t))
+}function Fo(){const t=chat.search.trim().toLowerCase(),e=bo().filter(e=>!t||(e.title+" "+e.messages.map(t=>t.content).join(" ")).toLowerCase().includes(t))
 ;return e.map(t=>'<article class="chat-list-item"><button type="button" data-act="chatOpen" data-id="'+m(t.id)+'"><b>'+m(t.title)+"</b><small>"+m(go(v(new Date(t.updated))))+" · "+t.messages.filter(t=>t.role==="assistant").length+" 轮 · 已加入 "+Object.values(t.cards||{}).filter(t=>t.status==="added"&&!t.existing).length+' 张卡片</small></button><div class="row"><button type="button" class="linkbtn" data-act="chatRename" data-id="'+m(t.id)+'">改名</button><button type="button" class="linkbtn" data-act="chatDelete" data-id="'+m(t.id)+'">删除</button></div></article>').join("")||'<p class="fine">'+(t?"没有找到相关对话。":"还没有保存的对话。")+"</p>"
-}function Fo(){const t=h("#chat-list")
-;t.innerHTML='<header class="row"><h2>对话列表</h2><button type="button" class="icon-button" data-act="chatListClose" aria-label="关闭对话列表">×</button></header><label class="sr-only" for="chat-search">搜索标题和内容</label><input id="chat-search" type="search" placeholder="搜索标题和内容" value="'+m(chat.search)+'"><div id="chat-list-items">'+zo()+"</div>"
-;t.showModal()}function Wo(){const t=h("#chat-dialog")
+}function Wo(){const t=h("#chat-list")
+;t.innerHTML='<header class="row"><h2>对话列表</h2><button type="button" class="icon-button" data-act="chatListClose" aria-label="关闭对话列表">×</button></header><label class="sr-only" for="chat-search">搜索标题和内容</label><input id="chat-search" type="search" placeholder="搜索标题和内容" value="'+m(chat.search)+'"><div id="chat-list-items">'+Fo()+"</div>"
+;t.showModal()}function Ko(){const t=h("#chat-dialog")
 ;t.innerHTML='<h2>记录与聊天设置</h2><p class="fine">默认不发送当天记录。选中的材料会附在下一条消息上，之后在这段对话里继续发送。</p><label for="chat-date">带上某一天的记录</label><input id="chat-date" type="date" value="'+b()+'"><button type="button" class="btn" data-act="chatChooseDate">选择材料</button><label class="chat-toggle"><input type="checkbox" data-chat-hyps'+(Vs.chatHyps!==false?" checked":"")+'>让 Claude 看到我的假设清单</label><p class="fine">只发送编号和文字，不含证据。</p><button type="button" class="linkbtn" data-act="chatDialogClose">关闭</button>'
-;t.showModal()}function Ko(t=chat.doc?.id){const e=t===chat.doc?.id?chat.doc:S.meta["chat:"+t];if(!e)return;h("#chat-list").close();const a=h("#chat-dialog")
+;t.showModal()}function Yo(t=chat.doc?.id){const e=t===chat.doc?.id?chat.doc:S.meta["chat:"+t];if(!e)return;h("#chat-list").close();const a=h("#chat-dialog")
 ;a.innerHTML='<h2>给对话改个名字</h2><label for="chat-name">对话标题</label><input id="chat-name" maxlength="80" value="'+m(e.title)+'"><button type="button" class="btn" data-act="chatRenameSave" data-id="'+m(e.id)+'">保存</button><button type="button" class="linkbtn" data-act="chatDialogClose">取消</button>'
-;a.showModal()}function Yo(){if(chat.input)xo();if(chat.request){chat.request.stopped=true;chat.request.ctl.abort()}
+;a.showModal()}function Vo(){if(chat.input)So();if(chat.request){chat.request.stopped=true;chat.request.ctl.abort()}
 for(const t of["chat-list","chat-dialog"])if(h("#"+t).open)h("#"+t).close();const t=new URLSearchParams(location.hash.split("?")[1]||"")
-;if(V==="pred"&&N(t.get("date")))$=t.get("date")}function Vo(){if(!chat.target)return;const t=chat.target;chat.target=null;requestAnimationFrame(()=>{
+;if(V==="pred"&&L(t.get("date")))$=t.get("date")}function $o(){if(!chat.target)return;const t=chat.target;chat.target=null;requestAnimationFrame(()=>{
 const e=t.type==="pred"?"data-pred-id":"data-hyp-id",a=Array.from(document.querySelectorAll("["+e+"]")).find(a=>a.getAttribute(e)===t.id);if(a){a.tabIndex=-1;a.focus({
-preventScroll:true});a.scrollIntoView({block:"center"})}})}const $o={chatSend(){No()},chatRetry(){No("",true)},chatStop(){if(chat.request){chat.request.stopped=true
-;chat.request.ctl.abort()}},chatAsk(t){No(t.dataset.text)},chatLatest(){chat.follow=true;const t=h("#chat-feed");t.scrollTop=t.scrollHeight;h("#chat-latest").hidden=true},
+preventScroll:true});a.scrollIntoView({block:"center"})}})}const Go={chatSend(){Ro()},chatRetry(){Ro("",true)},chatStop(){if(chat.request){chat.request.stopped=true
+;chat.request.ctl.abort()}},chatAsk(t){Ro(t.dataset.text)},chatLatest(){chat.follow=true;const t=h("#chat-feed");t.scrollTop=t.scrollHeight;h("#chat-latest").hidden=true},
 chatNew(){if(chat.request){U("先停止当前回复，再开新对话。");return}chat.doc=wo();chat.input="";chat.attachment=null;chat.error=""
-;history.replaceState(null,"","#chat?id="+encodeURIComponent(chat.doc.id));render(true)},chatList:Fo,chatListClose(){const t=h("#chat-list");t.classList.add("closing")
+;history.replaceState(null,"","#chat?id="+encodeURIComponent(chat.doc.id));render(true)},chatList:Wo,chatListClose(){const t=h("#chat-list");t.classList.add("closing")
 ;setTimeout(()=>{t.close();t.classList.remove("closing")},200)},chatOpen(t){h("#chat-list").close();location.hash="#chat?id="+encodeURIComponent(t.dataset.id)},chatRename(t){
-Ko(t.dataset.id||chat.doc.id)},async chatRenameSave(t){const e=h("#chat-name").value.trim();if(!e)return
-;const a=t.dataset.id===chat.doc?.id?chat.doc:j(S.meta["chat:"+t.dataset.id]);if(!a)return;a.title=e;try{if(a.messages.length)await Do(a);h("#chat-dialog").close();render(true)
+Yo(t.dataset.id||chat.doc.id)},async chatRenameSave(t){const e=h("#chat-name").value.trim();if(!e)return
+;const a=t.dataset.id===chat.doc?.id?chat.doc:j(S.meta["chat:"+t.dataset.id]);if(!a)return;a.title=e;try{if(a.messages.length)await Oo(a);h("#chat-dialog").close();render(true)
 }catch{U("改名没有保存成功。")}},chatDelete(t){const e=h("#chat-dialog");h("#chat-list").close()
 ;e.innerHTML='<h2>删除这次对话？</h2><p>已加入的假设、预测和证据会保留。</p><button type="button" class="btn" data-act="chatDeleteConfirm" data-id="'+m(t.dataset.id)+'">删除对话</button><button type="button" class="linkbtn" data-act="chatDialogClose">取消</button>'
-;e.showModal()},async chatDeleteConfirm(t){if(chat.request?.doc.id===t.dataset.id){U("请先停止生成。");return}try{await Eo("meta","chat:"+t.dataset.id);delete X["chat:"+t.dataset.id];bt()
-;if(chat.doc?.id===t.dataset.id)chat.doc=null;h("#chat-dialog").close();history.replaceState(null,"","#chat");render(true)}catch{U("删除没存成功。")}},chatOptions:Wo,chatDialogClose(){
-h("#chat-dialog").close()},chatChooseDate(){const t=h("#chat-date").value;if(!N(t))return;h("#chat-dialog").close();Fi("chat",{date:t})},chatDetach(){chat.attachment=null
-;render(true)},chatEdit(t){const e=t.dataset.key;if(chat.busy.has(chat.doc.id+":"+e))return;chat.edits.set(chat.doc.id+":"+e,jo(e).text);render(true)},chatAdd(t){Ro(t.dataset.key)
-},chatUndo(t){Ho(t.dataset.key)},chatCardJump(t){const e=chat.doc.cards[t.dataset.key];if(e)Po(e.type,e.ref)},chatExisting(t){const e=jo(t.dataset.key),a=Co(e)
-;if(a)Po(e.type,e.type==="pred"?{id:a.id,date:e.date}:{id:a.id})},chatSource(t){location.hash="#chat?id="+encodeURIComponent(t.dataset.chat)+"&msg="+t.dataset.msg}}
-;document.addEventListener("input",t=>{if(t.target.id==="chat-input"){chat.input=t.target.value;Lo();xo()}
+;e.showModal()},async chatDeleteConfirm(t){if(chat.request?.doc.id===t.dataset.id){U("请先停止生成。");return}try{await Do("meta","chat:"+t.dataset.id);delete X["chat:"+t.dataset.id];bt()
+;if(chat.doc?.id===t.dataset.id)chat.doc=null;h("#chat-dialog").close();history.replaceState(null,"","#chat");render(true)}catch{U("删除没存成功。")}},chatOptions:Ko,chatDialogClose(){
+h("#chat-dialog").close()},chatChooseDate(){const t=h("#chat-date").value;if(!L(t))return;h("#chat-dialog").close();Fi("chat",{date:t})},chatDetach(){chat.attachment=null;So()
+;render(true)},chatEdit(t){const e=t.dataset.key;if(chat.busy.has(chat.doc.id+":"+e))return;chat.edits.set(chat.doc.id+":"+e,qo(e).text);render(true)},chatAdd(t){Ho(t.dataset.key)
+},chatUndo(t){Po(t.dataset.key)},chatCardJump(t){const e=chat.doc.cards[t.dataset.key];if(e)Bo(e.type,e.ref)},chatExisting(t){const e=qo(t.dataset.key),a=jo(e)
+;if(a)Bo(e.type,e.type==="pred"?{id:a.id,date:e.date}:{id:a.id})},chatSource(t){location.hash="#chat?id="+encodeURIComponent(t.dataset.chat)+"&msg="+t.dataset.msg}}
+;document.addEventListener("input",t=>{if(t.target.id==="chat-input"){chat.input=t.target.value;Lo();So()}
 if(t.target.dataset.chatEdit)chat.edits.set(chat.doc.id+":"+t.target.dataset.chatEdit,t.target.value);if(t.target.id==="chat-search"){chat.search=t.target.value
-;h("#chat-list-items").innerHTML=zo()}});document.addEventListener("change",t=>{if(t.target.hasAttribute("data-chat-hyps")){Vs.chatHyps=t.target.checked;ja()}})
-;document.addEventListener("keydown",t=>{if(t.target.id==="chat-input"&&(t.ctrlKey||t.metaKey)&&t.key==="Enter"&&!t.isComposing){t.preventDefault();No()}})
+;h("#chat-list-items").innerHTML=Fo()}});document.addEventListener("change",t=>{if(t.target.hasAttribute("data-chat-hyps")){Vs.chatHyps=t.target.checked;ja()}})
+;document.addEventListener("keydown",t=>{if(t.target.id==="chat-input"&&(t.ctrlKey||t.metaKey)&&t.key==="Enter"&&!t.isComposing){t.preventDefault();Ro()}})
 ;document.addEventListener("toggle",t=>{if(t.target.dataset.thought!==undefined){
 const e=+t.target.dataset.thought,a=chat.request?.index===e?chat.request:chat.thoughts.get(chat.doc.id+":"+e);if(a)a.open=t.target.open}},true)
-;window.addEventListener("pagehide",()=>{if(chat.request){xo(chat.request.doc,true);chat.request.stopped=true;chat.request.ctl.abort()}else if(chat.input)xo()});function Go(t,e){
+;window.addEventListener("pagehide",()=>{if(chat.request){So(chat.request.doc,true);chat.request.stopped=true;chat.request.ctl.abort()}else if(chat.input)So()});function Qo(t,e){
 if(t===b())return(new Date).toISOString();const a=t.split("-").map(Number),s=/^(\d{1,2}):(\d{2})/.exec(e||"")||[0,"12","00"]
-;return new Date(a[0],a[1]-1,a[2],+s[1],+s[2]).toISOString()}function Qo(){if(!W){U("还在打开记录本，稍等几秒再存。");return false}return true}function Xo(t){const e=b()
+;return new Date(a[0],a[1]-1,a[2],+s[1],+s[2]).toISOString()}function Xo(){if(!W){U("还在打开记录本，稍等几秒再存。");return false}return true}function Zo(t){const e=b()
 ;return t>e?"eve":t===e?"morning":"late"}const A={theme(t){Vs.theme=t.dataset.v;ja();qa(Vs.theme);render()},monthFinish(t){const e=!Q.open.has("month:finish");Cn("month:finish",e)
 ;t.setAttribute("aria-expanded",String(e));h("#month-finish").hidden=!e},monthInfo(t){const e=!Q.open.has("month:info");Cn("month:info",e);t.setAttribute("aria-expanded",String(e))
 ;h("#month-info").hidden=!e},summaryClose(){Xa()},dismissReminder(t){const e=b(),a=Vs.predDismiss;Vs.predDismiss={date:e,
@@ -1933,8 +1945,8 @@ types:Array.from(new Set((a&&a.date===e&&Array.isArray(a.types)?a.types:[]).conc
 ;t.showModal()},hypMenu(t){ss(t.dataset.id)},hypMenuClose(){as()},hypFilter(t){Q.hypFilter=t.dataset.v;Q.hypOpen=null;render()},dayActionsClose(){es()},summaryWord(){
 const t=h("#day-actions").dataset.key;es();A.wordDay({dataset:{key:t}})},summaryCopy(){const t=h("#day-actions").dataset.key;es()
 ;if(h("#day-actions").dataset.from!=="review")Xa(true,false);A.copy({dataset:{key:t}})},moreOpen(t){const e=t.dataset.key,a=t.dataset.section
-;if(!N(e)||!Object.prototype.hasOwnProperty.call(la,a))return;Q.moreReturn={day:e,section:a,scroll:window.scrollY,month:Q.moreMonth};history.replaceState(null,"",ua(e))
-;location.hash=ua(e,a)},moreBack(t){const e=t.dataset.key,a=Q.moreReturn;if(a&&a.day===e&&a.section===t.dataset.section)history.back();else{history.replaceState(null,"",ua(e));ir()
+;if(!L(e)||!Object.prototype.hasOwnProperty.call(la,a))return;Q.moreReturn={day:e,section:a,scroll:window.scrollY,month:Q.moreMonth};history.replaceState(null,"",ua(e))
+;location.hash=ua(e,a)},moreBack(t){const e=t.dataset.key,a=Q.moreReturn;if(a&&a.day===e&&a.section===t.dataset.section)history.back();else{history.replaceState(null,"",ua(e));or()
 }},fold(t){Qs(t,t.getAttribute("aria-expanded")!=="true")},capExpand(t){const e=t.getAttribute("aria-expanded")!=="true"
 ;document.querySelectorAll('[data-act="capExpand"]').forEach(e=>{if(e!==t&&e.getAttribute("aria-expanded")==="true")Qs(e,false)})
 ;Array.from(Q.open).filter(t=>t.startsWith("cap:")).forEach(t=>Q.open.delete(t));Qs(t,e)},deleteCap(t){un(t.dataset.key,t.dataset.id)},undoCap(){fn()},weekPick(t){Is=false
@@ -1942,7 +1954,7 @@ const t=h("#day-actions").dataset.key;es();A.wordDay({dataset:{key:t}})},summary
 ;const a=t.getAttribute("aria-expanded")!=="true";Cn(t.dataset.uiOpen,a);e.hidden=!a;t.setAttribute("aria-expanded",String(a))
 ;t.querySelector(".capture-label").textContent=a?t.dataset.closeLabel:t.dataset.openLabel;t.querySelector(".capture-sign").textContent=a?"−":"＋"},open(t){const e=null
 ;if(t.dataset.type==="evening"||t.dataset.type==="min"||t.dataset.type==="morning")is(t.dataset.type,t.dataset.key,e)},writingStep(t){const e=h("#writing-"+t.dataset.v);if(e){
-e.focus({preventScroll:true});e.scrollIntoView({block:"start",behavior:Ls()?"auto":"smooth"})}},cancel(){if(os(true)===false)return;if(V==="week"){location.hash="#more";return}
+e.focus({preventScroll:true});e.scrollIntoView({block:"start",behavior:Ns()?"auto":"smooth"})}},cancel(){if(os(true)===false)return;if(V==="week"){location.hash="#more";return}
 render();window.scrollTo(0,0)},pick(t){if(!G)return;let e=t.dataset.v;if(/^\d+$/.test(e)&&t.dataset.f==="inten")e=+e;const a=P(G.data,t.dataset.f)
 ;H(G.data,t.dataset.f,a===e?["D.op","D.str","hypKind"].includes(t.dataset.f)?a:"":e);G.dirty=true;X[G.type+":"+G.key]=G.data;kt();render()},tog(t){if(!G)return
 ;const e=(P(G.data,t.dataset.f)||[]).slice(),a=t.dataset.v,s=e.indexOf(a);if(s>=0)e.splice(s,1);else e.push(a);H(G.data,t.dataset.f,e);G.dirty=true;X[G.type+":"+G.key]=G.data;kt()
@@ -1951,21 +1963,21 @@ render();window.scrollTo(0,0)},pick(t){if(!G)return;let e=t.dataset.v;if(/^\d+$/
 ;if(!a.C.body)a.C.body=(s.body||[]).join("、");if(!a.C.did)a.C.did=[s.did,s.wanted&&"想做没做："+s.wanted].filter(Boolean).join("；");if(!a.C.care)a.C.care=s.care||""}}
 if(e.startsWith("pred:")&&a.C.src===e){const t=(S.days[G.key].preds||[]).find(t=>t.id===e.slice(5))
 ;if(t&&!a.C.fact)a.C.fact=a.R[t.id]&&a.R[t.id].a?"预测「"+t.text+"」，实际："+a.R[t.id].a:""}G.dirty=true;X[G.type+":"+G.key]=a;kt();render()},testHyp(t){const e=S.hyps[t.dataset.id]
-;if(!e)return;const a=G.data;if(a.hid===e.id){a.hid=null}else{a.hid=e.id;a.specific=L(e).replace("我可能会","我会")}G.dirty=true;X[G.type+":"+G.key]=a;kt();render()},async saveMorning(){
-if(!Qo())return;const t=G.key,e=G.data,a=T(t),s=(new Date).toISOString(),n=Xo(t);[["change",e.change],["emotion",e.emotion],["specific",e.specific]].forEach(t=>{
+;if(!e)return;const a=G.data;if(a.hid===e.id){a.hid=null}else{a.hid=e.id;a.specific=N(e).replace("我可能会","我会")}G.dirty=true;X[G.type+":"+G.key]=a;kt();render()},async saveMorning(){
+if(!Xo())return;const t=G.key,e=G.data,a=T(t),s=(new Date).toISOString(),n=Zo(t);[["change",e.change],["emotion",e.emotion],["specific",e.specific]].forEach(t=>{
 const i=(t[1]||"").trim();if(i)a.preds.push({id:C(),kind:t[0],text:i,hid:t[0]==="specific"?e.hid||null:null,at:s,src:n,result:"",actual:""})});if(!a.preds.length){U("至少写一条。")
-;return}os();render();try{await ht("days",t,a);U("存好了。晚上见。")}catch(t){}},delPred(t){if(!Qo())return;const e=T(t.dataset.key);e.preds=e.preds.filter(e=>e.id!==t.dataset.id)
-;ht("days",t.dataset.key,e).catch(()=>{});render()},async saveEvening(){if(!Qo())return
-;const t=G.key,e=j(G.data),a=T(t),s=(new Date).toISOString(),n=a.evening&&a.evening.mode==="std"?a.evening:null;Zo(a,e.R);const i={mode:"std",at:n?n.at:s,edited:n?s:null,
-after:e.after||"",surprise:(e.surprise||"").trim(),raw:e,D:n?n.D:null,E:n?n.E:null};const o=[];if(!n||!n.D||n.D.op==="none"){i.D=tr(t,e.D,o)}i.E=er(t,e.E,n&&n.E,o);a.evening=i
-;delete a.skip;a.skip=null;os();render();try{await ht("days",t,a);for(const t of o)await t();U(ar(i.D)||"写完了。")}catch(t){}},async saveMin(){if(!Qo())return
-;const t=G.key,e=j(G.data),a=T(t),s=(new Date).toISOString(),n=a.evening&&a.evening.mode==="min"?a.evening:null;Zo(a,e.R);const i={mode:"min",at:n?n.at:s,late:t<b(),
-after:e.after||"",raw:e,D:n?n.D:null};const o=[];if((!n||!n.D||n.D.op==="none")&&((e.D.sit||"").trim()||(e.D.rea||"").trim()))i.D=tr(t,{op:"new",sit:e.D.sit,rea:e.D.rea,ev:e.q1||""
-},o);a.evening=i;a.skip=null;os();Q.skipOpen=false;render();try{await ht("days",t,a);for(const t of o)await t();U(ar(i.D)||"这一页收好了。谢谢你留意今天的自己。")}catch(t){}},skipOpen(){
-Q.skipOpen=!Q.skipOpen;render()},async skip(t){if(!Qo())return;const e=T(t.dataset.key);e.skip={reason:t.dataset.v,at:(new Date).toISOString()};Q.skipOpen=false;render();try{
-await ht("days",t.dataset.key,e);U("留白也收好了。下次想写时再来。")}catch(t){}},async saveCap(){if(!Qo()||!G||G.type!=="capture"||Q.capSaving)return;const t=j(G.data)
+;return}os();render();try{await ht("days",t,a);U("存好了。晚上见。")}catch(t){}},delPred(t){if(!Xo())return;const e=T(t.dataset.key);e.preds=e.preds.filter(e=>e.id!==t.dataset.id)
+;ht("days",t.dataset.key,e).catch(()=>{});render()},async saveEvening(){if(!Xo())return
+;const t=G.key,e=j(G.data),a=T(t),s=(new Date).toISOString(),n=a.evening&&a.evening.mode==="std"?a.evening:null;tr(a,e.R);const i={mode:"std",at:n?n.at:s,edited:n?s:null,
+after:e.after||"",surprise:(e.surprise||"").trim(),raw:e,D:n?n.D:null,E:n?n.E:null};const o=[];if(!n||!n.D||n.D.op==="none"){i.D=er(t,e.D,o)}i.E=ar(t,e.E,n&&n.E,o);a.evening=i
+;delete a.skip;a.skip=null;os();render();try{await ht("days",t,a);for(const t of o)await t();U(sr(i.D)||"写完了。")}catch(t){}},async saveMin(){if(!Xo())return
+;const t=G.key,e=j(G.data),a=T(t),s=(new Date).toISOString(),n=a.evening&&a.evening.mode==="min"?a.evening:null;tr(a,e.R);const i={mode:"min",at:n?n.at:s,late:t<b(),
+after:e.after||"",raw:e,D:n?n.D:null};const o=[];if((!n||!n.D||n.D.op==="none")&&((e.D.sit||"").trim()||(e.D.rea||"").trim()))i.D=er(t,{op:"new",sit:e.D.sit,rea:e.D.rea,ev:e.q1||""
+},o);a.evening=i;a.skip=null;os();Q.skipOpen=false;render();try{await ht("days",t,a);for(const t of o)await t();U(sr(i.D)||"这一页收好了。谢谢你留意今天的自己。")}catch(t){}},skipOpen(){
+Q.skipOpen=!Q.skipOpen;render()},async skip(t){if(!Xo())return;const e=T(t.dataset.key);e.skip={reason:t.dataset.v,at:(new Date).toISOString()};Q.skipOpen=false;render();try{
+await ht("days",t.dataset.key,e);U("留白也收好了。下次想写时再来。")}catch(t){}},async saveCap(){if(!Xo()||!G||G.type!=="capture"||Q.capSaving)return;const t=j(G.data)
 ;if(!(t.fact||"").trim()&&!(t.quote||"").trim()&&!(t.emos||[]).length){U("至少写一句发生了什么，或者点一个情绪。");return}const e=G.key!=="new"
-;const a=b(),s=e?G.key.split("|")[0]:$>a?a:$,n=e?G.key.split("|")[1]:C();const i=T(s),o=i.caps.find(t=>t.id===n);const r={id:n,at:o?o.at:Go(s,t.time),fact:(t.fact||"").trim(),
+;const a=b(),s=e?G.key.split("|")[0]:$>a?a:$,n=e?G.key.split("|")[1]:C();const i=T(s),o=i.caps.find(t=>t.id===n);const r={id:n,at:o?o.at:Qo(s,t.time),fact:(t.fact||"").trim(),
 emos:t.emos||[],inten:t.inten||0,quote:(t.quote||"").trim(),body:t.body||[],did:(t.did||"").trim(),wanted:(t.wanted||"").trim(),care:(t.care||"").trim(),tags:t.tags||[],
 hyp:t.hyp&&S.hyps[t.hyp]?t.hyp:null,hypKind:t.hypKind==="con"?"con":"sup"};r.done=!!(r.quote||r.care);i.caps=o?i.caps.map(t=>t.id===n?r:t):i.caps.concat([r]);const c=qe(s,r,o)
 ;const l=G;Q.capSaving=true;const d=h('[data-act="saveCap"]');if(d){d.disabled=true;d.textContent="正在保存…"}try{await ht("days",s,i);await Promise.all(c.map(t=>t()))
@@ -1974,9 +1986,9 @@ hyp:t.hyp&&S.hyps[t.hyp]?t.hyp:null,hypKind:t.hypKind==="con"?"con":"sup"};r.don
 Q.capSaving=false;if(G===l)render();U("这次没存好，内容还在，请稍后再试。")}},editCap(t){const e=t.dataset.key,a=S.days[e],s=a&&a.caps.find(e=>e.id===t.dataset.id);if(!s)return;G=null;V="capture"
 ;if(location.hash!=="#capture")history.replaceState(null,"","#capture");const n="capture:"+e+"|"+s.id;G={type:"capture",key:e+"|"+s.id,data:X[n]?j(X[n]):Object.assign(j(s),{
 more:true}),dirty:false};render();window.scrollTo(0,0)},delCap(){if(!G||G.type!=="capture"||G.key==="new")return;const t=G.key.split("|");un(t[0],t[1])},async saveWeek(){
-if(!Qo())return;const t=G.key,e=j(G.data);e.at=(new Date).toISOString();delete X["week:"+t];bt();G.dirty=false;try{await ht("weeks",t,e);U("周复盘存好了。去清单里更新一下假设。")}catch(t){}render()
+if(!Xo())return;const t=G.key,e=j(G.data);e.at=(new Date).toISOString();delete X["week:"+t];bt();G.dirty=false;try{await ht("weeks",t,e);U("周复盘存好了。去清单里更新一下假设。")}catch(t){}render()
 },weekNav(t){xs();const e=w(G.key,+t.dataset.v);Q.weekKey=e;G=null;render()},goWeek(t){Q.weekKey=t.dataset.key;G=null;if(location.hash==="#week"){V="week";render()
-}else location.hash="#week"},hypNew(){Q.hypNew=!Q.hypNew;render();const t=h("#hn-sit");if(t)t.focus()},hypNewCancel(){Q.hypNew=false;render()},async hypNewSave(){if(!Qo())return
+}else location.hash="#week"},hypNew(){Q.hypNew=!Q.hypNew;render();const t=h("#hn-sit");if(t)t.focus()},hypNewCancel(){Q.hypNew=false;render()},async hypNewSave(){if(!Xo())return
 ;const t=h("#hn-sit").value.trim(),e=h("#hn-rea").value.trim(),a=h("#hn-ev").value.trim();if(!t||!e){U("情境和反应都要写。");return}const s=xe({sit:t,rea:e,ev:a?[{date:b(),kind:"sup",
 note:a,str:"strong"}]:[]});Q.hypNew=false;Q.hypFilter="test";render();try{await ht("hyps",s.id,s);render();U("加进清单了，编号 "+ve(s)+"。")}catch(t){}},hypAct(t){as(false);Q.hypOpen={
 id:t.dataset.id,act:t.dataset.v,str:"strong"};render()
@@ -1986,28 +1998,28 @@ a.value=Q.hypOpen&&Q.hypOpen.note||"";a.focus()}},hypClose(){Q.hypOpen=null;rend
 ;e.ei=s;e.del=null;e.fp=JSON.stringify(n);e.draft={date:n.date||b(),kind:n.kind==="con"?"con":"sup",str:n.str==="weak"?"weak":"strong",note:n.note||""};render()
 ;const i=h("#ex-note");if(i)i.focus()},evPick(t){Ie();const e=Q.hypOpen;if(!e||!e.draft)return;e.draft[t.dataset.f]=t.dataset.v;render()},evDelAsk(t){
 const e=Q.hypOpen,a=e&&S.hyps[e.id],s=+t.dataset.i,n=a&&(a.ev||[])[s];if(!n)return;e.del=s;e.ei=null;e.fp=JSON.stringify(n);render()},evCancel(){const t=Q.hypOpen;if(t){t.ei=null
-;t.del=null}render()},async evSave(){if(!Qo())return;Ie();const t=Q.hypOpen;if(!t||t.ei==null)return;const e=t.draft||{};if(!/^\d{4}-\d{2}-\d{2}$/.test(e.date||"")){U("日期没填好。")
+;t.del=null}render()},async evSave(){if(!Xo())return;Ie();const t=Q.hypOpen;if(!t||t.ei==null)return;const e=t.draft||{};if(!/^\d{4}-\d{2}-\d{2}$/.test(e.date||"")){U("日期没填好。")
 ;return}const a=Me(t.ei);if(!a)return;const{o:s,h:n,cur:i}=a,o=s.ei;if(e.date!==i.date&&e.date>b()){U("日期不能是以后的日子。");return}const r=Object.assign({},i,{date:e.date,
 kind:e.kind==="con"?"con":"sup",str:e.str==="weak"?"weak":"strong",note:(e.note||"").trim()});if(JSON.stringify(r)===JSON.stringify(i)){s.ei=null;render();U("没有改动。");return}
 n.ev=n.ev.slice();n.ev[o]=r;n.updated=(new Date).toISOString();const c=[()=>ht("hyps",n.id,n)],l=Ae(i);if(l&&l.cap.hyp===n.id&&r.kind!==i.kind){const t=j(S.days[l.k])
 ;t.caps=t.caps.map(t=>t.id===l.id?Object.assign({},t,{hypKind:r.kind}):t);c.push(()=>ht("days",l.k,t))}s.ei=null;render();try{for(const t of c)await t();render();U("改好了。")
-}catch(t){}},async evDel(){if(!Qo())return;const t=Q.hypOpen;if(!t||t.del==null)return;const e=Me(t.del);if(!e)return;const{o:a,h:s,cur:n}=e,i=a.del;s.ev=s.ev.filter((t,e)=>e!==i)
+}catch(t){}},async evDel(){if(!Xo())return;const t=Q.hypOpen;if(!t||t.del==null)return;const e=Me(t.del);if(!e)return;const{o:a,h:s,cur:n}=e,i=a.del;s.ev=s.ev.filter((t,e)=>e!==i)
 ;s.updated=(new Date).toISOString();const o=[()=>ht("hyps",s.id,s)],r=Ae(n);if(r&&r.cap.hyp===s.id){const t=j(S.days[r.k]);t.caps=t.caps.map(t=>t.id===r.id?Object.assign({},t,{
 hyp:null}):t);o.push(()=>ht("days",r.k,t))}a.del=null;if(!s.ev.length)Q.hypOpen=null;render();try{for(const t of o)await t();render();U("删掉了这条证据。")}catch(t){}},async hypEv(t){
-if(!Qo())return;const e=j(S.hyps[t.dataset.id]);if(!e)return;const a=(h("#hx-note").value||"").trim(),s=(Q.hypOpen&&Q.hypOpen.str)==="weak"?"weak":"strong"
+if(!Xo())return;const e=j(S.hyps[t.dataset.id]);if(!e)return;const a=(h("#hx-note").value||"").trim(),s=(Q.hypOpen&&Q.hypOpen.str)==="weak"?"weak":"strong"
 ;e.ev=(e.ev||[]).concat([{date:b(),kind:t.dataset.v,note:a,str:s}]);e.updated=(new Date).toISOString();Q.hypOpen=null;render();try{await ht("hyps",e.id,e);render()
-;if(t.dataset.v==="con")U("反例记下了。它是新信息：试试缩小这条的条件。")}catch(t){}},async hypStatus(t){as();if(!Qo())return;const e=j(S.hyps[t.dataset.id]);if(!e)return;e.status=t.dataset.v
-;e.updated=(new Date).toISOString();render();try{await ht("hyps",e.id,e);render()}catch(t){}},async hypRevise(t){if(!Qo())return;const e=j(S.hyps[t.dataset.id]);if(!e)return
-;const a=(h("#hx-text").value||"").trim();if(!a){U("改写后的版本不能是空的。");return}if(Je(a,L(e))){U("还没改动。");return}const s=b();Se(e,s);e.text=a;e.sit=null;e.rea=null;e.ev=[];e.revisedOn=s
+;if(t.dataset.v==="con")U("反例记下了。它是新信息：试试缩小这条的条件。")}catch(t){}},async hypStatus(t){as();if(!Xo())return;const e=j(S.hyps[t.dataset.id]);if(!e)return;e.status=t.dataset.v
+;e.updated=(new Date).toISOString();render();try{await ht("hyps",e.id,e);render()}catch(t){}},async hypRevise(t){if(!Xo())return;const e=j(S.hyps[t.dataset.id]);if(!e)return
+;const a=(h("#hx-text").value||"").trim();if(!a){U("改写后的版本不能是空的。");return}if(Je(a,N(e))){U("还没改动。");return}const s=b();Se(e,s);e.text=a;e.sit=null;e.rea=null;e.ev=[];e.revisedOn=s
 ;e.verBy=null;e.status="test";e.updated=(new Date).toISOString();Q.hypOpen=null;render();try{await ht("hyps",e.id,e);render();U(ve(e)+" 改写了，旧版本存进了历史。这就是一次重新认识。")}catch(t){}},
-async hypDel(t){if(!Qo())return;const e=t.dataset.id;Q.hypOpen=null;render();try{await vt("hyps",e);render()}catch(t){}},logOpen(t){
-Q.logOpen=Q.logOpen===t.dataset.key?null:t.dataset.key;render()},copy(t){const e=t.dataset.key;Pn((Mn(e)||"【复盘日 "+e+" "+O(e)+"】\n今天还没有记录。")+"\n\n"+Ln()+"\n\n"+Nn+"\n"+Hn)},
-copyAll(){const t=he().filter(t=>t<=b()).sort();Pn(t.map(Mn).filter(Boolean).join("\n\n")+"\n\n"+Ln())},closeCopy(){Q.copy=null;render()},newEvent(){is("event","new")
+async hypDel(t){if(!Xo())return;const e=t.dataset.id;Q.hypOpen=null;render();try{await vt("hyps",e);render()}catch(t){}},logOpen(t){
+Q.logOpen=Q.logOpen===t.dataset.key?null:t.dataset.key;render()},copy(t){const e=t.dataset.key;Pn((Mn(e)||"【复盘日 "+e+" "+O(e)+"】\n今天还没有记录。")+"\n\n"+Nn()+"\n\n"+Ln+"\n"+Hn)},
+copyAll(){const t=he().filter(t=>t<=b()).sort();Pn(t.map(Mn).filter(Boolean).join("\n\n")+"\n\n"+Nn())},closeCopy(){Q.copy=null;render()},newEvent(){is("event","new")
 ;if(G&&G.type==="event"&&!S.events[G.key]&&!G.data.capRef&&$<=b()){G.data.date=$;render()}},selDay(t){Bs(w($,+t.dataset.v))},selToday(){Bs(b())},calToggle(){Q.cal=!Q.cal
 ;Q.calMonth=$.slice(0,7);render()},calMonth(t){const e=+t.dataset.v;if(t.dataset.mode==="pick"){Q.calMonth=ha(Q.calMonth||$.slice(0,7),e);render()
 ;const t=h('#day-picker [data-act="calMonth"][data-v="'+e+'"]');if(t&&!t.disabled)t.focus({preventScroll:true});ya("#day-picker .calendar-grid, #day-picker .calhead > span",e)
 ;return}Za(e)},calPick(t){const e=t.dataset.key;if(t.dataset.mode==="pick"){Q.cal=false;if(e===$)render();else Bs(e);h("#day-label").focus({preventScroll:true});return}Qa(e)},
-goDay(t){const e=t.dataset.key;$=e>w(b(),1)?b():e;Q.cal=false;const a="#"+t.dataset.v;if(location.hash===a)ir();else location.hash=a},syncNowBtn(){Qt();render()},syncEdit(){
+goDay(t){const e=t.dataset.key;$=e>w(b(),1)?b():e;Q.cal=false;const a="#"+t.dataset.v;if(location.hash===a)or();else location.hash=a},syncNowBtn(){Qt();render()},syncEdit(){
 Q.syncEdit=true;Q.syncErr=null;render()},syncEditCancel(){Q.syncEdit=false;Q.syncErr=null;render()},syncOffAsk(){Q.syncOff=true;render()},syncOffNo(){Q.syncOff=false;render()},
 syncOff(){Dt=null;_t();Q.syncOff=false;Tt={ok:null,msg:"",at:null};render();U("已停止同步。本机和云端的数据都还在。")},async syncSetup(){
 const t=(h("#sy-repo").value||"").trim().replace(/^https?:\/\/github\.com\//i,"").replace(/\.git$/i,"").replace(/\/+$/,"")
@@ -2020,16 +2032,16 @@ if(o.private===false)return n("这个仓库是公开的。请换成私有（Priv
 lastAt:Dt.lastAt};if(s!==Dt.pass)n.newPass=s;Dt=n}else Dt={repo:t,token:e,pass:s,lastAt:null};const r=!!Dt.newPass;_t();Q.syncChecking=false;Q.syncEdit=false;render();await Qt()
 ;render();if(Tt.ok&&!r)U("云端同步已开启。")},eventFromCap(t){const e=pe(t.dataset.key,t.dataset.id);is("event",e?e.id:"new|"+t.dataset.key+"|"+t.dataset.id)},editEvent(t){
 is("event",t.dataset.id)},evCap(t){const e=t.dataset.v.split("|");ye(G.data,e[0],e[1]);G.dirty=true;X[G.type+":"+G.key]=G.data;kt();render()},delEventAsk(){G.data._del=true
-;render()},delEventNo(){G.data._del=false;render()},async delEvent(){if(!Qo())return;const t=G.key;os();render();try{await vt("events",t);render();U("删掉了。")}catch(t){}},
-async saveEvent(){if(!Qo())return;const t=j(G.data),e=b(),a=S.events[G.key]||null;const s=(t.title||"").trim(),n=(t.facts||"").trim();if(!s&&!n){U("至少写一句是什么事。");return}
-const i=a?a.id:C(),o=(new Date).toISOString();let r=/^\d{4}-\d{2}-\d{2}$/.test(t.date||"")?t.date:e;if(r>e)r=e;const c=[];const l=a&&a.Dres&&a.Dres.op!=="none"?a.Dres:tr(r,t.D,c)
+;render()},delEventNo(){G.data._del=false;render()},async delEvent(){if(!Xo())return;const t=G.key;os();render();try{await vt("events",t);render();U("删掉了。")}catch(t){}},
+async saveEvent(){if(!Xo())return;const t=j(G.data),e=b(),a=S.events[G.key]||null;const s=(t.title||"").trim(),n=(t.facts||"").trim();if(!s&&!n){U("至少写一句是什么事。");return}
+const i=a?a.id:C(),o=(new Date).toISOString();let r=/^\d{4}-\d{2}-\d{2}$/.test(t.date||"")?t.date:e;if(r>e)r=e;const c=[];const l=a&&a.Dres&&a.Dres.op!=="none"?a.Dres:er(r,t.D,c)
 ;const d=t=>(t||"").trim();const u={id:i,date:r,created:a?a.created:o,updated:o,capRef:t.capRef||null,title:s||n.slice(0,30),facts:n,quote:d(t.quote),emos:t.emos||[],
 inten:t.inten||0,body:t.body||[],expect:d(t.expect),gap:d(t.gap),fork:d(t.fork),alt:d(t.alt),why:d(t.why),care:d(t.care),friend:d(t.friend),nextIf:d(t.nextIf),
 nextThen:d(t.nextThen),after:t.after||"",D:t.D,Dres:l};u.done=!!(u.fork||u.care||l&&l.op!=="none");os();render();window.scrollTo(0,0);try{await ht("events",i,u)
-;for(const t of c)await t();U(ar(l)||(u.done?"这件事复盘好了。":"存下了。没写完的部分，之后在「今天」页接着写。"))}catch(t){}},async wordEvent(t){const e=S.events[t.dataset.id];if(!e)return;if(!Z){
+;for(const t of c)await t();U(sr(l)||(u.done?"这件事复盘好了。":"存下了。没写完的部分，之后在「今天」页接着写。"))}catch(t){}},async wordEvent(t){const e=S.events[t.dataset.id];if(!e)return;if(!Z){
 U("这里不能保存文件，可以先用「复制给 Claude」把文字留下来。");return}let a;try{a=ri(Zn(e))}catch(t){U("生成 Word 时出错了，先用「复制给 Claude」把文字留下来。");return}
 const s=String(e.title||"").replace(/[\\\/:*?"<>|\s]+/g,"").slice(0,14);try{await Z.save({filename:"单件复盘-"+e.date+(s?"-"+s:"")+".docx",data:a});U("Word 保存好了。")}catch(t){
-if(t&&t.code==="declined")return;U("没保存成功，可以先用「复制给 Claude」把文字留下来。")}},copyEvent(t){const e=S.events[t.dataset.id];if(e)Pn(ti(e)+"\n\n"+Ln()+"\n\n"+ei+"\n"+Hn)},async wordDay(t){
+if(t&&t.code==="declined")return;U("没保存成功，可以先用「复制给 Claude」把文字留下来。")}},copyEvent(t){const e=S.events[t.dataset.id];if(e)Pn(ti(e)+"\n\n"+Nn()+"\n\n"+ei+"\n"+Hn)},async wordDay(t){
 if(!Z){U("这里不能保存文件，可以先用「复制给 Claude」把文字留下来。");return}const e=t.dataset.key;let a;try{a=ri(Vn(e))}catch(t){U("生成 Word 时出错了，先用「复制给 Claude」把文字留下来。");return}try{await Z.save({
 filename:"复盘-"+e+".docx",data:a});U("Word 保存好了。")}catch(t){if(t&&t.code==="declined")return
 ;if(t&&t.code==="rate_limited")U("上一个保存窗口还开着，处理完再点一次。");else U("没保存成功，可以先用「复制给 Claude」把文字留下来。")}},async export(){if(!Z){U("这里不能导出文件，用「复制全部为文字」。");return}const t={app:"自我观察本",
@@ -2038,7 +2050,7 @@ localStorage.setItem("zwgcb-lastbackup",b())}catch(t){}U("全部数据导出好�
 ;if(t){t.value="";t.click()}},impOpen(){is("import","new")},impParse(){const t=G.data,e=h("#f-text");if(e)t.text=e.value;const a=Pe(t.text);if(a.error){t.err=[a.error];t.a=null
 ;render();return}const s=Be(a.obj);if(s.length){t.err=s;t.a=null;render();return}t.err=null;t.a=a.obj;t.mode=fe(a.obj.date).length?null:"add";t.tmr=true;X[G.type+":"+G.key]=t;kt()
 ;render();window.scrollTo(0,0)},impBack(){G.data.a=null;G.data.err=null;render()},impMode(t){G.data.mode=t.dataset.v;render()},impTmr(){G.data.tmr=!G.data.tmr;render()},
-async impCommit(){if(!Qo()||!G||!G.data.a)return;const t=G.data,e=t.a,a=fe(e.date);if(a.length&&!t.mode){U("先选「覆盖」还是「另存一条」。");return}
+async impCommit(){if(!Xo()||!G||!G.data.a)return;const t=G.data,e=t.a,a=fe(e.date);if(a.length&&!t.mode){U("先选「覆盖」还是「另存一条」。");return}
 const s=t.mode&&t.mode!=="add"?S.archives[t.mode]:null;const n=Ke(e,s);if(n.errors.length){render();return}const i=(new Date).toISOString();const o={id:n.recId,date:e.date,
 time:e.time||"",chat_link:e.chat_link||"",imported:i,data:e,applied:n.items,tmrPredId:null,resolvedQ:[]};const r=String(e.tomorrow_prediction||"").trim();if(r&&t.tmr){
 const t=w(e.date,1),a=n.days[t]||T(t);o.tmrPredId=C();a.preds=(a.preds||[]).concat([{id:o.tmrPredId,kind:"specific",text:r,hid:null,at:i,src:"eve",result:"",actual:"",arc:o.id}])
@@ -2046,47 +2058,47 @@ const t=w(e.date,1),a=n.days[t]||T(t);o.tmrPredId=C();a.preds=(a.preds||[]).conc
 ;if(n.seq>be())c.push(ht("meta","counters",{hypSeq:n.seq}));c.push(ht("archives",o.id,o));if(s)c.push(vt("archives",s.id));os();if(e.date<=w(b(),1))$=e.date
 ;if(location.hash==="#review"){V="review";render()}else location.hash="#review";window.scrollTo(0,0);try{await Promise.all(c)
 ;U("导入好了，归到 "+E(e.date)+(n.items.length?"，假设清单变了 "+n.items.length+" 处":"")+"。")}catch(t){}},openDay(t){$=t.dataset.key
-;if(location.hash==="#review")ir();else location.hash="#review"},async qToggle(t){if(!Qo())return;const e=j(S.archives[t.dataset.id]);if(!e)return
+;if(location.hash==="#review")or();else location.hash="#review"},async qToggle(t){if(!Xo())return;const e=j(S.archives[t.dataset.id]);if(!e)return
 ;const a=+t.dataset.v,s=new Set(e.resolvedQ||[]);if(s.has(a))s.delete(a);else s.add(a);e.resolvedQ=Array.from(s).sort((t,e)=>t-e);const n=ht("archives",e.id,e);render();try{await n
-}catch(t){}},arcDelAsk(t){Q.arcDel=t.dataset.id;render()},arcDelNo(){Q.arcDel=null;render()},async arcDel(t){if(!Qo())return;const e=S.archives[t.dataset.id];if(!e)return
+}catch(t){}},arcDelAsk(t){Q.arcDel=t.dataset.id;render()},arcDelNo(){Q.arcDel=null;render()},async arcDel(t){if(!Xo())return;const e=S.archives[t.dataset.id];if(!e)return
 ;const a=j(S.hyps)||{},s={};We(e,a,s);const n=Fe(a),i=[];n.putIds.forEach(t=>i.push(ht("hyps",t,a[t])));n.delIds.forEach(t=>i.push(vt("hyps",t)))
 ;Object.keys(s).forEach(t=>i.push(ht("days",t,s[t])));i.push(vt("archives",e.id));Q.arcDel=null;render();try{await Promise.all(i);U("删掉了这份存档，它加的证据和假设也撤回了。")}catch(t){}}}
-;function Zo(t,e){t.preds=t.preds.map(t=>{const a=e&&e[t.id];return a?Object.assign({},t,{result:a.r||"",actual:(a.a||"").trim()}):t})}function tr(t,e,a){
+;function tr(t,e){t.preds=t.preds.map(t=>{const a=e&&e[t.id];return a?Object.assign({},t,{result:a.r||"",actual:(a.a||"").trim()}):t})}function er(t,e,a){
 if(!e||e.op==="none")return{op:"none"};const s=(new Date).toISOString();if(e.op==="new"){const s=(e.sit||"").trim(),n=(e.rea||"").trim();if(!s&&!n)return{op:"none"};const i=xe({
 sit:s||"（情境没写）",rea:n||"（反应没写）",date:t,ev:[{date:t,kind:"sup",note:(e.ev||"").trim(),str:e.str==="weak"?"weak":"strong"}]});a.push(()=>ht("hyps",i.id,i));return{op:"new",hid:i.id,
-text:ve(i)+" "+L(i),line:'<div class="hmeta"><span class="hno">'+ve(i)+"</span></div>"+'<div class="hmeta"><span class="st test">新假设</span></div>'+Ze(i)}}
+text:ve(i)+" "+N(i),line:'<div class="hmeta"><span class="hno">'+ve(i)+"</span></div>"+'<div class="hmeta"><span class="st test">新假设</span></div>'+Ze(i)}}
 if(e.op==="old"&&e.hid&&S.hyps[e.hid]){const n=j(S.hyps[e.hid]),i=e.kind==="con"?"con":"sup";n.ev=(n.ev||[]).concat([{date:t,kind:i,note:(e.ev||"").trim(),
-str:e.str==="weak"?"weak":"strong"}]);n.updated=s;a.push(()=>ht("hyps",n.id,n));return{op:"old",hid:n.id,kind:i,text:ve(n)+" "+L(n)+"（"+(i==="con"?"反例":"支持")+"）",
-line:'<div class="hmeta"><span class="st '+(i==="con"?"revised":"test")+'">'+(i==="con"?"记了一次反例":"记了一次支持")+"</span></div>"+Ze(n)}}return{op:"none"}}function er(t,e,a,s){e=e||{}
+str:e.str==="weak"?"weak":"strong"}]);n.updated=s;a.push(()=>ht("hyps",n.id,n));return{op:"old",hid:n.id,kind:i,text:ve(n)+" "+N(n)+"（"+(i==="con"?"反例":"支持")+"）",
+line:'<div class="hmeta"><span class="st '+(i==="con"?"revised":"test")+'">'+(i==="con"?"记了一次反例":"记了一次支持")+"</span></div>"+Ze(n)}}return{op:"none"}}function ar(t,e,a,s){e=e||{}
 ;const n={watch:(e.watch||"").trim(),tmr:(e.tmr||"").trim(),predId:a?a.predId:null};const i=w(t,1);if(n.tmr||n.predId){const t=T(i);if(n.predId&&t.preds.some(t=>t.id===n.predId)){
 if(n.tmr)t.preds=t.preds.map(t=>t.id===n.predId?Object.assign({},t,{text:n.tmr}):t);else{t.preds=t.preds.filter(t=>t.id!==n.predId);n.predId=null}}else if(n.tmr){n.predId=C()
-;t.preds.push({id:n.predId,kind:"specific",text:n.tmr,hid:null,at:(new Date).toISOString(),src:"eve",result:"",actual:""})}s.push(()=>ht("days",i,t))}return n}function ar(t){
+;t.preds.push({id:n.predId,kind:"specific",text:n.tmr,hid:null,at:(new Date).toISOString(),src:"eve",result:"",actual:""})}s.push(()=>ht("days",i,t))}return n}function sr(t){
 if(!t||t.op==="none")return"";if(t.op==="new")return"写完了。新假设进了清单。";const e=S.hyps[t.hid];if(!e)return"写完了。";const a=oe(e,"sup"),s=oe(e,"con")
 ;if(t.kind==="con")return"记了一次反例。去清单里缩小它的条件。";if(e.status==="test"&&a>=3&&s===0)return"这条已经支持 "+a+" 次，可以在清单里升为「较可信」。";return"写完了。"}document.addEventListener("toggle",t=>{
 const e=t.target;if(e.isConnected&&e.matches("details[data-ui-open]"))Cn(e.dataset.uiOpen,e.open)},true);document.addEventListener("click",t=>{const e=t.target.closest(".tabs a")
-;if(e&&e.getAttribute("href")===(location.hash||"#review")){t.preventDefault();ir();return}const a=t.target.closest("[data-act]");if(!a)return
-;const s=$o[a.dataset.act]||so[a.dataset.act]||A[a.dataset.act];if(s){t.preventDefault();s(a,t)}});document.addEventListener("input",t=>{const e=t.target
+;if(e&&e.getAttribute("href")===(location.hash||"#review")){t.preventDefault();or();return}const a=t.target.closest("[data-act]");if(!a)return
+;const s=Go[a.dataset.act]||so[a.dataset.act]||A[a.dataset.act];if(s){t.preventDefault();s(a,t)}});document.addEventListener("input",t=>{const e=t.target
 ;if(!G||!e.dataset||!e.dataset.f)return;H(G.data,e.dataset.f,e.value);G.dirty=true;if(e.id==="f-fact")nn();X[G.type+":"+G.key]=G.data;kt();if(e.dataset.f==="specific"){
 const t=h("#w-specific");if(t)t.textContent=us(e.value)}if(e.dataset.f==="E.tmr"){const t=h("#w-tmr");if(t)t.textContent=us(e.value)}if(e.dataset.live==="hyp"){const t=h("#w-hyp")
-;if(t)t.textContent=ps((G.data.D.sit||"")+(G.data.D.rea||""))}});const sr={today:"pred",log:"more"};function nr(t){const e=(t||"#review").slice(1).split("?")[0],a=sr[e]||e
-;return["pred","capture","review","hyps","more","week","settings","ai","chat"].includes(a)&&(!["ai","chat"].includes(a)||ci)?a:"review"}function ir(){ai.hypRequest?.ctl.abort()
-;if(ai.request){ai.request.stopped=true;ai.request.ctl.abort()}eo();Hs();Fa();as(false);if(h("#day-actions").open)h("#day-actions").close();V=nr(location.hash)
-;if(!ci&&location.hash.startsWith("#chat"))history.replaceState(null,"","#review");Yo();Q.cal=false;if(V==="ai"){
-const t=new URLSearchParams(location.hash.split("?")[1]||"").get("day");ai.date=N(t)?t:$;$=ai.date}
+;if(t)t.textContent=ps((G.data.D.sit||"")+(G.data.D.rea||""))}});const nr={today:"pred",log:"more"};function ir(t){const e=(t||"#review").slice(1).split("?")[0],a=nr[e]||e
+;return["pred","capture","review","hyps","more","week","settings","ai","chat"].includes(a)&&(!["ai","chat"].includes(a)||ci)?a:"review"}function or(){ai.hypRequest?.ctl.abort()
+;if(ai.request){ai.request.stopped=true;ai.request.ctl.abort()}eo();Hs();Fa();as(false);if(h("#day-actions").open)h("#day-actions").close();V=ir(location.hash)
+;if(!ci&&location.hash.startsWith("#chat"))history.replaceState(null,"","#review");Vo();Q.cal=false;if(V==="ai"){
+const t=new URLSearchParams(location.hash.split("?")[1]||"").get("day");ai.date=L(t)?t:$;$=ai.date}
 const t=da(),e=V==="more"&&!t.section&&t.day&&Q.moreReturn&&Q.moreReturn.day===t.day;if(t.day){Q.moreDay=t.day;Q.moreMonth=e?Q.moreReturn.month:t.day.slice(0,7)}if(G&&G.dirty){
 X[G.type+":"+G.key]=G.data;bt()}G=null;Q.hypOpen=null;Q.hypNew=false;Q.copy=null;Q.arcDel=null;render(true);if(e){window.scrollTo(0,Q.moreReturn.scroll)
 ;const t=h('#summary-content [data-section="'+Q.moreReturn.section+'"]');if(t)t.focus({preventScroll:true});$a()}else{window.scrollTo(0,0);if(V==="more"&&!t.section&&Q.moreDay)$a()
-;if(t.section){const t=h("#more-reader-heading");if(t)t.focus({preventScroll:true});ya(".more-reader",1)}}}window.addEventListener("hashchange",ir);const or=h("#month-scroller")
-;or.addEventListener("pointerdown",()=>{Pa=true;Ba=true},{passive:true});window.addEventListener("pointerup",()=>{if(Ba){Ba=false;clearTimeout(Ua);Ua=setTimeout(ts,150)}},{
-passive:true});window.addEventListener("pointercancel",()=>{Ba=false},{passive:true});or.addEventListener("wheel",()=>{Pa=true},{passive:true});or.addEventListener("keydown",t=>{
-if(["ArrowLeft","ArrowRight","Home","End"].includes(t.key))Pa=true});or.addEventListener("scrollend",ts);if(!("onscrollend"in or))or.addEventListener("scroll",()=>{clearTimeout(Ua)
+;if(t.section){const t=h("#more-reader-heading");if(t)t.focus({preventScroll:true});ya(".more-reader",1)}}}window.addEventListener("hashchange",or);const rr=h("#month-scroller")
+;rr.addEventListener("pointerdown",()=>{Pa=true;Ba=true},{passive:true});window.addEventListener("pointerup",()=>{if(Ba){Ba=false;clearTimeout(Ua);Ua=setTimeout(ts,150)}},{
+passive:true});window.addEventListener("pointercancel",()=>{Ba=false},{passive:true});rr.addEventListener("wheel",()=>{Pa=true},{passive:true});rr.addEventListener("keydown",t=>{
+if(["ArrowLeft","ArrowRight","Home","End"].includes(t.key))Pa=true});rr.addEventListener("scrollend",ts);if(!("onscrollend"in rr))rr.addEventListener("scroll",()=>{clearTimeout(Ua)
 ;Ua=setTimeout(ts,150)},{passive:true});h("#hyp-actions").addEventListener("cancel",t=>{t.preventDefault();as()});h("#day-actions").addEventListener("cancel",t=>{t.preventDefault()
 ;es()});h("#day-summary").addEventListener("cancel",t=>{t.preventDefault();Xa()});window.addEventListener("resize",()=>requestAnimationFrame(()=>{if(Ja()){Ka();Va();$a()}}))
-;window.addEventListener("online",ee);window.addEventListener("offline",ee);const rr=h("#week-scroller");let cr;rr.addEventListener("pointerdown",()=>{Is=true;Ms=true},{
-passive:true});window.addEventListener("pointerup",()=>{if(Ms){Ms=false;clearTimeout(cr);cr=setTimeout(Ws,150)}},{passive:true});window.addEventListener("pointercancel",()=>{
-Ms=false},{passive:true});rr.addEventListener("wheel",()=>{Is=true},{passive:true});rr.addEventListener("keydown",t=>{
-if(["ArrowLeft","ArrowRight","Home","End"].includes(t.key))Is=true});rr.addEventListener("scrollend",Ws);if(!("onscrollend"in rr))rr.addEventListener("scroll",()=>{clearTimeout(cr)
-;cr=setTimeout(Ws,150)},{passive:true});let lr=null;window.addEventListener("resize",()=>{cancelAnimationFrame(lr);lr=requestAnimationFrame(()=>{
+;window.addEventListener("online",ee);window.addEventListener("offline",ee);const cr=h("#week-scroller");let lr;cr.addEventListener("pointerdown",()=>{Is=true;Ms=true},{
+passive:true});window.addEventListener("pointerup",()=>{if(Ms){Ms=false;clearTimeout(lr);lr=setTimeout(Ws,150)}},{passive:true});window.addEventListener("pointercancel",()=>{
+Ms=false},{passive:true});cr.addEventListener("wheel",()=>{Is=true},{passive:true});cr.addEventListener("keydown",t=>{
+if(["ArrowLeft","ArrowRight","Home","End"].includes(t.key))Is=true});cr.addEventListener("scrollend",Ws);if(!("onscrollend"in cr))cr.addEventListener("scroll",()=>{clearTimeout(lr)
+;lr=setTimeout(Ws,150)},{passive:true});let dr=null;window.addEventListener("resize",()=>{cancelAnimationFrame(dr);dr=requestAnimationFrame(()=>{
 if(!h("#week-shell").hidden)zs(k($));nn()})});document.addEventListener("keydown",t=>{if(t.key==="Tab"&&h("#hyp-actions").open){
 const e=Array.from(h("#hyp-actions").querySelectorAll("button:not([disabled])")),a=e[0],s=e[e.length-1];if(t.shiftKey&&document.activeElement===a){t.preventDefault();s.focus()
 }else if(!t.shiftKey&&document.activeElement===s){t.preventDefault();a.focus()}}if(t.key==="Escape"&&h("#hyp-actions").open){t.preventDefault();as();return}
@@ -2094,15 +2106,15 @@ if(t.key==="Tab"&&h("#day-actions").open){const e=Array.from(h("#day-actions").q
 ;if(t.shiftKey&&document.activeElement===a){t.preventDefault();s.focus()}else if(!t.shiftKey&&document.activeElement===s){t.preventDefault();a.focus()}}
 if((t.ctrlKey||t.metaKey)&&t.key==="Enter"&&!t.isComposing&&G&&G.type==="capture"){t.preventDefault();A.saveCap()}if(t.key==="Escape"&&h("#day-actions").open){t.preventDefault()
 ;es();return}if(t.key==="Escape"&&Ja()&&Q.moreDay){t.preventDefault();Xa();return}if(t.key==="Escape"&&Q.cal){Q.cal=false;Ys();h("#day-label").focus({preventScroll:true})}})
-;document.addEventListener("focusin",t=>{if(t.target.matches("#view input,#view textarea"))requestAnimationFrame(()=>{ur();if(ys())ws();else if(t.target.id==="f-fact")on()})})
-;let dr=window.innerHeight;function ur(){const t=document.activeElement,e=t&&/^(INPUT|TEXTAREA)$/.test(t.tagName),a=window.visualViewport;if(!e)dr=window.innerHeight
-;const s=!!e&&(dr-window.innerHeight>150||a&&window.innerHeight-a.height>150);document.body.classList.toggle("keyboard-open",s)
+;document.addEventListener("focusin",t=>{if(t.target.matches("#view input,#view textarea"))requestAnimationFrame(()=>{pr();if(ys())ws();else if(t.target.id==="f-fact")on()})})
+;let ur=window.innerHeight;function pr(){const t=document.activeElement,e=t&&/^(INPUT|TEXTAREA)$/.test(t.tagName),a=window.visualViewport;if(!e)ur=window.innerHeight
+;const s=!!e&&(ur-window.innerHeight>150||a&&window.innerHeight-a.height>150);document.body.classList.toggle("keyboard-open",s)
 ;const n=s&&a&&Math.abs(a.scale-1)<.05?Math.max(0,innerHeight-a.height-a.offsetTop):0;document.documentElement.style.setProperty("--writing-pan",(s&&a?a.offsetTop:0)+"px")
 ;document.documentElement.style.setProperty("--writing-inset",n+"px");document.documentElement.style.setProperty("--writing-vh",(a?a.height:innerHeight)+"px");if(V==="chat")Lo()
-;if(s&&ys())requestAnimationFrame(ws);if(s&&G&&G.type==="capture")requestAnimationFrame(on)}if(window.visualViewport){window.visualViewport.addEventListener("resize",ur)
-;window.visualViewport.addEventListener("scroll",ur)}window.addEventListener("resize",ur);document.addEventListener("focusout",()=>setTimeout(ur,0))
-;document.addEventListener("change",t=>{if(t.target&&t.target.id==="importFile"&&t.target.files&&t.target.files[0])bn(t.target.files[0])});V=nr(location.hash)
-;if(!ci&&location.hash.startsWith("#chat"))history.replaceState(null,"","#review");const pr=da();if(pr.day){Q.moreDay=pr.day;Q.moreMonth=pr.day.slice(0,7)}
+;if(s&&ys())requestAnimationFrame(ws);if(s&&G&&G.type==="capture")requestAnimationFrame(on)}if(window.visualViewport){window.visualViewport.addEventListener("resize",pr)
+;window.visualViewport.addEventListener("scroll",pr)}window.addEventListener("resize",pr);document.addEventListener("focusout",()=>setTimeout(pr,0))
+;document.addEventListener("change",t=>{if(t.target&&t.target.id==="importFile"&&t.target.files&&t.target.files[0])bn(t.target.files[0])});V=ir(location.hash)
+;if(!ci&&location.hash.startsWith("#chat"))history.replaceState(null,"","#review");const fr=da();if(fr.day){Q.moreDay=fr.day;Q.moreMonth=fr.day.slice(0,7)}
 /* BOOT_APP */se()})();
 </script>
 <script>

@@ -53,8 +53,8 @@ test('truncated and interrupted replies survive, oversized input never leaves br
  for(const ev of [events('截断文字','max_tokens'),events('断开的文字').slice(0,-2)]){const b=setup(async()=>stream(ev));await b.api.chatSend('虚构');assert.ok(b.api.chat.doc.messages[1].content);assert.equal(Object.keys(b.S.meta).length,1);assert.ok(b.api.chat.doc.messages[1].stopReason==='max_tokens'||b.api.chat.doc.messages[1].partial);}
  const b=setup();await b.api.chatSend('字'.repeat(90000));assert.equal(b.api.chat.doc.messages.length,0);assert.equal(b.api.chat.error,'这次对话太长了，开一个新对话继续');
 });
-test('failed local writes roll back target and preserve recoverable draft',async()=>{
- const b=setup();b.mode='local';b.lsRead=()=>({hyps:{},meta:{}});const d=reply(b,'<hyp>在压力大时，我可能会更晚开始。</hyp>');await b.api.chatAddCard('1:0');assert.equal(Object.keys(b.S.hyps).length,1);assert.ok(b.drafts['chat:'+d.id]);assert.match(b.api.chat.error,/没有保存成功/);
+test('failed local writes roll back target and leave the conversation available for retry',async()=>{
+ const b=setup();b.mode='local';b.lsRead=()=>({hyps:{},meta:{}});const d=reply(b,'<hyp>在压力大时，我可能会更晚开始。</hyp>');await b.api.chatAddCard('1:0');assert.equal(Object.keys(b.S.hyps).length,1);assert.equal(b.api.chat.doc,d);assert.equal(d.messages.length,2);assert.match(b.api.chat.error,/没有保存成功/);
 });
 test('three local sends preserve the original snapshot and only cache the system and final user text',async()=>{
  const requests=[],wire=[],env={MODEL_EXPLORE:'mock',MAX_TOKENS_EXPLORE:'32000'};
@@ -67,9 +67,9 @@ test('three local sends preserve the original snapshot and only cache the system
    assert.ok(raw.messages.slice(1).every(m=>!m.ctx));assert.equal(raw.messages.length,2*i+1);
    const blocks=body.messages.flatMap(m=>m.content);assert.equal(blocks.filter(v=>v.text.startsWith('<materials>')).length,1);
    assert.match(body.messages[0].content[0].text,/^<materials>/);assert.ok(body.messages[0].content[0].text.includes('\\u003c旧记录>'));
-   assert.equal(body.messages[0].content.at(-1).text,'第一次');assert.equal(blocks.filter(v=>v.text.startsWith('<hypotheses>')).length,1);
-   assert.match(body.messages.at(-1).content.at(-2).text,/^<hypotheses>/);assert.equal(blocks.at(-1).text,q);
-   assert.deepEqual([...body.system,...blocks].filter(v=>v.cache_control),[body.system[0],blocks.at(-1)]);
+   assert.equal(body.messages[0].content[1].text,'第一次');assert.equal(blocks.filter(v=>v.text.startsWith('<hypotheses>')).length,1);
+   assert.match(body.messages.at(-1).content.at(-1).text,/^<hypotheses>/);assert.equal(blocks.at(-2).text,q);
+   assert.deepEqual([...body.system,...blocks].filter(v=>v.cache_control),[body.system[0],blocks.at(-2)]);
  }
  const id=b.api.chat.doc.id;assert.equal(b.S.meta['chat:'+id].messages[0].ctx.materials.review,'蓝卡片 <旧记录>');
  b.api.chat.doc.messages[0].ctx.materials.review='字'.repeat(90000);await b.api.chatSend('第四次');assert.equal(requests.length,3);assert.match(b.api.chat.error,/太长/);
@@ -86,6 +86,6 @@ test('stream draft checkpoints are one second apart and final reply is flushed',
    now+=100;const e=i<25?{type:'content_block_delta',delta:{type:'text_delta',text:'甲'}}:{type:'message_stop'};
    c.enqueue(new TextEncoder().encode('data: '+JSON.stringify(e)+'\n\n'));if(++i===26)c.close();
  }},{highWaterMark:0}),{headers:{'content-type':'text/event-stream'}});});
- b.performance={now:()=>now};b.saveDrafts=()=>{const r=b.api.chat.request,d=b.drafts['chat:'+b.api.chat.doc.id];if(r&&d)checkpoints.push([now,!!r.finishedAt,d.doc.messages.at(-1).content.length]);return true;};
+ b.performance={now:()=>now};b.saveDrafts=()=>{const r=b.api.chat.request,d=b.drafts['chat:'+b.api.chat.doc.id];if(r&&d?.reply)checkpoints.push([now,!!r.finishedAt,d.reply.content.length]);return true;};
  await b.api.chatSend('虚构限频检查');assert.deepEqual(checkpoints,[[1000,false,10],[2000,false,20],[2600,true,25]]);
 });
