@@ -796,9 +796,11 @@ let dlNs = null;
 /* ---------- storage ---------- */
 let base = null;
 const queues = {};
+/* LOCAL_DOCUMENT_STORE */
 function lsWrite(){ try { const o = { savedAt:Date.now() }; COLS.forEach(c => { o[c] = S[c]; }); localStorage.setItem(LS_KEY, JSON.stringify(o)); return true; } catch (e) { return false; } }
 function lsRead(){ try { return JSON.parse(localStorage.getItem(LS_KEY) || 'null'); } catch (e) { return null; } }
 function put(col, id, data){
+  const previous=S[col][id];
   data = Object.assign({}, data, { _t:Date.now() });   // change stamp, used when merging with the cloud copy
   S[col] = Object.assign({}, S[col]); S[col][id] = data;
   if (mode === 'cloud'){
@@ -807,6 +809,10 @@ function put(col, id, data){
     queues[path] = p;
     return p.catch(e => { toast(errMsg(e)); throw e; });
   }
+  if(mode==='idb')return writeRows([[col,id,data]]).then(()=>{noteLocalChange();queueRefresh();},e=>{
+    if(S[col][id]===data){if(previous===undefined)delete S[col][id];else S[col][id]=previous;}
+    toast('本机写入失败，请检查浏览器存储空间并重试。');throw e;
+  });
   if (!lsWrite()) toast('这个浏览器不允许保存，刷新后会丢失。');
   noteLocalChange(); queueRefresh();
   return Promise.resolve();
@@ -815,6 +821,7 @@ function put(col, id, data){
 let refreshQ = false;
 function queueRefresh(){ if (refreshQ) return; refreshQ = true; Promise.resolve().then(() => { refreshQ = false; refresh(); }); }
 function remove(col, id){
+  const previous=S[col][id];
   S[col] = Object.assign({}, S[col]); delete S[col][id];
   if (mode === 'cloud'){
     const path = col + '/' + id;
@@ -822,6 +829,9 @@ function remove(col, id){
     queues[path] = p;
     return p.catch(e => { toast(errMsg(e)); throw e; });
   }
+  if(mode==='idb')return writeRows([[col,id]]).then(()=>{
+    const del=readDel();del[col+'/'+id]=Date.now();writeDel(del);noteLocalChange();queueRefresh();
+  },e=>{if(previous!==undefined&&S[col][id]===undefined)S[col][id]=previous;toast('删除未保存，请重试。');throw e;});
   const del = readDel(); del[col + '/' + id] = Date.now(); writeDel(del);
   lsWrite(); noteLocalChange(); queueRefresh(); return Promise.resolve();
 }
@@ -920,9 +930,20 @@ function mergeSnap(a, b){
   out.changedLocal = changedLocal; out.changedRemote = changedRemote;
   return out;
 }
-function applySnap(m){
+async function applySnap(m){
+  const oldDel=readDel();
   const n = {}; COLS.forEach(c => { n[c] = m.cols[c] || {}; });
-  S = n; writeDel(m.del); lsWrite();
+  if(mode==='idb'){
+    const changes=[];
+    for(const c of COLS)for(const id of new Set([...Object.keys(S[c]),...Object.keys(n[c])])){
+      if(JSON.stringify(S[c][id])!==JSON.stringify(n[c][id]))changes.push([c,id,n[c][id]]);
+    }
+    const pending=writeRows(changes),before=S;
+    S=n;try{await pending;}catch(e){for(const [c,id,v] of changes)if(S[c][id]===v){if(id in before[c])S[c][id]=before[c][id];else delete S[c][id];}throw e;}
+  }else{S=n;lsWrite();}
+  const del={...m.del};
+  if(mode==='idb')for(const [k,t] of Object.entries(readDel()))if(t!==oldDel[k])del[k]=Math.max(t,del[k]||0);
+  writeDel(del);
   hypsMigrated = false; migrateHyps(); refresh();
 }
 function setSync(ok, msg){
@@ -938,9 +959,9 @@ async function syncNow(){
   syncBusy = true; setSync(null, '同步中…');
   try {
     // give documents saved before sync existed a stamp, so they take part in the merge
-    let stamped = false; const now = Date.now();
-    COLS.forEach(c => Object.keys(S[c] || {}).forEach(id => { if (!S[c][id]._t){ S[c][id] = Object.assign({}, S[c][id], { _t:now }); stamped = true; } }));
-    if (stamped) lsWrite();
+    const stamps=[];const now=Date.now();
+    COLS.forEach(c=>Object.keys(S[c]||{}).forEach(id=>{if(!S[c][id]._t){const v={...S[c][id],_t:now};S[c][id]=v;stamps.push([c,id,v]);}}));
+    if(stamps.length){if(mode==='idb'){try{await writeRows(stamps);}catch(e){for(const [c,id,v] of stamps)if(S[c][id]===v)delete v._t;throw e;}}else lsWrite();}
     // A pending new sync password: read the cloud copy with the current one (or the new one, if a
     // half-finished change already uploaded), then always re-upload encrypted with the new one.
     const rekey = (syncCfg.newPass && syncCfg.newPass !== syncCfg.pass) ? syncCfg.newPass : null;
@@ -960,7 +981,7 @@ async function syncNow(){
       }
       rev0 = localRev;   // everything saved up to here is in this snapshot
       const merged = mergeSnap(snapshotLocal(), rsnap);
-      if (merged.changedLocal) applySnap(merged);
+      if (merged.changedLocal) await applySnap(merged);
       if (!remote.exists || merged.changedRemote || rekey){
         const env = await encryptJSON({ cols:merged.cols, del:merged.del, at:Date.now() }, rekey || syncCfg.pass);
         const res = await ghPut(JSON.stringify(env), remote.sha);
@@ -1031,11 +1052,11 @@ function syncLabel(){
   const el = $('#sync');
   let t = '连接中', w = false;
   if (mode === 'cloud') { t = !ready ? '载入中' : slow ? '连接慢，可能不是最新' : '已同步 · 仅自己可见'; w = slow; }
-  else if (mode === 'local'){
+  else if (mode === 'local'||mode==='idb'){
     if (OFFLINE_APP && syncCfg && syncCfg.token){ const at = syncState.at || syncCfg.lastAt; t = syncState.msg === '同步中…' ? '同步中…' : syncState.ok === false ? '同步失败' : at ? '已同步 ' + hm(new Date(at).toISOString()) : '等待同步'; w = syncState.ok === false; }
     else { t = OFFLINE_APP ? '本机保存' : '只存在这台设备'; w = !OFFLINE_APP; }
   }
-  if(mode === 'local' && !navigator.onLine){t='离线 · 本机保存';w=false;}
+  if((mode==='local'||mode==='idb') && !navigator.onLine){t='离线 · 本机保存';w=false;}
   el.textContent = t; el.classList.toggle('warn', w);
 }
 function saveFile(filename, data){
@@ -1061,8 +1082,8 @@ function saveFile(filename, data){
 }
 async function init(){
   dlNs = { save:({ filename, data }) => saveFile(filename, data) };
-  useLocal();
-  try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch (e) {}
+  requestPersistence();
+  if(AI_ON){render();await startJournal();}else useLocal();
   syncLater(1500);
   window.addEventListener('online', () => syncLater(800));
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') syncLater(1000); else if (syncDirty) syncNow(); });
@@ -2405,7 +2426,7 @@ function hypCard(x){
 
 function dataCard(){
   const b=backupInfo();
-  return '<section class="card" id="settings-data"><h2 class="stage">数据</h2><p class="'+(b.stale?'warn':'fine')+'">'+(b.date?'上次导出：'+b.date:'还没有导出过备份。')+'</p><p class="fine">导出 JSON 可以备份或迁移全部记录。导入会保留已有记录；本机草稿、访问口令和显示偏好不进入导出。保存某一天的 Word，可到回顾页点选日期后打开“⋯”。</p><div class="row">'+(dlNs?'<button type="button" class="btn ghost" data-act="export">全部数据导出</button>':'')+'<button type="button" class="btn ghost" data-act="importPick">全部数据导入</button><button type="button" class="btn ghost" data-act="copyAll">复制全部为文字</button></div><input type="file" id="importFile" accept=".json,application/json" hidden></section>';
+  return '<section class="card" id="settings-data"><h2 class="stage">数据</h2>'+diskInfo()+'<p class="'+(b.stale?'warn':'fine')+'">'+(b.date?'上次导出：'+b.date:'还没有导出过备份。')+'</p><p class="fine">导出 JSON 可以备份或迁移全部记录。导入会保留已有记录；本机草稿、访问口令和显示偏好不进入导出。保存某一天的 Word，可到回顾页点选日期后打开“⋯”。</p><div class="row">'+(dlNs?'<button type="button" class="btn ghost" data-act="export">全部数据导出</button>':'')+'<button type="button" class="btn ghost" data-act="importPick">全部数据导入</button><button type="button" class="btn ghost" data-act="copyAll">复制全部为文字</button></div><input type="file" id="importFile" accept=".json,application/json" hidden></section>';
 }
 function syncStatusText(){
   if (syncState.msg) return syncState.msg;
@@ -2510,6 +2531,7 @@ function rememberView(view){
   };
 }
 function render(force=false){
+  if(!ready&&AI_ON){$('#view').innerHTML='<p class="muted" role="status">'+(disk.notice||'正在打开记录本…')+'</p>';return;}
   if((ai.request&&route==='ai'||chat.request&&route==='chat')&&!force)return;
   ai.texts.clear();
   const view = $('#view'), previous = rememberView(view);

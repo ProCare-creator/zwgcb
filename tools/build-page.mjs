@@ -3,6 +3,8 @@ import {gzipSync} from 'node:zlib';
 import {minify} from 'terser';
 const root=new URL('../',import.meta.url);
 let html=await fs.readFile(new URL('ui/app.html',root),'utf8');
+const storage=await fs.readFile(new URL('ui/storage.js',root),'utf8');
+html=html.replace('/* LOCAL_DOCUMENT_STORE */',()=>storage);
 const js=(await fs.readFile(new URL('ui/ai.js',root),'utf8'))+'\n'+(await fs.readFile(new URL('ui/chat.js',root),'utf8')),css=(await fs.readFile(new URL('ui/ai.css',root),'utf8'))+'\n'+(await fs.readFile(new URL('ui/chat.css',root),'utf8'));
 html=html.replace('/* AI_CSS_START */',()=>'/* AI_CSS_START */\n'+css).replace('/* AI_UI_START */',()=>'/* AI_UI_START */\n'+js);
 for(const match of [...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g)]){
