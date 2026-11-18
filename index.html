@@ -804,7 +804,7 @@ body.has-chat .tabs .in{display:grid;grid-template-columns:repeat(6,minmax(0,1fr
 (()=>{"use strict";const t={avoid:"最可能拖着不做的事",change:"最有可能做出改变的事",emotion:"最可能让我情绪起伏的",specific:"具体预测"};const e={morning:"当天写",late:"当天写",eve:"前晚出题",chat:"聊天加入"};const a={hit:"对",
 miss:"落空",half:"一半"};const s=["焦虑","烦躁","委屈","失落","羞愧","愤怒","紧张","无力","不耐烦","兴奋","被认可","平静"];const n=["胸闷","肩颈紧","心跳快","胃里发紧","脸发热","坐不住","想逃开","没力气","呼吸浅","放松"]
 ;const i=["预测落空","不像自己","拖延","冲突","纠结","高光"];const o=["太累","忘了","不想面对","没时间","其他"];const r=["充实","好好","努力","认真","尽量","高效","顺利","不错","加油","开心","积极","争取","适当","多一点","少一点","状态好"]
-;const c=["情绪最强的一刻","最不像自己的一刻","最有劲的一刻","别的时刻"];const l="review-archive/v1";const d=true;const u="v6.12.0";const p="zwgcb-data-v1",f="zwgcb-drafts-v1"
+;const c=["情绪最强的一刻","最不像自己的一刻","最有劲的一刻","别的时刻"];const l="review-archive/v1";const d=true;const u="v6.12.1";const p="zwgcb-data-v1",f="zwgcb-drafts-v1"
 ;const h=t=>document.querySelector(t);const m=t=>String(t==null?"":t).replace(/[&<>"']/g,t=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[t]))
 ;const y=t=>String(t).padStart(2,"0");const v=t=>t.getFullYear()+"-"+y(t.getMonth()+1)+"-"+y(t.getDate());const g=t=>{const e=t.split("-").map(Number)
 ;return new Date(e[0],e[1]-1,e[2])};const b=(t=new Date)=>v(new Date(t.getTime()-4*36e5));const w=(t,e)=>{const a=g(t);a.setDate(a.getDate()+e);return v(a)};const k=t=>{
@@ -1651,7 +1651,7 @@ if(!ai.needsToken&&chat.pending&&V==="chat"){const t=chat.pending;chat.pending=n
 return!!(t.review.trim()||t.preds.length||t.caps.length||t.hyps.length)}function Ii(t=null,chat=null){if(t==="hyps"){Zi(chat);return}const e=t==="chat"?{date:chat.date
 }:ti(),a=t==="chat"?{selection:ei(),materials:ii(e.date,ei())}:_i(e),s=ni(e.date),n=!!e.materials;ai.confirm={mode:t,selection:q(a.selection),...t==="chat"?{chatDate:e.date}:{}}
 ;const i=h("#ai-confirm")
-;i.innerHTML='<header class="row"><div><p class="ai-eyebrow">'+E(e.date)+' · 仅这一天</p><h2 id="ai-confirm-title">这次发给 Claude 的内容</h2></div><button type="button" class="icon-button" data-act="aiConsentCancel" aria-label="关闭发送确认">×</button></header><p class="fine">由你选择；本机其他日期的记录不会发送。</p><div class="ai-checklist">'+Zn.map(([t,e])=>'<label><input type="checkbox" data-ai-check="'+t+'"'+(a.selection[t]?" checked":"")+(n||!s[t].length?" disabled":"")+"><span>"+e+"</span><small>"+(!s[t].length?"无记录":Array.isArray(s[t])?s[t].length+" 条":"已写")+"</small></label>").join("")+"</div>"+(n?'<p class="fine">这轮材料已固定。保存后开新一轮，才能更换材料。</p>':"")+'<details class="ai-preview"><summary>查看实际发送的文字</summary><div id="ai-material-preview" class="ai-prose"></div></details><p class="ai-error" id="ai-consent-error" role="status"></p><button type="button" class="btn" data-act="aiConsentAccept">'+(t==="chat"?"确认带到下一条消息":t?"确认并发送":"保存选择")+"</button>"
+;i.innerHTML='<header class="row"><div><p class="ai-eyebrow">'+E(e.date)+' · 仅这一天</p><h2 id="ai-confirm-title">这次发给 Claude 的内容</h2></div><button type="button" class="icon-button" data-act="aiConsentCancel" aria-label="关闭发送确认">×</button></header><p class="fine">'+(t==="chat"?"所选材料会保留在这段对话中，后续消息也会带上。":"由你选择；本机其他日期的记录不会发送。")+'</p><div class="ai-checklist">'+Zn.map(([t,e])=>'<label><input type="checkbox" data-ai-check="'+t+'"'+(a.selection[t]?" checked":"")+(n||!s[t].length?" disabled":"")+"><span>"+e+"</span><small>"+(!s[t].length?"无记录":Array.isArray(s[t])?s[t].length+" 条":"已写")+"</small></label>").join("")+"</div>"+(n?'<p class="fine">这轮材料已固定。保存后开新一轮，才能更换材料。</p>':"")+'<details class="ai-preview"><summary>查看实际发送的文字</summary><div id="ai-material-preview" class="ai-prose"></div></details><p class="ai-error" id="ai-consent-error" role="status"></p><button type="button" class="btn" data-act="aiConsentAccept">'+(t==="chat"?"确认带到下一条消息":t?"确认并发送":"保存选择")+"</button>"
 ;Li();i.showModal()}function Li(){if(ai.confirm.chatDate){h("#ai-material-preview").textContent=JSON.stringify({date:ai.confirm.chatDate,
 materials:ii(ai.confirm.chatDate,ai.confirm.selection)},null,2);return}const t=ti(),e=t.materials||ii(t.date,ai.confirm.selection);let a=JSON.stringify({date:t.date,materials:e
 },null,2)
@@ -1759,15 +1759,16 @@ const i=a.pendingHyp||(a.pendingHyp=pe({text:s,src:{type:"ai",date:chat.date,cha
 const t=V==="hyps"?ai.jumpHyp:V==="ai"?ai.jumpChat:null;if(!t)return;ai.jumpHyp=null;ai.jumpChat=null;requestAnimationFrame(()=>{
 const e=V==="hyps"?"data-hyp-id":"data-chat-id",a=Array.from(document.querySelectorAll("["+e+"]")).find(a=>a.getAttribute(e)===t);if(a){a.tabIndex=-1;a.focus({preventScroll:true})
 ;a.scrollIntoView({block:"start"})}})}const chat={doc:null,input:"",attachment:null,request:null,error:"",thoughts:new Map,edits:new Map,busy:new Set,queues:new Map,follow:true,
-search:"",pending:null,jump:null};const ro=t=>t.slice(5).replace("-","/")
+search:"",pending:null,jump:null};const ro=t=>String(t??"").slice(5).replace("-","/")
 ;const co=()=>Object.entries(S.meta).filter(([t,e])=>t.startsWith("chat:")&&e&&typeof e.id==="string"&&Array.isArray(e.messages)).map(([,t])=>t).sort((t,e)=>String(e.updated).localeCompare(String(t.updated)))
 ;function lo(){const t=(new Date).toISOString();return{id:C(),title:"新对话",created:t,updated:t,messages:[],cards:{}}}function uo(){
 const t=new URLSearchParams(location.hash.split("?")[1]||"").get("id");if(chat.doc&&(!t||chat.doc.id===t))return chat.doc;const e=t&&S.meta["chat:"+t],a=t&&X["chat:"+t]
 ;chat.doc=q(a?.doc&&(!e||a.doc.updated>=e.updated)?a.doc:e)||lo();chat.doc.cards||={};chat.input=a?.input||"";chat.attachment=a?.attachment||null
-;chat.error=t&&!e&&!a?"这次对话已删除或不在这台设备上。":"";chat.follow=true;chat.scrollTop=0;return chat.doc}function po(t=chat.doc){if(!t)return;const e=t===chat.doc;X["chat:"+t.id]={doc:q(t),
-input:e?chat.input:X["chat:"+t.id]?.input||"",attachment:e?q(chat.attachment):X["chat:"+t.id]?.attachment||null};if(chat.request?.doc===t){
-const e=X["chat:"+t.id].doc.messages[chat.request.index];if(e)e.partial=true}lt()
-;if(e&&V==="chat"&&!new URLSearchParams(location.hash.split("?")[1]||"").has("id"))history.replaceState(null,"","#chat?id="+encodeURIComponent(t.id))}async function fo(t,e,a){
+;chat.error=t&&!e&&!a?"这次对话已删除或不在这台设备上。":"";chat.follow=true;chat.scrollTop=0;return chat.doc}function po(t=chat.doc,e=false){if(!t)return
+;const a=chat.request?.doc===t?chat.request:null;if(a&&!e){const t=performance.now();if(t-a.lastDraft<1e3)return;a.lastDraft=t}const s=t===chat.doc;X["chat:"+t.id]={doc:q(t),
+input:s?chat.input:X["chat:"+t.id]?.input||"",attachment:s?q(chat.attachment):X["chat:"+t.id]?.attachment||null};if(chat.request?.doc===t){
+const e=X["chat:"+t.id].doc.messages[chat.request.index];if(e&&!a.finishedAt)e.partial=true}lt()
+;if(s&&V==="chat"&&!new URLSearchParams(location.hash.split("?")[1]||"").has("id"))history.replaceState(null,"","#chat?id="+encodeURIComponent(t.id))}async function fo(t,e,a){
 const s=S[t][e];try{await nt(t,e,a);if(F==="local"&&JSON.stringify(st()?.[t]?.[e])!==JSON.stringify(S[t][e]))throw Error("local-save")}catch(a){if(s)S[t][e]=s;else delete S[t][e]
 ;throw a}}async function ho(t,e){const a=S[t][e],s=F==="local"?St()[t+"/"+e]:null;try{await rt(t,e);if(F==="local"){const a=st();if(!a||a[t]?.[e])throw Error("local-remove")}
 }catch(n){if(a)S[t][e]=a;if(F==="local"){const a=St();if(s===undefined)delete a[t+"/"+e];else a[t+"/"+e]=s;Et(a)}throw n}}function mo(t){t.updated=(new Date).toISOString()
@@ -1786,13 +1787,13 @@ const[e,a]=t.split(":").map(Number),s=yo(chat.doc.messages[e]?.content||"").part
 ;return s}function bo(t,e,a=false){const s=chat.doc.cards[e];if(s?.text)t={...t,text:s.text};const n=vo(t),i=t.type==="ev"?Object.values(S.hyps).find(e=>e.no===+t.no):null
 ;const o=t.type==="hyp"?"假设":t.type==="pred"?t.date===w(b(),1)?"明天的预测":ro(t.date)+" 的预测":"给 H"+t.no+" 加"+(t.kind==="sup"?"支持证据":"反例")
 ;const r=' data-key="'+e+'"',c=chat.busy.has(chat.doc.id+":"+e),l=chat.edits.get(chat.doc.id+":"+e)
-;let d='<article class="chat-card '+(s?.status==="added"?"is-added":"")+'" data-card-key="'+e+'"><span class="ai-eyebrow">'+o+"</span>"
+;let d='<article class="chat-card '+(s?.status==="added"?"is-added":"")+'" data-card-key="'+e+'"><span class="ai-eyebrow">'+m(o)+"</span>"
 ;d+=l!==undefined?'<label class="sr-only" for="chat-edit-'+e+'">编辑卡片文字</label><textarea id="chat-edit-'+e+'" data-chat-edit="'+e+'" rows="3" maxlength="300">'+m(l)+"</textarea>":"<p>"+m(t.text)+"</p>"
 ;if(s?.status==="added"){const t=s.type==="pred"?(s.existing?"已有 ":"已加到 ")+ro(s.ref.date)+" 的预测":(s.existing?"已有 H":"已加入 H")+s.ref.no
-;d+='<button class="linkbtn" type="button" data-act="chatCardJump"'+r+">"+t+" ›</button>"
+;d+='<button class="linkbtn" type="button" data-act="chatCardJump"'+r+">"+m(t)+" ›</button>"
 ;if(s.undoUntil>Date.now())d+='<button class="linkbtn" type="button" data-act="chatUndo"'+r+(c?" disabled":"")+">撤销</button>"}else if(n&&l===undefined){
-d+='<button class="linkbtn" type="button" data-act="chatExisting"'+r+">"+(t.type==="hyp"?"已有 H"+n.no:"已有 "+ro(t.date)+" 的预测")+" ›</button>"
-}else if(t.type==="ev"&&!i)d+='<span class="fine">找不到 H'+t.no+"</span>";else d+='<div class="row"><button type="button" class="btn sm" data-act="chatAdd"'+r+(c||a||chat.request?" disabled":"")+">"+(c?"正在加入…":"加入")+'</button><button type="button" class="linkbtn" data-act="chatEdit"'+r+(c||a||chat.request?" disabled":"")+">改一下</button></div>"
+d+='<button class="linkbtn" type="button" data-act="chatExisting"'+r+">"+m(t.type==="hyp"?"已有 H"+n.no:"已有 "+ro(t.date)+" 的预测")+" ›</button>"
+}else if(t.type==="ev"&&!i)d+='<span class="fine">找不到 H'+m(t.no)+"</span>";else d+='<div class="row"><button type="button" class="btn sm" data-act="chatAdd"'+r+(c||a||chat.request?" disabled":"")+">"+(c?"正在加入…":"加入")+'</button><button type="button" class="linkbtn" data-act="chatEdit"'+r+(c||a||chat.request?" disabled":"")+">改一下</button></div>"
 ;return d+"</article>"}function wo(t,e){const a=e?chat.request:chat.thoughts.get(chat.doc.id+":"+t);if(!a)return""
 ;const s=a.thinking||"",n=Math.max(1,Math.round(((a.firstText||a.finishedAt||performance.now())-a.start)/1e3))
 ;if(e&&!a.text)return'<div class="chat-thinking is-thinking" role="status"><span>正在想</span><div>'+m(s||"正在读你说的话…")+"</div></div>";if(!s)return""
@@ -1801,10 +1802,10 @@ const t=chat.doc,e=t.messages.map(t=>t.role).lastIndexOf("assistant");return t.m
 const n=chat.request?.doc===t&&chat.request.index===s,i=a.role==="assistant"?yo(a.content,!n):null
 ;let o=i?i.parts.map(t=>t.type==="text"?'<div class="ai-prose">'+m(t.text)+"</div>":bo(t,s+":"+t.index,n)).join(""):'<div class="ai-prose">'+m(a.content)+"</div>"
 ;if(i&&s===e&&!n)o+='<div class="chat-asks">'+i.asks.map(t=>'<button type="button" class="chip" data-act="chatAsk" data-text="'+m(t)+'">'+m(t)+"</button>").join("")+"</div>"
-;return'<article class="chat-message '+a.role+'" data-message="'+s+'">'+(a.ctx?'<span class="chat-context">带了 '+ro(a.ctx.date)+" 的记录</span>":"")+(a.role==="assistant"?wo(s,n):"")+o+(a.stopReason==="max_tokens"?'<p class="fine">回答到上限被截断了</p>':"")+(a.partial?'<p class="fine">这条回复未完成，已保留收到的文字。</p>':"")+"</article>"
+;return'<article class="chat-message '+(a.role==="assistant"?"assistant":"user")+'" data-message="'+s+'">'+(a.ctx?'<span class="chat-context">带了 '+m(ro(a.ctx.date))+" 的记录</span>":"")+(a.role==="assistant"?wo(s,n):"")+o+(a.stopReason==="max_tokens"?'<p class="fine">回答到上限被截断了</p>':"")+(a.partial?'<p class="fine">这条回复未完成，已保留收到的文字。</p>':"")+"</article>"
 }).join("")}function xo(){uo()
 ;const t=chat.doc.messages.some(t=>t.role==="user")?'<button type="button" class="chat-title" data-act="chatRename">'+m(chat.doc.title)+"</button>":'<span aria-hidden="true"></span>'
-;return'<section class="chat-page"><header class="chat-top"><button type="button" class="linkbtn" data-act="chatList">对话列表</button>'+t+'<button type="button" class="linkbtn" data-act="chatNew">新对话</button></header><div id="chat-feed" tabindex="0" aria-label="聊天消息">'+(!ai.token||ai.needsToken?vi():"")+(chat.doc.messages.length?ko():'<div class="chat-empty"><span class="ai-eyebrow">和 Claude 聊聊</span><h1>从此刻想到的说起。</h1><p>不必先整理好。默认不会发送当天记录。</p>'+["有件事让我反复想，想和你理一理。","我发现自己有个重复的反应。","帮我把一个想法变成可以验证的小尝试。"].map(t=>'<button type="button" data-act="chatAsk" data-text="'+m(t)+'">'+t+" <span>↗</span></button>").join("")+"</div>")+'</div><button type="button" id="chat-latest" class="chip" data-act="chatLatest"'+(chat.follow?" hidden":"")+'>回到最新 ↓</button><footer class="chat-composer">'+(chat.error?'<p class="ai-error" role="status">'+m(chat.error)+(chat.doc.messages.at(-1)?.role==="user"?'<button type="button" class="linkbtn" data-act="chatRetry">重试</button>':"")+"</p>":"")+(chat.attachment?'<div class="chat-context">下一条带上 '+ro(chat.attachment.date)+' 的记录 <button type="button" class="linkbtn" data-act="chatDetach">移除</button></div>':"")+'<div class="chat-input-row"><button type="button" class="icon-button" data-act="chatOptions" aria-label="添加记录和聊天设置">＋</button><label class="sr-only" for="chat-input">给 Claude 发消息</label><textarea id="chat-input" rows="1" placeholder="聊聊你想到的…">'+m(chat.input)+'</textarea><button type="button" class="btn sm" data-act="'+(chat.request?"chatStop":"chatSend")+'">'+(chat.request?"停止":"发送")+'</button></div><p class="fine">'+(Hs.chatHyps===false?"未发送假设清单":"会带上假设编号和文字")+' · <button type="button" class="linkbtn" data-act="chatOptions">设置</button></p></footer></section>'
+;return'<section class="chat-page"><header class="chat-top"><button type="button" class="linkbtn" data-act="chatList">对话列表</button>'+t+'<button type="button" class="linkbtn" data-act="chatNew">新对话</button></header><div id="chat-feed" tabindex="0" aria-label="聊天消息">'+(!ai.token||ai.needsToken?vi():"")+(chat.doc.messages.length?ko():'<div class="chat-empty"><span class="ai-eyebrow">和 Claude 聊聊</span><h1>从此刻想到的说起。</h1><p>不必先整理好。默认不会发送当天记录。</p>'+["有件事让我反复想，想和你理一理。","我发现自己有个重复的反应。","帮我把一个想法变成可以验证的小尝试。"].map(t=>'<button type="button" data-act="chatAsk" data-text="'+m(t)+'">'+t+" <span>↗</span></button>").join("")+"</div>")+'</div><button type="button" id="chat-latest" class="chip" data-act="chatLatest"'+(chat.follow?" hidden":"")+'>回到最新 ↓</button><footer class="chat-composer">'+(chat.error?'<p class="ai-error" role="status">'+m(chat.error)+(chat.doc.messages.at(-1)?.role==="user"?'<button type="button" class="linkbtn" data-act="chatRetry">重试</button>':"")+"</p>":"")+(chat.attachment?'<div class="chat-context">下一条带上 '+m(ro(chat.attachment.date))+' 的记录 <button type="button" class="linkbtn" data-act="chatDetach">移除</button></div>':"")+'<div class="chat-input-row"><button type="button" class="icon-button" data-act="chatOptions" aria-label="添加记录和聊天设置">＋</button><label class="sr-only" for="chat-input">给 Claude 发消息</label><textarea id="chat-input" rows="1" placeholder="聊聊你想到的…">'+m(chat.input)+'</textarea><button type="button" class="btn sm" data-act="'+(chat.request?"chatStop":"chatSend")+'">'+(chat.request?"停止":"发送")+'</button></div><p class="fine">'+(Hs.chatHyps===false?"未发送假设清单":"会带上假设编号和文字")+' · <button type="button" class="linkbtn" data-act="chatOptions">设置</button></p></footer></section>'
 }function So(){document.body.classList.toggle("chat-mode",V==="chat");const t=h('[data-r="chat"]');if(t)t.hidden=!Qn;document.body.classList.toggle("has-chat",Qn)
 ;if(V!=="chat")return;const e=h("#chat-feed");e.addEventListener("scroll",()=>{chat.scrollTop=e.scrollTop;chat.follow=e.scrollHeight-e.scrollTop-e.clientHeight<90
 ;h("#chat-latest").hidden=chat.follow},{passive:true});Do();const a=new URLSearchParams(location.hash.split("?")[1]||""),s=a.get("msg");if(s!==null&&chat.jump!==location.hash){
@@ -1816,26 +1817,26 @@ chat.jump=location.hash;requestAnimationFrame(()=>h('#chat-feed [data-message="'
 ;if(!t)return;t.style.height="auto";t.style.height=Math.min(128,t.scrollHeight)+"px"}async function Oo(t=chat.input,e=false){
 if(!Qn||chat.request||ai.request||ai.hypRequest||!Uo())return;const a=uo(),s=String(t||"").trim();if(!e&&!s)return;if(!navigator.onLine){chat.error=Xn.offline;render(true);return}
 if(!ai.token||ai.needsToken){chat.pending={text:s,retry:e};ai.needsToken=true;render(true);h("#ai-token")?.focus();return}const n=e?a.messages.at(-1):{role:"user",content:s,
-at:(new Date).toISOString(),...chat.attachment?{ctx:{date:chat.attachment.date}}:{}};const i=(e?a.messages:[...a.messages,n]).map(t=>({role:t.role,content:t.content
-})).filter(t=>t.content.trim());const o={messages:i,...Hs.chatHyps===false?{}:{hyps:Object.values(S.hyps).map(t=>({no:t.no,text:L(t)}))},...chat.attachment?{materials:{
-date:chat.attachment.date,...chat.attachment.materials}}:{}};if(i.length>200||(new TextEncoder).encode(JSON.stringify(o)).length>256*1024){chat.error="这次对话太长了，开一个新对话继续"
-;render(true);return}if(!e){a.messages.push(n);if(a.title==="新对话")a.title=[...s].slice(0,20).join("")}chat.input="";chat.error="";chat.follow=true
+at:(new Date).toISOString(),...chat.attachment?{ctx:q(chat.attachment)}:{}};const i=(e?a.messages:[...a.messages,n]).map(t=>({role:t.role,content:t.content,
+...t.role==="user"&&t.ctx?{ctx:{date:t.ctx.date,materials:t.ctx.materials}}:{}})).filter(t=>t.content.trim());const o={messages:i,...Hs.chatHyps===false?{}:{
+hyps:Object.values(S.hyps).map(t=>({no:t.no,text:L(t)}))}};if(i.length>200||(new TextEncoder).encode(JSON.stringify(o)).length>256*1024){chat.error="这次对话太长了，开一个新对话继续";render(true)
+;return}if(!e){a.messages.push(n);chat.attachment=null;if(a.title==="新对话")a.title=[...s].slice(0,20).join("")}chat.input="";chat.error="";chat.follow=true
 ;history.replaceState(null,"","#chat?id="+encodeURIComponent(a.id));po(a);const r={doc:a,index:a.messages.length,ctl:new AbortController,text:"",thinking:"",model:"",
-start:performance.now(),ended:false,stopReason:null};chat.request=r;const c={role:"assistant",content:"",at:(new Date).toISOString()};a.messages.push(c);const l=qi("/api/chat")
-;let d="error",u=false;const p=setTimeout(()=>{u=true;r.ctl.abort()},66e4),f=Ui(r);render(true);try{const t=await fetch("/api/chat",{method:"POST",headers:{
+start:performance.now(),lastDraft:performance.now(),ended:false,stopReason:null};chat.request=r;const c={role:"assistant",content:"",at:(new Date).toISOString()};a.messages.push(c)
+;const l=qi("/api/chat");let d="error",u=false;const p=setTimeout(()=>{u=true;r.ctl.abort()},66e4),f=Ui(r);render(true);try{const t=await fetch("/api/chat",{method:"POST",headers:{
 "Content-Type":"application/json",Authorization:"Bearer "+ai.token},body:JSON.stringify(o),signal:r.ctl.signal});ji(l,t);if(!t.ok){const e=await t.json().catch(()=>({}));throw{
 code:t.status===413?"chat_large":t.status===401?"unauthorized":e.error?.code||"upstream_error"}}if(!t.body||!t.headers.get("content-type")?.includes("text/event-stream"))throw{
 code:"upstream_error"};const e=t.body.getReader(),s=new TextDecoder;let n="",i=0;const u=t=>{
 const e=t.split(/\r?\n/).filter(t=>t.startsWith("data:")).map(t=>t.slice(5).trimStart()).join("\n");if(!e)return;const s=JSON.parse(e);Bi(r,l,s)
-;if(r.text&&!r.firstText)r.firstText=performance.now();c.content=r.text;if(performance.now()-i>80){i=performance.now();Eo();a.updated=(new Date).toISOString();po(a)}};try{for(;;){
-const{done:t,value:a}=await e.read();if(t)break;n+=s.decode(a,{stream:true});let i;while(i=/\r?\n\r?\n/.exec(n)){u(n.slice(0,i.index));n=n.slice(i.index+i[0].length)}}n+=s.decode()
-;if(n.trim())u(n)}finally{e.releaseLock()}if(r.stopReason==="max_tokens"&&!r.text.trim())throw{code:"thinking_limit"}
-;if(!r.text.trim()||!r.ended&&r.stopReason!=="max_tokens")throw{code:"upstream_error"};d="complete"}catch(t){
+;if(r.text&&!r.firstText)r.firstText=performance.now();c.content=r.text;if(performance.now()-i>80){i=performance.now();Eo()}if(performance.now()-r.lastDraft>=1e3){
+a.updated=(new Date).toISOString();po(a)}};try{for(;;){const{done:t,value:a}=await e.read();if(t)break;n+=s.decode(a,{stream:true});let i;while(i=/\r?\n\r?\n/.exec(n)){
+u(n.slice(0,i.index));n=n.slice(i.index+i[0].length)}}n+=s.decode();if(n.trim())u(n)}finally{e.releaseLock()}if(r.stopReason==="max_tokens"&&!r.text.trim())throw{
+code:"thinking_limit"};if(!r.text.trim()||!r.ended&&r.stopReason!=="max_tokens")throw{code:"upstream_error"};d="complete"}catch(t){
 if(chat.doc===a)chat.error=r.stopped?"已停止，收到的文字已保留。":t.code==="chat_large"?"这次对话太长了，开一个新对话继续":t.code==="thinking_limit"?"这次想得太久，没来得及回答，请重试":Xn[u?"timeout":t.code]||"连接中断，收到的文字已保留。"
 ;if(t.code==="unauthorized")ai.needsToken=true}finally{clearTimeout(p);f();r.finishedAt=performance.now();r.ctl.abort();l.elapsed=r.finishedAt-r.start
 ;chat.thoughts.set(a.id+":"+r.index,r);c.content=r.text;if(r.stopReason)c.stopReason=r.stopReason;if(d!=="complete")c.partial=true;if(!r.text.trim())a.messages.pop()
-;if(chat.doc===a&&(d==="complete"||r.text))chat.attachment=null;try{await mo(a)}catch{if(chat.doc===a)chat.error="聊天没存成功，已保留草稿。请先保留这个页面。";po(a)}
-if(chat.request===r)chat.request=null;if(V==="chat"&&chat.doc===a)render(true)}}async function Co(t){const e=chat.doc,a=go(t),s=e.id+":"+t
+;a.updated=(new Date).toISOString();po(a,true);try{await mo(a)}catch{if(chat.doc===a)chat.error="聊天没存成功，已保留草稿。请先保留这个页面。"}if(chat.request===r)chat.request=null
+;if(V==="chat"&&chat.doc===a)render(true)}}async function Co(t){const e=chat.doc,a=go(t),s=e.id+":"+t
 ;if(!a||chat.request||chat.busy.has(s)||e.cards[t]?.status==="added"||!Uo())return;const n=chat.edits.get(s);if(n!==undefined)a.text=n.trim();if(!a.text||[...a.text].length>300){
 U("请保留 1–300 字的文字。");return}const i=vo(a);if(i){e.cards[t]={status:"added",type:a.type,text:a.text,existing:true,ref:a.type==="hyp"?{id:i.id,no:i.no}:{id:i.id,date:a.date}}
 ;chat.edits.delete(s);try{await mo(e)}catch{po(e)}render(true);return}chat.busy.add(s);render(true);let o;try{const n=(new Date).toISOString(),i=b();if(a.type==="hyp"){const t=pe({
@@ -1848,21 +1849,21 @@ note:a.text,str:"weak",src:"chat:"+e.id});r.updated=n;await fo("hyps",r.id,r)}}e
 ;if(!a||a.status!=="added"||a.existing||!Number.isFinite(a.undoUntil)||Date.now()>a.undoUntil||chat.busy.has(s))return;chat.busy.add(s);try{const t=a.ref;if(a.type==="hyp"){
 if(S.hyps[t.id]?.src?.chatId===e.id)await ho("hyps",t.id)}else if(a.type==="pred"){const e=q(T(t.date));e.preds=e.preds.filter(e=>e.id!==t.id);await fo("days",e.date,e)}else{
 const e=q(S.hyps[t.hypId]);if(e){e.ev=(e.ev||[]).filter(e=>e.id!==t.id);await fo("hyps",e.id,e)}}a.status="undone";delete a.undoUntil;await mo(e)}catch{chat.error="撤销没存成功，请保留页面重试。"
-;po(e)}finally{chat.busy.delete(s);render(true)}}function jo(t,e){if(t==="pred"){$=e.date;chat.target={type:t,id:e.id};location.hash="#pred?date="+e.date}else{Q.hypFilter="all"
-;chat.target={type:"hyp",id:e.hypId||e.id};location.hash="#hyps"}}function Ao(t,e){
+;po(e)}finally{chat.busy.delete(s);render(true)}}function jo(t,e){if(t==="pred"){if(!R(e?.date))return;$=e.date;chat.target={type:t,id:e.id};location.hash="#pred?date="+e.date
+}else{Q.hypFilter="all";chat.target={type:"hyp",id:e.hypId||e.id};location.hash="#hyps"}}function Ao(t,e){
 const a=t==="hyp"&&e.src?.type==="chat"?e.src.chatId:t==="pred"&&e.src==="chat"?e.chatId:t==="ev"&&typeof e.src==="string"&&e.src.startsWith("chat:")?e.src.slice(5):null
 ;if(!a)return"";const s=S.meta["chat:"+a];if(!s)return'<span class="fine chat-source">对话已删除</span>'
 ;const n=Object.keys(s.cards||{}).find(t=>s.cards[t].ref?.id===e.id),i=t==="hyp"?e.src.date:t==="ev"?e.date:v(new Date(e.at))
-;return'<button type="button" class="linkbtn fine chat-source" data-act="chatSource" data-chat="'+m(a)+'" data-msg="'+(n?Number(n.split(":")[0]):0)+'">来自 '+ro(i)+" 的聊天</button>"}
-function To(){const t=t=>(new TextEncoder).encode(JSON.stringify(t)).length,e=co(),a=t(e),s=t(S),n=e.length?a/e.length:8192;return{count:e.length,size:a,total:s,
+;return'<button type="button" class="linkbtn fine chat-source" data-act="chatSource" data-chat="'+m(a)+'" data-msg="'+(n?Number(n.split(":")[0]):0)+'">来自 '+m(ro(i))+" 的聊天</button>"
+}function To(){const t=t=>(new TextEncoder).encode(JSON.stringify(t)).length,e=co(),a=t(e),s=t(S),n=e.length?a/e.length:8192;return{count:e.length,size:a,total:s,
 days:Math.max(0,Math.floor((3*1024*1024-s)/(2*n)))}}function _o(){if(!Qn)return"";const t=To()
 ;return'<section class="card" id="settings-chat"><h2 class="stage">Claude 聊天</h2><p>聊天记录共 '+t.count+" 次、约 "+(t.size/1024).toFixed(1)+' KB</p><p class="fine">全部记录约 '+(t.total/1024).toFixed(1)+" KB。按每天 2 次、"+(t.count?"当前对话平均大小":"每次约 8 KB 的假设")+"估算，约 "+t.days+" 天达到 3 MB。</p>"+(t.total>3*1024*1024?'<p class="ai-error">总数据已超过 3 MB，请导出备份并清理不再需要的聊天；本机存储和云端同步都有容量上限。</p>':"")+'<label class="chat-toggle"><input type="checkbox" data-chat-hyps'+(Hs.chatHyps!==false?" checked":"")+'>让 Claude 看到我的假设清单</label><p class="fine">只带编号和文字，不含证据。</p></section>'
 }function Mo(){const t=chat.search.trim().toLowerCase(),e=co().filter(e=>!t||(e.title+" "+e.messages.map(t=>t.content).join(" ")).toLowerCase().includes(t))
-;return e.map(t=>'<article class="chat-list-item"><button type="button" data-act="chatOpen" data-id="'+m(t.id)+'"><b>'+m(t.title)+"</b><small>"+ro(v(new Date(t.updated)))+" · "+t.messages.filter(t=>t.role==="assistant").length+" 轮 · 已加入 "+Object.values(t.cards||{}).filter(t=>t.status==="added"&&!t.existing).length+' 张卡片</small></button><div class="row"><button type="button" class="linkbtn" data-act="chatRename" data-id="'+m(t.id)+'">改名</button><button type="button" class="linkbtn" data-act="chatDelete" data-id="'+m(t.id)+'">删除</button></div></article>').join("")||'<p class="fine">'+(t?"没有找到相关对话。":"还没有保存的对话。")+"</p>"
+;return e.map(t=>'<article class="chat-list-item"><button type="button" data-act="chatOpen" data-id="'+m(t.id)+'"><b>'+m(t.title)+"</b><small>"+m(ro(v(new Date(t.updated))))+" · "+t.messages.filter(t=>t.role==="assistant").length+" 轮 · 已加入 "+Object.values(t.cards||{}).filter(t=>t.status==="added"&&!t.existing).length+' 张卡片</small></button><div class="row"><button type="button" class="linkbtn" data-act="chatRename" data-id="'+m(t.id)+'">改名</button><button type="button" class="linkbtn" data-act="chatDelete" data-id="'+m(t.id)+'">删除</button></div></article>').join("")||'<p class="fine">'+(t?"没有找到相关对话。":"还没有保存的对话。")+"</p>"
 }function Io(){const t=h("#chat-list")
 ;t.innerHTML='<header class="row"><h2>对话列表</h2><button type="button" class="icon-button" data-act="chatListClose" aria-label="关闭对话列表">×</button></header><label class="sr-only" for="chat-search">搜索标题和内容</label><input id="chat-search" type="search" placeholder="搜索标题和内容" value="'+m(chat.search)+'"><div id="chat-list-items">'+Mo()+"</div>"
 ;t.showModal()}function Lo(){const t=h("#chat-dialog")
-;t.innerHTML='<h2>记录与聊天设置</h2><p class="fine">默认不发送当天记录。选中的材料只随下一条消息发送。</p><label for="chat-date">带上某一天的记录</label><input id="chat-date" type="date" value="'+b()+'"><button type="button" class="btn" data-act="chatChooseDate">选择材料</button><label class="chat-toggle"><input type="checkbox" data-chat-hyps'+(Hs.chatHyps!==false?" checked":"")+'>让 Claude 看到我的假设清单</label><p class="fine">只发送编号和文字，不含证据。</p><button type="button" class="linkbtn" data-act="chatDialogClose">关闭</button>'
+;t.innerHTML='<h2>记录与聊天设置</h2><p class="fine">默认不发送当天记录。选中的材料会附在下一条消息上，之后在这段对话里继续发送。</p><label for="chat-date">带上某一天的记录</label><input id="chat-date" type="date" value="'+b()+'"><button type="button" class="btn" data-act="chatChooseDate">选择材料</button><label class="chat-toggle"><input type="checkbox" data-chat-hyps'+(Hs.chatHyps!==false?" checked":"")+'>让 Claude 看到我的假设清单</label><p class="fine">只发送编号和文字，不含证据。</p><button type="button" class="linkbtn" data-act="chatDialogClose">关闭</button>'
 ;t.showModal()}function Ro(t=chat.doc?.id){const e=t===chat.doc?.id?chat.doc:S.meta["chat:"+t];if(!e)return;h("#chat-list").close();const a=h("#chat-dialog")
 ;a.innerHTML='<h2>给对话改个名字</h2><label for="chat-name">对话标题</label><input id="chat-name" maxlength="80" value="'+m(e.title)+'"><button type="button" class="btn" data-act="chatRenameSave" data-id="'+m(e.id)+'">保存</button><button type="button" class="linkbtn" data-act="chatDialogClose">取消</button>'
 ;a.showModal()}function No(){if(chat.input)po();if(chat.request){chat.request.stopped=true;chat.request.ctl.abort()}
@@ -1890,7 +1891,7 @@ if(t.target.dataset.chatEdit)chat.edits.set(chat.doc.id+":"+t.target.dataset.cha
 ;document.addEventListener("keydown",t=>{if(t.target.id==="chat-input"&&(t.ctrlKey||t.metaKey)&&t.key==="Enter"&&!t.isComposing){t.preventDefault();Oo()}})
 ;document.addEventListener("toggle",t=>{if(t.target.dataset.thought!==undefined){
 const e=+t.target.dataset.thought,a=chat.request?.index===e?chat.request:chat.thoughts.get(chat.doc.id+":"+e);if(a)a.open=t.target.open}},true)
-;window.addEventListener("pagehide",()=>{if(chat.request){po();chat.request.stopped=true;chat.request.ctl.abort()}else if(chat.input)po()});function Bo(t,e){
+;window.addEventListener("pagehide",()=>{if(chat.request){po(chat.request.doc,true);chat.request.stopped=true;chat.request.ctl.abort()}else if(chat.input)po()});function Bo(t,e){
 if(t===b())return(new Date).toISOString();const a=t.split("-").map(Number),s=/^(\d{1,2}):(\d{2})/.exec(e||"")||[0,"12","00"]
 ;return new Date(a[0],a[1]-1,a[2],+s[1],+s[2]).toISOString()}function Uo(){if(!W){U("还在打开记录本，稍等几秒再存。");return false}return true}function Jo(t){const e=b()
 ;return t>e?"eve":t===e?"morning":"late"}const A={theme(t){Hs.theme=t.dataset.v;ga();ba(Hs.theme);render()},monthFinish(t){const e=!Q.open.has("month:finish");vn("month:finish",e)
