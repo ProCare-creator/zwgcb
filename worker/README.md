@@ -14,7 +14,7 @@
 
 ## 6b：账号数据库（验收分支，尚未上线）
 
-本地验收使用独立 D1，见[账号验收记录](../docs/accounts-6b.md)。正式上线前需在 Cloudflare 创建或选定 `zwgcb-vault`，给 Worker 添加 D1 绑定 `VAULT`，在 Wrangler 的 `d1_databases` 中填写该数据库实际 ID、`database_name: "zwgcb-vault"` 和 `migrations_dir: "worker/migrations"`。先对正确的库应用 `0001_accounts.sql`，确认成功后再部署应用。不要用本机测试库的占位 ID。未配置时账号接口返回 503，不会自动初始化或覆盖生产库。
+本地验收使用独立 D1，见[账号验收记录](../docs/accounts-6b.md)。生产需要配置 Secret、真实 D1 绑定并按顺序执行两份迁移；按 [v6.14.0 上线准备](../docs/release-6.14.0.md) 操作。未配置时账号接口返回 503，不会自动初始化或覆盖生产库。
 
 在控制台添加独立 Secret `AUTH_PEPPER`（至少 32 个随机字节，安全备份，不随意更换）。本机测试秘密只写入忽略的 `.dev.vars`，不打印。首个管理员以现有 `ACCESS_TOKEN` 注册；由于旧口令曾被分享，建议**在开放注册之前**更换它，再由所有者先完成管理员注册。等所有者在手机上验证账号登录和 AI、明确要求停用旧口令后，才删除过渡路径。
 

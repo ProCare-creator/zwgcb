@@ -11,6 +11,7 @@ const mac=(p,s)=>crypto.subtle.sign('HMAC',p,typeof s==='string'?enc.encode(s):s
 const same=(p,expected,s)=>crypto.subtle.verify('HMAC',p,bin(expected),typeof s==='string'?enc.encode(s):s);
 const stmt=(e,sql,...v)=>e.VAULT.prepare(sql).bind(...v);
 const publicUser=r=>({id:r.id,username:r.username,nickname:r.nickname,role:r.role});
+function iterations(v=600000){if(!Number.isInteger(v)||v<100000||v>2000000)fail(400,'invalid');return v;}
 function name(s){if(typeof s!=='string'||!/^[a-z0-9_]{3,20}$/.test(s))fail(400,'invalid');return s;}
 const cookie=(value,age)=>cookieName+'='+value+'; Path=/; Secure; HttpOnly; SameSite=Strict; Max-Age='+age;
 export async function accountSession(req,e){
@@ -36,14 +37,14 @@ export async function accounts(req,e,readBody){
  if(!e.VAULT||!e.AUTH_PEPPER||enc.encode(e.AUTH_PEPPER).length<32)fail(503,'accounts_unavailable');
  let b={};if(!get){try{b=await readBody(req,8192);}catch{fail(400,'invalid');}if(!b||typeof b!=='object'||Array.isArray(b))fail(400,'invalid');}
  const p=await pepper(e),now=Date.now();
- if(path==='auth/salt'){const u=name(url.searchParams.get('u')),row=await stmt(e,'SELECT kdf_salt FROM users WHERE username=?',u).first();return out({kdf_salt:b64(row?.kdf_salt||new Uint8Array(await mac(p,'salt:'+u)).slice(0,16))});}
+ if(path==='auth/salt'){const u=name(url.searchParams.get('u')),row=await stmt(e,'SELECT kdf_salt,kdf_iter FROM users WHERE username=?',u).first();return out({kdf_iter:row?.kdf_iter??600000,kdf_salt:b64(row?.kdf_salt||new Uint8Array(await mac(p,'salt:'+u)).slice(0,16))});}
  if(path==='auth/register'){
  const u=name(b.username),nick=b.nickname??'';if(typeof nick!=='string'||[...nick].length>12||typeof b.invite!=='string'||!b.invite.length||b.invite.length>512)fail(400,'invalid');
  const bad=await gates(e,p,req,u,now),asAdmin=!!e.ACCESS_TOKEN&&await same(p,new Uint8Array(await mac(p,'bootstrap:'+e.ACCESS_TOKEN)),'bootstrap:'+b.invite);
  const id=crypto.randomUUID(),hint=await sha(b.invite);bytes(b.authKey,32);bytes(b.recoveryAuth,32);
- const args=[id,u,nick,asAdmin?'admin':'user',bytes(b.kdf_salt,16),await mac(p,bytes(b.authKey,32)),bytes(b.wrapped_keys,92),bytes(b.recovery_wrapped,92),await mac(p,bytes(b.recoveryAuth,32)),now,now,asAdmin?null:hint];
+ const args=[id,u,nick,asAdmin?'admin':'user',bytes(b.kdf_salt,16),await mac(p,bytes(b.authKey,32)),bytes(b.wrapped_keys,92),bytes(b.recovery_wrapped,92),await mac(p,bytes(b.recoveryAuth,32)),now,now,asAdmin?null:hint,iterations(b.kdf_iter)];
  const where=asAdmin?"NOT EXISTS (SELECT 1 FROM users WHERE role='admin')":"EXISTS (SELECT 1 FROM invites WHERE code_hash=? AND used_by IS NULL AND revoked=0 AND expires_at>?)";
- const r=await stmt(e,'INSERT OR IGNORE INTO users(id,username,nickname,role,kdf_salt,auth_hash,wrapped_keys,recovery_wrapped,recovery_hash,created_at,last_seen,invite_hash) SELECT ?,?,?,?,?,?,?,?,?,?,?,? WHERE '+where,...args,...(asAdmin?[]:[hint,now])).run();
+ const r=await stmt(e,'INSERT OR IGNORE INTO users(id,username,nickname,role,kdf_salt,auth_hash,wrapped_keys,recovery_wrapped,recovery_hash,created_at,last_seen,invite_hash,kdf_iter) SELECT ?,?,?,?,?,?,?,?,?,?,?,?,? WHERE '+where,...args,...(asAdmin?[]:[hint,now])).run();
  if(!r.meta.changes)await bad();return out({ok:true},201);
  }
  if(path==='auth/login'||path==='auth/recover/start'){
@@ -58,7 +59,7 @@ export async function accounts(req,e,readBody){
  if(path==='auth/recover/finish'){
  bytes(b.token,32);bytes(b.authKey,32);const h=await sha(b.token);
  const sub='(SELECT user_id FROM resets WHERE token_hash=? AND expires_at>?)';
- const [x]=await e.VAULT.batch([stmt(e,'UPDATE users SET kdf_salt=?,auth_hash=?,wrapped_keys=? WHERE disabled=0 AND id='+sub,bytes(b.kdf_salt,16),await mac(p,bytes(b.authKey,32)),bytes(b.wrapped_keys,92),h,now),stmt(e,'DELETE FROM sessions WHERE user_id='+sub,h,now),stmt(e,'DELETE FROM auth_fail WHERE key IN (SELECT \'u:\'||username FROM users WHERE id='+sub+')',h,now),stmt(e,'DELETE FROM resets WHERE user_id='+sub,h,now)]);
+ const [x]=await e.VAULT.batch([stmt(e,'UPDATE users SET kdf_salt=?,auth_hash=?,wrapped_keys=?,kdf_iter=? WHERE disabled=0 AND id='+sub,bytes(b.kdf_salt,16),await mac(p,bytes(b.authKey,32)),bytes(b.wrapped_keys,92),iterations(b.kdf_iter),h,now),stmt(e,'DELETE FROM sessions WHERE user_id='+sub,h,now),stmt(e,'DELETE FROM auth_fail WHERE key IN (SELECT \'u:\'||username FROM users WHERE id='+sub+')',h,now),stmt(e,'DELETE FROM resets WHERE user_id='+sub,h,now)]);
  if(!x.meta.changes)fail(401,'invalid_reset');return out({ok:true});
  }
  const s=await accountSession(req,e);if(!s)fail(401,'no_session');const uid=s.user.id;
@@ -76,7 +77,7 @@ export async function accounts(req,e,readBody){
  const bad=await gates(e,p,req,s.user.username,now);
  const current="SELECT 1 FROM users u JOIN sessions s ON s.user_id=u.id WHERE u.id=? AND u.auth_hash=? AND u.disabled=0 AND s.token_hash=? AND s.expires_at>?";
  const check=[uid,old,s.hash,now];
- const [,,x]=await e.VAULT.batch([stmt(e,'DELETE FROM sessions WHERE user_id=? AND token_hash<>? AND EXISTS('+current+')',uid,s.hash,...check),stmt(e,'DELETE FROM resets WHERE user_id=? AND EXISTS('+current+')',uid,...check),stmt(e,'UPDATE users SET auth_hash=?,kdf_salt=?,wrapped_keys=? WHERE id=? AND EXISTS('+current+')',next,bytes(b.kdf_salt,16),bytes(b.wrapped_keys,92),uid,...check)]);
+ const [,,x]=await e.VAULT.batch([stmt(e,'DELETE FROM sessions WHERE user_id=? AND token_hash<>? AND EXISTS('+current+')',uid,s.hash,...check),stmt(e,'DELETE FROM resets WHERE user_id=? AND EXISTS('+current+')',uid,...check),stmt(e,'UPDATE users SET auth_hash=?,kdf_salt=?,wrapped_keys=?,kdf_iter=? WHERE id=? AND EXISTS('+current+')',next,bytes(b.kdf_salt,16),bytes(b.wrapped_keys,92),iterations(b.kdf_iter),uid,...check)]);
  if(!x.meta.changes)await bad();return reply({ok:true});
  }
  if(!path.startsWith('admin/'))fail(404,'not_found');if(s.user.role!=='admin')fail(403,'forbidden');

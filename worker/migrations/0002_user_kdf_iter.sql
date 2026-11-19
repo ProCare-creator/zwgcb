@@ -1,0 +1,2 @@
+ALTER TABLE users ADD COLUMN kdf_iter INTEGER NOT NULL DEFAULT 600000
+ CHECK(typeof(kdf_iter)='integer' AND kdf_iter BETWEEN 100000 AND 2000000);

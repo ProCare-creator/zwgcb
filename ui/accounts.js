@@ -13,9 +13,10 @@ function accountCard(){
  if(!accountHost)return '';
  const v=acct.view,n=accountUser;
  let h=n?'<p>当前账号：<b>'+esc(n.username)+'</b> '+esc(n.nickname||'')+'</p>':'<p>用邀请码注册，也可以不登录，继续只存本机。</p>';
+ if(n){try{const raw=localStorage.getItem('zwgcb-kdf-ms');if(raw!==null&&/^\d+$/.test(raw))h+='<p id="ac-kdf-time" class="fine">这台设备计算一次密码用时 '+(Number(raw)/1000).toFixed(2)+' 秒</p>';}catch{}}
  if(!n)h+='<p class="fine">云端同步开放后，记录会在这台设备上加密，再存到 zwgcb.cn。管理员能看到用户名、注册时间、最近使用时间和占用空间，看不到记录内容。当前版本只提供账号，记录还未上传。</p>';
  if(!v)h+=n?acctButton('password','修改密码')+acctButton('logout','退出登录')+(n.role==='admin'?acctButton('manage','管理账号和邀请码'):''):acctButton('login','登录')+acctButton('register','用邀请码注册')+acctButton('recover','忘记密码')+(!AI_ON?'<details><summary>已有访问口令</summary>'+acctField('legacy','访问口令','password')+acctButton('legacy','验证并保存')+'</details>':'');
- else if(v==='receipt'){h+='<p>注册成功。请抄下恢复码，离开后不会再显示。如果密码和恢复码都丢了，云端记录无法解开。</p><code id="ac-receipt">'+esc(acct.pending.code)+'</code><label><input type="checkbox" id="ac-ack">我已抄下恢复码</label>'+acctButton('ack','继续登录','disabled');}
+ else if(v==='receipt'){h+='<p>注册成功。这台设备计算一次密码用时 '+(acct.pending.p.ms/1000).toFixed(2)+' 秒。请抄下七组恢复码，离开后不会再显示。如果密码和恢复码都丢了，云端记录无法解开。</p><code id="ac-receipt">'+esc(acct.pending.code)+'</code><label><input type="checkbox" id="ac-ack">我已抄下恢复码</label>'+acctButton('ack','继续登录','disabled');}
  else if(v==='logout')h+='<p>退出后，此账号的数据不会出现在其他账号中。</p>'+acctButton('keep','保留这台设备上的记录')+acctButton('clear','同时清除这台设备上的记录');
  else if(v==='manage'&&n?.role==='admin'&&acct.overview){
   const o=acct.overview,fmt=x=>new Date(x).toLocaleDateString('zh-CN');
@@ -42,6 +43,7 @@ async function acctEnter(username,p){
  const j=await acctApi('auth/login',{username,authKey:p.authKey});
  try{const raw=await accountCrypto.unwrap(p.kek,j.wrapped_keys);try{await acctDbKeys(j.user.id,await accountCrypto.keys(raw));}finally{raw.fill(0);}}
  catch{await acctApi('auth/logout',{});throw Error('无法在这台设备上保存钥匙，未完成登录。');}
+ try{nativeStore.setItem('zwgcb-kdf-ms:'+j.user.id,String(p.ms));}catch{}
  nativeStore.setItem(activeKey,JSON.stringify(j.user));location.replace('#settings');location.reload();
 }
 async function acctAction(a,el){
@@ -83,17 +85,17 @@ async function acctAction(a,el){
  if(a!=='submit')return;
  if(v!=='password'&&!/^[a-z0-9_]{3,20}$/.test(user))throw Error('用户名格式不正确。');
  if(v!=='login'&&(pass.length<8||pass!==val('confirm')))throw Error('密码至少 8 位，两次输入必须一致。');
- const derive=async(u,pw)=>C.password(pw,(await acctApi('auth/salt?u='+encodeURIComponent(u))).kdf_salt);
+ const derive=async(u,pw)=>{const params=await acctApi('auth/salt?u='+encodeURIComponent(u));return C.password(pw,params.kdf_salt,params.kdf_iter);};
  if(v==='login')return acctEnter(user,await derive(user,pass));
- const salt=C.salt(),p=await C.password(pass,salt);let raw;
+ const iter=C.defaultIter,salt=C.salt(),p=await C.password(pass,salt,iter);let raw;
  try{
  if(v==='register'){const code=await C.code(),rec=await C.recovery(code);raw=C.data();
- await acctApi('auth/register',{username:user,nickname:val('nick'),invite:val('invite'),kdf_salt:salt,authKey:p.authKey,wrapped_keys:await C.wrap(p.kek,raw),recovery_wrapped:await C.wrap(rec.kek,raw),recoveryAuth:rec.auth});
+ await acctApi('auth/register',{username:user,nickname:val('nick'),invite:val('invite'),kdf_salt:salt,kdf_iter:iter,authKey:p.authKey,wrapped_keys:await C.wrap(p.kek,raw),recovery_wrapped:await C.wrap(rec.kek,raw),recoveryAuth:rec.auth});
  acct.pending={code,username:user,p};acct.view='receipt';acctPaint();return;}
  if(v==='recover'){const rec=await C.recovery(val('code').trim());const j=await acctApi('auth/recover/start',{username:user,recoveryAuth:rec.auth});raw=await C.unwrap(rec.kek,j.recovery_wrapped);
- await acctApi('auth/recover/finish',{token:j.token,kdf_salt:salt,authKey:p.authKey,wrapped_keys:await C.wrap(p.kek,raw)});
+ await acctApi('auth/recover/finish',{token:j.token,kdf_salt:salt,kdf_iter:iter,authKey:p.authKey,wrapped_keys:await C.wrap(p.kek,raw)});
  }else if(v==='password'){const current=await derive(accountUser.username,val('old'));const j=await acctApi('auth/keys', {currentAuth:current.authKey});raw=await C.unwrap(current.kek,j.wrapped_keys);
- await acctApi('auth/password',{currentAuth:current.authKey,authKey:p.authKey,kdf_salt:salt,wrapped_keys:await C.wrap(p.kek,raw)});}
+ await acctApi('auth/password',{currentAuth:current.authKey,authKey:p.authKey,kdf_salt:salt,kdf_iter:iter,wrapped_keys:await C.wrap(p.kek,raw)});}
  acctReset();acct.note='密码已更新，其他设备需要重新登录。';acctPaint();
  }finally{raw?.fill(0);}
 }

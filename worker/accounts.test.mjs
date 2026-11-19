@@ -6,9 +6,19 @@ import {randomBytes,timingSafeEqual} from 'node:crypto';
 import {createHandler} from './worker.mjs';
 crypto.subtle.timingSafeEqual=(a,b)=>timingSafeEqual(new Uint8Array(a),new Uint8Array(b));
 const enc=n=>randomBytes(n).toString('base64url');
+test('second migration preserves existing users and gives their original credentials 600000 iterations',t=>{
+ const db=new DatabaseSync(':memory:');t.after(()=>db.close());
+ const sql=file=>readFileSync(new URL('./migrations/'+file,import.meta.url),'utf8');
+ db.exec(sql('0001_accounts.sql'));
+ db.exec("INSERT INTO users(id,username,role,kdf_salt,auth_hash,wrapped_keys,recovery_wrapped,recovery_hash,created_at,last_seen) VALUES('1','existing','user',randomblob(16),randomblob(32),randomblob(92),randomblob(92),randomblob(32),1,1)");
+ const before=db.prepare('SELECT * FROM users').get();db.exec(sql('0002_user_kdf_iter.sql'));
+ const {kdf_iter,...after}=db.prepare('SELECT * FROM users').get();assert.equal(kdf_iter,600000);assert.deepEqual(after,{...before});
+ assert.throws(()=>db.exec('UPDATE users SET kdf_iter=99999'));
+});
 function fixture(t){
  const db=new DatabaseSync(':memory:');t.after(()=>db.close());
  db.exec('PRAGMA foreign_keys=ON;'+readFileSync(new URL('./migrations/0001_accounts.sql',import.meta.url),'utf8'));
+ db.exec(readFileSync(new URL('./migrations/0002_user_kdf_iter.sql',import.meta.url),'utf8'));
  const wrap=(sql,v=[])=>{const q=db.prepare(sql);return {bind:(...a)=>wrap(sql,a.map(x=>x instanceof ArrayBuffer?new Uint8Array(x):x)),first:async()=>q.get(...v),all:async()=>({results:q.all(...v),meta:{size_after:4096}}),run:async()=>({meta:{changes:q.run(...v).changes}}),query:/^SELECT/i.test(sql)};};
  const VAULT={prepare:wrap,batch:async ops=>{db.exec('BEGIN');try{const result=[];for(const op of ops)result.push(await (op.query?op.all():op.run()));db.exec('COMMIT');return result;}catch(e){db.exec('ROLLBACK');throw e;}}};
  const env={VAULT,ALLOWED_ORIGIN:'https://zwgcb.cn',AUTH_PEPPER:enc(32),ACCESS_TOKEN:enc(24),AI_RATE_LIMITER:{limit:async()=>({success:true})}};
@@ -22,6 +32,18 @@ async function users(t){
  const user=make('reader',invite);assert.equal((await api('auth/register',user)).status,201);const login=await api('auth/login',user);
  return {...f,ac,user,uc:login.cookie,id:login.body.user.id,db};
 }
+test('iterations belong to the credential and update atomically on password change and recovery',async t=>{
+ const {api,user,uc,make}=await users(t),params=async u=>(await api('auth/salt?u='+u)).body;
+ for(const u of ['owner','reader','unknown'])assert.equal((await params(u)).kdf_iter,600000);
+ const next=make('reader','');
+ for(const n of [99999,2000001,null,'150000',123456.5])assert.equal((await api('auth/password',{...next,currentAuth:user.authKey,kdf_iter:n},uc)).status,400);
+ assert.equal((await params('reader')).kdf_salt,user.kdf_salt);
+ assert.equal((await api('auth/password',{...next,currentAuth:user.authKey,kdf_iter:180000},uc)).status,200);
+ assert.equal((await params('reader')).kdf_iter,180000);assert.equal((await params('owner')).kdf_iter,600000);
+ const tok=(await api('auth/recover/start',{username:'reader',recoveryAuth:user.recoveryAuth})).body.token;
+ assert.equal((await api('auth/recover/finish',{...user,token:tok,kdf_iter:750000})).status,200);
+ assert.equal((await params('reader')).kdf_iter,750000);
+});
 test('invitations expire or revoke; deletion requires the exact name and leaves the admin intact',async t=>{
  const {db,ac,id,uc,api,make}=await users(t);
  for(const kind of ['revoked','expired']){
