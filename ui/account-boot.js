@@ -20,6 +20,8 @@ async function shareDevice(){
 }
 await shareDevice();
 if(accountHost)document.querySelector('#view')?.removeAttribute('aria-busy');
+// Remove the retired AI credential from this device, including the pre-account key.
+try{nativeStore.removeItem('zwgcb-ai');if(accountUser)nativeStore.removeItem('zwgcb-ai:'+accountUser.id);}catch{}
 const accountSuffix=accountUser?':'+accountUser.id:'';
 const localStorage={getItem:k=>nativeStore.getItem(k+accountSuffix),setItem:(k,v)=>nativeStore.setItem(k+accountSuffix,v),removeItem:k=>nativeStore.removeItem(k+accountSuffix)};
 if(accountHost){

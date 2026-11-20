@@ -5,40 +5,40 @@
 ## 配置和部署
 
 - `wrangler.jsonc` 只包含公开配置：节点、认证方式、模型、输出上限、Origin 和限流。
-- `AI_API_KEY`、`ACCESS_TOKEN` 由使用者在 Cloudflare 控制台添加为 **Secret**。不放进 `vars` 或会提交的文件。本机真实测试仅允许使用仓库根目录的 `.dev.vars`（已忽略），不输出密钥。
+- `AI_API_KEY`、`AUTH_PEPPER` 由使用者在 Cloudflare 控制台添加为 **Secret**。不放进 `vars` 或会提交的文件。本机真实测试仅允许使用仓库根目录的 `.dev.vars`（已忽略），不输出密钥。
 - **正式发布 = 推送到 `main`**。Worker 已连接 Cloudflare Workers Builds（仓库 `ProCare-creator/zwgcb`，生产分支 `main`，Build command 留空，Deploy command `npx wrangler deploy --keep-vars`，Preview builds 关闭）。推送到 `main` 后 Cloudflare 自动构建并部署到 zwgcb.cn；其他分支不会部署。没验收的改动不要合并到 `main`。
 - **生产版本标签**：每次合并到 `main` 上线，先核对 Cloudflare 生产构建成功且构建记录中的提交就是本次发布的提交，再以该提交的 `APP_VERSION` 创建带说明的 Git 标签。推送标签后，核对远端标签指向同一提交。构建未成功不打标签；同名标签若已指向其他提交，不移动或覆盖。
 - 需要手动部署时（例如 Workers Builds 出问题），在本机用 Windows 用户环境变量中的 `CLOUDFLARE_API_TOKEN` 执行 `npx wrangler deploy --keep-vars`；不要把 Token 的值写进命令、脚本或仓库。
 - 构建脚本 `build.mjs` 由 wrangler 在部署时运行，仅复制页面、Service Worker、manifest 和图标到 `dist/`。
 - `.env*`、`.dev.vars*`、`.wrangler/`、`dist/` 已忽略。
 
-## 6b：账号数据库（验收分支，尚未上线）
+## 6b 账号数据库
 
 本地验收使用独立 D1，见[账号验收记录](../docs/accounts-6b.md)。生产需要配置 Secret、真实 D1 绑定并按顺序执行两份迁移；按 [v6.14.0 上线准备](../docs/release-6.14.0.md) 操作。未配置时账号接口返回 503，不会自动初始化或覆盖生产库。
 
-在控制台添加独立 Secret `AUTH_PEPPER`（至少 32 个随机字节，安全备份，不随意更换）。本机测试秘密只写入忽略的 `.dev.vars`，不打印。首个管理员以现有 `ACCESS_TOKEN` 注册；由于旧口令曾被分享，建议**在开放注册之前**更换它，再由所有者先完成管理员注册。等所有者在手机上验证账号登录和 AI、明确要求停用旧口令后，才删除过渡路径。
+在控制台添加独立 Secret `AUTH_PEPPER`（至少 32 个随机字节，安全备份，不随意更换）。本机测试秘密只写入忽略的 `.dev.vars`，不打印。生产管理员已注册。自 v6.14.1 起，注册仅接受管理员签发的有效邀请码，新建账号的角色固定为普通用户。
 
 账号接口：`GET /api/auth/salt?u=`、`GET /api/auth/me`，以及 `POST /api/auth/{register,login,logout,keys,password,recover/start,recover/finish}`。`keys` 要求当前会话和当前密码派生凭证，只返回包裹后的钥匙供改密。管理接口：`GET /api/admin/overview`、`POST /api/admin/{invite,revoke,user}`，仅管理员可用。所有 POST 校验 Origin。邀请码占用和注册由同一 SQL 写入及触发器完成；凭证更新与会话撤销使用 [D1 批量事务](https://developers.cloudflare.com/d1/worker-api/d1-database/#batch)。
 
-AI 接口（含 health）要求管理员会话，或在没有登录会话时使用过渡期旧 Bearer 口令，否则返回 403。有效普通用户会话不能用 Bearer 提升权限。绑定账号库后，管理员 Cookie 与旧口令共用同一管理员额度。6b 不提供云端记录同步接口。
+AI 接口（含 health）要求有效的管理员会话。未登录返回 401，普通账号返回 403。限流按管理员账号 ID 计数。6b 不提供云端记录同步接口。
 
 ## 接口行为
 
 | 接口 | 方法 | 行为 |
 | --- | --- | --- |
-| `/api/health` | GET | 验证访问口令，返回配置的模型名，不调用模型 |
+| `/api/health` | GET | 验证管理员会话，返回配置的模型名，不调用模型 |
 | `/api/summary` | POST | 当天所选材料的总结，转发 Anthropic SSE |
 | `/api/explore` | POST | 当天所选材料、可选总结及多轮对话，转发 Anthropic SSE |
 | `/api/hyps` | POST | 从对话提炼最多 3 条假设，返回经校验的 JSON |
 | `/api/chat` | POST | 独立自由聊天，可选假设清单 / 逐条消息的材料快照，转发 Anthropic SSE |
 
-全部接口验证 Bearer 访问口令。POST 必须带 `Origin: https://zwgcb.cn`；GET 若提供 Origin，也必须匹配。所有接口共用 Cloudflare 限流绑定：`limit: 10`、`period: 60`。该绑定是近似计数，验收按“10 秒内发起 30 次 POST，出现 429”判断。
+以上 AI 接口均验证管理员会话。POST 必须带 `Origin: https://zwgcb.cn`；GET 若提供 Origin，也必须匹配。所有接口共用 Cloudflare 限流绑定：`limit: 10`、`period: 60`。该绑定是近似计数，验收按“10 秒内发起 30 次 POST，出现 429”判断。
 
 请求体上限 64 KiB，仅 `/api/chat` 为 256 KiB；只接受约定字段，客户端无法覆盖模型或输出上限。独立聊天只在系统提示和最后一条用户正文上加缓存标记。缓存是否实际命中以中转站返回的 usage 为准。
 
 默认认证为 `x-api-key`。连接超时或 5xx 可在输出开始前切换备用节点；401、429 以及已经开始的输出不自动重发。连接限时 60 秒；流式输出空闲限时 120 秒。总结总时长 300 秒，探索 600 秒（连接、重试和输出共用同一总预算）。取消下游请求会取消上游。
 
-只跟随 307/308，最多两次；目标必须为 HTTPS，且 origin 必须精确匹配配置中的主、备用节点。外部域名不会收到密钥。经口令验证的响应头提供 `x-ai-node`、`x-ai-redirected`、`x-ai-redirect-domain`；只含主/备标记、是否跟随跳转及最后一个跳转域名，不返回路径、查询参数、密钥或请求内容。不记录请求体、模型文本或口令，未启用 Worker 日志。
+只跟随 307/308，最多两次；目标必须为 HTTPS，且 origin 必须精确匹配配置中的主、备用节点。外部域名不会收到密钥。经会话验证的响应头提供 `x-ai-node`、`x-ai-redirected`、`x-ai-redirect-domain`；只含主/备标记、是否跟随跳转及最后一个跳转域名，不返回路径、查询参数、密钥或请求内容。不记录请求体、模型文本或口令，未启用 Worker 日志。
 
 ## 第 A 批：思考与截断
 
@@ -66,7 +66,7 @@ v6.12.1 缓存诊断：两次相同请求相隔 7.036 秒，第二次读取 9,70
 
 ### 提炼假设接口
 
-`POST /api/hyps` 与其他接口共用口令、Origin、限流和 64 KiB 请求上限。输入为 `{messages:[{role,content,ctx?}],hyps:[{no,text}]}`，最多 60 条消息、300 条现有假设，只使用角色、正文、编号和文字。使用 `MODEL_SUMMARY`、力度 `medium`、上限 4000，非流式。连接、重试和总预算沿用总结接口；响应开始后不因格式错误重发模型请求。
+`POST /api/hyps` 与其他接口共用管理员会话验证、Origin、限流和 64 KiB 请求上限。输入为 `{messages:[{role,content,ctx?}],hyps:[{no,text}]}`，最多 60 条消息、300 条现有假设，只使用角色、正文、编号和文字。使用 `MODEL_SUMMARY`、力度 `medium`、上限 4000，非流式。连接、重试和总预算沿用总结接口；响应开始后不因格式错误重发模型请求。
 
 只从用户消息提出可验证或推翻的猜测，不能把 Claude 的建议当作事实。输出 `{hyps:[{text,why,near}]}`，最多 3 条。截断、无效 JSON、超大响应和缺失字段均报通用错误；不透传错误正文、思考、模型内部字段。不存在的相近编号归为 null。Worker 仅为本次响应临时解析 JSON，不记录或持久化对话、模型输出。
 

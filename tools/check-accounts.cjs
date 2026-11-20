@@ -1,6 +1,6 @@
 /* Local-only 6b acceptance. Temporary secrets live only in an ignored .dev.vars.
    Set WRANGLER_JS, PLAYWRIGHT_PATH, CHROME_PATH and QA_OUTPUT as needed. */
-const fs=require('node:fs'),path=require('node:path'),{spawn,execFileSync}=require('node:child_process'),{randomBytes,randomUUID}=require('node:crypto');
+const fs=require('node:fs'),path=require('node:path'),{spawn,execFileSync}=require('node:child_process'),{randomBytes,randomUUID,createHash}=require('node:crypto');
 const {DatabaseSync}=require('node:sqlite'),assert=require('node:assert/strict'),{chromium}=require(process.env.PLAYWRIGHT_PATH||'playwright');
 const root=path.join(__dirname,'..'),out=process.env.QA_OUTPUT||require('node:os').tmpdir(),work=path.join(root,'.wrangler','account-qa',randomUUID()),dbpath=path.join(work,'db');
 const conf=path.join(work,'wrangler.json'),cli=process.env.WRANGLER_JS,port=Number(process.env.QA_PORT||8867),origin='http://127.0.0.1:'+port;
@@ -12,6 +12,10 @@ async function run(){
  fs.mkdirSync(work,{recursive:true});fs.mkdirSync(out,{recursive:true});fs.writeFileSync(path.join(work,'.dev.vars'),'ACCESS_TOKEN='+boot+'\nAUTH_PEPPER='+password()+password()+'\n');
  fs.writeFileSync(conf,JSON.stringify({name:'journal-account-local',main:path.join(root,'worker/worker.mjs'),compatibility_date:'2026-11-12',assets:{directory:path.join(root,'dist'),binding:'ASSETS',run_worker_first:['/api/*']},vars:{ALLOWED_ORIGIN:origin,MODEL_SUMMARY:'fixture',MODEL_EXPLORE:'fixture'},ratelimits:[{name:'AI_RATE_LIMITER',namespace_id:'71002',simple:{limit:10,period:60}}],d1_databases:[{binding:'VAULT',migrations_dir:path.join(root,'worker/migrations'),database_name:'zwgcb-vault',database_id:'00000000-0000-4000-8000-000000000006'}]}));
  execFileSync(process.execPath,[cli,'d1','migrations','apply','zwgcb-vault','--local','--persist-to',dbpath,'--config',conf],opts);
+ // Seed a normal invitation directly in this run's isolated local D1.
+ const localSql=command=>execFileSync(process.execPath,[cli,'d1','execute','zwgcb-vault','--local','--persist-to',dbpath,'--config',conf,'--command',command],opts);
+ const fixtureInvite=password(),hash=createHash('sha256').update(fixtureInvite).digest('hex');
+ localSql("INSERT INTO invites(code_hash,id,created_at,expires_at) VALUES(X'"+hash+"','fixture',0,"+(Date.now()+3600000)+")");
  child=spawn(process.execPath,[cli,'dev','--local','--ip','127.0.0.1','--port',String(port),'--persist-to',dbpath,'--config',conf],opts);
  for(let i=0;i<60;i++){try{if((await fetch(origin+'/api/auth/me')).status===401)break;}catch{}await new Promise(r=>setTimeout(r,350));}
  browser=await chromium.launch({executablePath:process.env.CHROME_PATH});let errors=[];
@@ -23,9 +27,15 @@ async function run(){
  const logout=async p=>{await click(p,'logout');await click(p,'keep');await act(p,'login').waitFor();};
  const salt=async(p,u)=>(await api(p,'auth/salt?u='+u)).j.kdf_salt;
  const auth=(p,pw,s)=>p.evaluate(async({pw,s})=>{let b=s.replaceAll('-','+').replaceAll('_','/'),salt=Uint8Array.from(atob(b),x=>x.charCodeAt(0)),e=new TextEncoder(),c=crypto.subtle,k=await c.importKey('raw',e.encode(pw),'PBKDF2',false,['deriveBits']),start=performance.now(),m=await c.deriveBits({name:'PBKDF2',salt,iterations:600000,hash:'SHA-256'},k,256),ms=Math.round(performance.now()-start),mk=await c.importKey('raw',m,'HKDF',false,['deriveBits']),h=await c.deriveBits({name:'HKDF',salt:e.encode('zwgcb/accounts/v1'),info:e.encode('login'),hash:'SHA-256'},mk,256);return {ms,authKey:btoa(String.fromCharCode(...new Uint8Array(h))).replaceAll('+','-').replaceAll('/','_').replaceAll('=','')};},{pw,s});
- stage='admin registration';const admin=await page(),bp=await page(),other=await page();await reg(admin,'owner',A,boot);assert.equal((await api(admin,'auth/me')).j.user.role,'admin');assert.equal((await api(admin,'health')).status,200);
+ stage='admin registration';const admin=await page(),bp=await page(),other=await page();await other.evaluate(()=>localStorage.setItem('zwgcb-ai',JSON.stringify({token:'retired'})));await other.reload();await act(other,'login').waitFor();
+ assert.equal(await other.locator('#settings-ai,#ai-token,[data-account="legacy"]').count(),0);assert.ok(await other.locator('[data-r=chat]').isHidden());
+ assert.equal(await other.evaluate(()=>localStorage.getItem('zwgcb-ai')),null);
+ assert.equal(await other.evaluate(async token=>(await fetch('/api/health',{headers:{Authorization:'Bearer '+token}})).status,boot),401);
+ await reg(admin,'owner',A,fixtureInvite);
+ localSql("UPDATE users SET role='admin' WHERE username='owner'");await admin.reload();await act(admin,'manage').waitFor();
+ assert.equal((await api(admin,'auth/me')).j.user.role,'admin');assert.equal((await api(admin,'health')).status,200);
  const cookie=(await admin.context().cookies()).find(c=>c.name==='__Host-zw');assert.ok(cookie.secure&&cookie.httpOnly&&cookie.sameSite==='Strict');
- const enc=n=>randomBytes(n).toString('base64url'),fake={username:'extra',invite:boot,authKey:enc(32),kdf_salt:enc(16),recoveryAuth:enc(32),wrapped_keys:enc(92),recovery_wrapped:enc(92)};assert.notEqual((await api(other,'auth/register',fake)).status,201);check('single bootstrap admin; secure cookie and account-only AI health');
+ const enc=n=>randomBytes(n).toString('base64url'),fake={username:'extra',invite:boot,authKey:enc(32),kdf_salt:enc(16),recoveryAuth:enc(32),wrapped_keys:enc(92),recovery_wrapped:enc(92)};assert.notEqual((await api(other,'auth/register',fake)).status,201);check('retired token rejected; secure admin session accepted; anonymous AI controls hidden');
  stage='invite and user registration';await click(admin,'manage');await click(admin,'issue');const invite=await admin.locator('#account-card code').innerText(),rec=await reg(bp,'reader',B,invite);assert.notEqual((await api(other,'auth/register',{...fake,invite,username:'again'})).status,201);
  const user=(await api(bp,'auth/me')).j.user;assert.equal(user.role,'user');await login(other,'reader',B);
  assert.equal((await api(bp,'chat',{messages:[{role:'user',content:'fixture'}]})).status,403);assert.equal((await api(bp,'admin/overview')).status,403);assert.equal(await bp.locator('#settings-ai,#settings-chat').count(),0);await bp.goto(origin+'/#chat');await bp.waitForFunction(()=>location.hash==='#review');assert.ok(await bp.locator('[data-r=chat]').isHidden());await bp.goto(origin+'/#settings');await bp.screenshot({path:path.join(out,'account-user.png')});

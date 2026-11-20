@@ -10,7 +10,7 @@ function setup(fetcher=async()=>{throw Error('unexpected request');},wake){
  const document=new EventTarget();document.visibilityState='visible';
  const box={accountHost:true,accountUser:{role:'admin'},document,window:new EventTarget(),navigator:{onLine:true,wakeLock:wake},location:{origin:'http://localhost',hostname:'localhost'},localStorage:{getItem:()=>null},$:()=>({addEventListener(){}}),newId:()=> 'test-id',drafts:{},uiPrefs:{},saveDrafts:()=>true,clone:structuredClone,fetch:fetcher,AbortController,AbortSignal,TextEncoder,TextDecoder,performance,setTimeout,clearTimeout,requestAnimationFrame:fn=>setTimeout(fn,0),cancelAnimationFrame:clearTimeout,route:'ai',mode:'test',hm:()=> '12:00',S:{days:{[date]:{date}}},getDay:()=>box.S.days[date],put:async()=>{}};
  vm.createContext(box);vm.runInContext(source+`;aiRender=()=>{};aiPaint=()=>{};globalThis.api={ai,aiSession,aiRun,aiStreamEvent,aiNewDiagnostic,aiKeepAwake,aiSaveDraft,aiRunHyps,aiHypAdd,aiHypEdit,aiHypCards};`,box);
- box.api.ai.date=date;box.api.ai.token='mock-access';return box;
+ box.api.ai.date=date;return box;
 }
 const event=(type,extra={})=>({type,...extra});
 function stream(events){
@@ -74,7 +74,7 @@ test('empty, 401 and malformed extraction responses do not create records',async
  for(const [status,data] of [[200,{hyps:[]}],[401,{error:{code:'unauthorized'}}],[200,{hyps:[{text:'missing why'}]}]]){
   const box=setup(async()=>new Response(JSON.stringify(data),{status}));const before=JSON.stringify(box.S);await box.api.aiRunHyps(structuredClone(hypContext));
   assert.equal(JSON.stringify(box.S),before);assert.equal(box.api.ai.hypRequest,null);const state=box.api.ai.hypResults.get(date+'|chat-1');
-  if(status===401){assert.equal(box.api.ai.needsToken,true);assert.equal(box.api.ai.pending.chatId,'chat-1');}else if(data.hyps.length)assert.ok(state.error);else assert.equal(state.hyps.length,0);
+  if(status===401){assert.match(state.error,/登录管理员账号/);}else if(data.hyps.length)assert.ok(state.error);else assert.equal(state.hyps.length,0);
  }
 });
 test('explicit confirmation uses makeHyp, saves source, and double-click does not duplicate',async()=>{

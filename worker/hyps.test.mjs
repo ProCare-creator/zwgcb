@@ -1,17 +1,16 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {timingSafeEqual} from 'node:crypto';
+import {adminCookie,sessionVault} from './session-fixture.mjs';
 import {createHandler,validate,upstreamBody,parseHyps} from './worker.mjs';
-crypto.subtle.timingSafeEqual=(a,b)=>timingSafeEqual(new Uint8Array(a),new Uint8Array(b));
 const input={messages:[{role:'user',content:'只做五分钟时，我开始整理了。'},{role:'assistant',content:'可能说明什么？'}],hyps:[{no:7,text:'在任务很大时，可能会推迟开始。'}]};
-const env={ACCESS_TOKEN:'mock-access',AI_API_KEY:'mock-api',ALLOWED_ORIGIN:'https://zwgcb.cn',MODEL_SUMMARY:'summary-test',AI_BASE_URL:'https://primary.example/api',AI_RATE_LIMITER:{limit:async()=>({success:true})}};
-const req=(body=input,headers={})=>new Request('https://zwgcb.cn/api/hyps',{method:'POST',headers:{'content-type':'application/json',authorization:'Bearer mock-access',origin:env.ALLOWED_ORIGIN,...headers},body:JSON.stringify(body)});
+const env={VAULT:sessionVault,AI_API_KEY:'mock-api',ALLOWED_ORIGIN:'https://zwgcb.cn',MODEL_SUMMARY:'summary-test',AI_BASE_URL:'https://primary.example/api',AI_RATE_LIMITER:{limit:async()=>({success:true})}};
+const req=(body=input,headers={})=>new Request('https://zwgcb.cn/api/hyps',{method:'POST',headers:{'content-type':'application/json',cookie:adminCookie,origin:env.ALLOWED_ORIGIN,...headers},body:JSON.stringify(body)});
 const proposal={text:'在只打算做五分钟时，可能会更容易开始整理。',why:'用户说：只做五分钟时，我开始整理了。',near:7};
 const model=(hyps=[proposal])=>({stop_reason:'end_turn',content:[{type:'thinking',thinking:'not returned'},{type:'text',text:JSON.stringify({hyps})}]});
 const response=data=>new Response(JSON.stringify(data),{headers:{'content-type':'application/json'}});
 test('hyps shares auth, origin, size and rate guards without inference',async()=>{
  const h=createHandler({fetcher:()=>{throw Error('must not infer');}});
- assert.equal((await h(req(input,{authorization:'Bearer wrong'}),env)).status,403);
+ assert.equal((await h(req(input,{cookie:'',authorization:'Bearer wrong'}),env)).status,401);
  assert.equal((await h(req(input,{origin:'https://wrong.example'}),env)).status,403);
  assert.equal((await h(req(),{...env,AI_RATE_LIMITER:{limit:async()=>({success:false})}})).status,429);
  assert.equal((await h(req({...input,messages:[{role:'user',content:'x'.repeat(65536)}]}),env)).status,413);

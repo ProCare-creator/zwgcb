@@ -1,12 +1,10 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {timingSafeEqual} from 'node:crypto';
+import {adminCookie,sessionVault} from './session-fixture.mjs';
 import {createHandler,validate,upstreamBody} from './worker.mjs';
-// Test-only compatibility shim. Values here are fixtures, never real credentials.
-crypto.subtle.timingSafeEqual=(a,b)=>timingSafeEqual(new Uint8Array(a),new Uint8Array(b));
 const body={date:'2026-11-10',materials:{review:'今天先做了十分钟。',preds:[],caps:[],hyps:[]}};
-const env=()=>({ACCESS_TOKEN:'mock-access',AI_API_KEY:'mock-upstream',ALLOWED_ORIGIN:'https://zwgcb.cn',AI_BASE_URL:'https://primary.example/api',AI_BASE_URL_BACKUP:'https://backup.example/api',MODEL_SUMMARY:'summary-test',MODEL_EXPLORE:'explore-test',MAX_TOKENS_SUMMARY:'1024',MAX_TOKENS_EXPLORE:'2048',AI_RATE_LIMITER:{limit:async()=>({success:true})},ASSETS:{fetch:async()=>new Response('static')}});
-const req=(path='/api/summary',data=body,opts={})=>new Request('https://zwgcb.cn'+path,{method:'POST',headers:{origin:'https://zwgcb.cn',authorization:'Bearer mock-access','content-type':'application/json',...opts.headers},body:typeof data==='string'?data:JSON.stringify(data),...Object.fromEntries(Object.entries(opts).filter(([k])=>k!=='headers'))});
+const env=()=>({VAULT:sessionVault,AI_API_KEY:'mock-upstream',ALLOWED_ORIGIN:'https://zwgcb.cn',AI_BASE_URL:'https://primary.example/api',AI_BASE_URL_BACKUP:'https://backup.example/api',MODEL_SUMMARY:'summary-test',MODEL_EXPLORE:'explore-test',MAX_TOKENS_SUMMARY:'1024',MAX_TOKENS_EXPLORE:'2048',AI_RATE_LIMITER:{limit:async()=>({success:true})},ASSETS:{fetch:async()=>new Response('static')}});
+const req=(path='/api/summary',data=body,opts={})=>new Request('https://zwgcb.cn'+path,{method:'POST',headers:{origin:'https://zwgcb.cn',cookie:adminCookie,'content-type':'application/json',...opts.headers},body:typeof data==='string'?data:JSON.stringify(data),...Object.fromEntries(Object.entries(opts).filter(([k])=>k!=='headers'))});
 const sse=text=>new Response(text||'data: {"type":"message_stop"}\n\n',{headers:{'content-type':'text/event-stream'}});
 test('adaptive thinking, effort allowlist and token limits are server controlled',()=>{
  const e={...env(),MAX_TOKENS_SUMMARY:'8000',MAX_TOKENS_EXPLORE:'32000',EFFORT_SUMMARY:'high',EFFORT_EXPLORE:'xhigh'};
@@ -52,8 +50,8 @@ test('routes, methods, origin, authorization and health avoid upstream calls',as
  assert.equal((await handler(req('/api/unknown'),e)).status,404);
  assert.equal((await handler(new Request('https://zwgcb.cn/api/summary'),e)).status,405);
  for(const origin of ['', 'https://evil.example'])assert.equal((await handler(req('/api/summary',body,{headers:{origin}}),e)).status,403);
- for(const authorization of ['', 'mock-access','Bearer wrong'])assert.equal((await handler(req('/api/summary',body,{headers:{authorization}}),e)).status,403);
- const r=await handler(new Request('https://zwgcb.cn/api/health',{headers:{authorization:'Bearer mock-access'}}),e);
+ for(const authorization of ['', 'mock-access','Bearer wrong'])assert.equal((await handler(req('/api/summary',body,{headers:{cookie:'',authorization}}),e)).status,401);
+ const r=await handler(new Request('https://zwgcb.cn/api/health',{headers:{cookie:adminCookie}}),e);
  assert.deepEqual(await r.json(),{ok:true,models:{summary:'summary-test',explore:'explore-test'}});
  assert.equal(r.headers.get('access-control-allow-origin'),null);
 });
@@ -68,7 +66,7 @@ test('body validation checks real dates, roles, size, and drops untrusted parame
  const built=upstreamBody(e,'summary',input);assert.equal(built.model,'summary-test');assert.equal(built.max_tokens,1024);assert.equal(built.stream,true);
 });
 test('one shared authenticated rate bucket rejects request 11',async()=>{
- let n=0;const e=env();e.AI_RATE_LIMITER.limit=async({key})=>{assert.equal(key,'journal-owner');return {success:++n<=10};};
+ let n=0;const e=env();e.AI_RATE_LIMITER.limit=async({key})=>{assert.equal(key,'fixture-admin');return {success:++n<=10};};
  const h=createHandler({fetcher:async()=>sse()});
  for(let i=0;i<11;i++)assert.equal((await h(req(),e)).status,i===10?429:200);
 });

@@ -40,11 +40,10 @@ export async function accounts(req,e,readBody){
  if(path==='auth/salt'){const u=name(url.searchParams.get('u')),row=await stmt(e,'SELECT kdf_salt,kdf_iter FROM users WHERE username=?',u).first();return out({kdf_iter:row?.kdf_iter??600000,kdf_salt:b64(row?.kdf_salt||new Uint8Array(await mac(p,'salt:'+u)).slice(0,16))});}
  if(path==='auth/register'){
  const u=name(b.username),nick=b.nickname??'';if(typeof nick!=='string'||[...nick].length>12||typeof b.invite!=='string'||!b.invite.length||b.invite.length>512)fail(400,'invalid');
- const bad=await gates(e,p,req,u,now),asAdmin=!!e.ACCESS_TOKEN&&await same(p,new Uint8Array(await mac(p,'bootstrap:'+e.ACCESS_TOKEN)),'bootstrap:'+b.invite);
+ const bad=await gates(e,p,req,u,now);
  const id=crypto.randomUUID(),hint=await sha(b.invite);bytes(b.authKey,32);bytes(b.recoveryAuth,32);
- const args=[id,u,nick,asAdmin?'admin':'user',bytes(b.kdf_salt,16),await mac(p,bytes(b.authKey,32)),bytes(b.wrapped_keys,92),bytes(b.recovery_wrapped,92),await mac(p,bytes(b.recoveryAuth,32)),now,now,asAdmin?null:hint,iterations(b.kdf_iter)];
- const where=asAdmin?"NOT EXISTS (SELECT 1 FROM users WHERE role='admin')":"EXISTS (SELECT 1 FROM invites WHERE code_hash=? AND used_by IS NULL AND revoked=0 AND expires_at>?)";
- const r=await stmt(e,'INSERT OR IGNORE INTO users(id,username,nickname,role,kdf_salt,auth_hash,wrapped_keys,recovery_wrapped,recovery_hash,created_at,last_seen,invite_hash,kdf_iter) SELECT ?,?,?,?,?,?,?,?,?,?,?,?,? WHERE '+where,...args,...(asAdmin?[]:[hint,now])).run();
+ const args=[id,u,nick,'user',bytes(b.kdf_salt,16),await mac(p,bytes(b.authKey,32)),bytes(b.wrapped_keys,92),bytes(b.recovery_wrapped,92),await mac(p,bytes(b.recoveryAuth,32)),now,now,hint,iterations(b.kdf_iter)];
+ const r=await stmt(e,'INSERT OR IGNORE INTO users(id,username,nickname,role,kdf_salt,auth_hash,wrapped_keys,recovery_wrapped,recovery_hash,created_at,last_seen,invite_hash,kdf_iter) SELECT ?,?,?,?,?,?,?,?,?,?,?,?,? WHERE EXISTS (SELECT 1 FROM invites WHERE code_hash=? AND used_by IS NULL AND revoked=0 AND expires_at>?)',...args,hint,now).run();
  if(!r.meta.changes)await bad();return out({ok:true},201);
  }
  if(path==='auth/login'||path==='auth/recover/start'){

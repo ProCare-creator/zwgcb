@@ -15,7 +15,7 @@ function accountCard(){
  let h=n?'<p>当前账号：<b>'+esc(n.username)+'</b> '+esc(n.nickname||'')+'</p>':'<p>用邀请码注册，也可以不登录，继续只存本机。</p>';
  if(n){try{const raw=localStorage.getItem('zwgcb-kdf-ms');if(raw!==null&&/^\d+$/.test(raw))h+='<p id="ac-kdf-time" class="fine">这台设备计算一次密码用时 '+(Number(raw)/1000).toFixed(2)+' 秒</p>';}catch{}}
  if(!n)h+='<p class="fine">云端同步开放后，记录会在这台设备上加密，再存到 zwgcb.cn。管理员能看到用户名、注册时间、最近使用时间和占用空间，看不到记录内容。当前版本只提供账号，记录还未上传。</p>';
- if(!v)h+=n?acctButton('password','修改密码')+acctButton('logout','退出登录')+(n.role==='admin'?acctButton('manage','管理账号和邀请码'):''):acctButton('login','登录')+acctButton('register','用邀请码注册')+acctButton('recover','忘记密码')+(!AI_ON?'<details><summary>已有访问口令</summary>'+acctField('legacy','访问口令','password')+acctButton('legacy','验证并保存')+'</details>':'');
+ if(!v)h+=n?acctButton('password','修改密码')+acctButton('logout','退出登录')+(n.role==='admin'?acctButton('manage','管理账号和邀请码'):''):acctButton('login','登录')+acctButton('register','用邀请码注册')+acctButton('recover','忘记密码');
  else if(v==='receipt'){h+='<p>注册成功。这台设备计算一次密码用时 '+(acct.pending.p.ms/1000).toFixed(2)+' 秒。请抄下七组恢复码，离开后不会再显示。如果密码和恢复码都丢了，云端记录无法解开。</p><code id="ac-receipt">'+esc(acct.pending.code)+'</code><label><input type="checkbox" id="ac-ack">我已抄下恢复码</label>'+acctButton('ack','继续登录','disabled');}
  else if(v==='logout')h+='<p>退出后，此账号的数据不会出现在其他账号中。</p>'+acctButton('keep','保留这台设备上的记录')+acctButton('clear','同时清除这台设备上的记录');
  else if(v==='manage'&&n?.role==='admin'&&acct.overview){
@@ -60,7 +60,6 @@ async function acctAction(a,el){
    await acctApi('admin/user',args);}
   acct.overview=await acctApi('admin/overview');acct.view='manage';acctPaint();return;
  }
- if(a==='legacy'){const token=val('legacy').trim();const r=await fetch('/api/health',{headers:{Authorization:'Bearer '+token}});if(!r.ok)throw Error('访问口令未通过验证。');localStorage.setItem('zwgcb-ai',JSON.stringify({token}));location.reload();return;}
  if(a==='keep'||a==='clear'){
   async function clearDevice(){
    if(!ready||!disk.db||!navigator.locks||form?.dirty)throw Error('无法确认记录已保存，请选择保留记录退出。');

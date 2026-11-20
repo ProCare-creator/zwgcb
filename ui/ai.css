@@ -19,8 +19,6 @@
 .ai-tabs{display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:4px;background:var(--accent-soft);border:1px solid var(--line);border-radius:var(--r-md);align-self:center;width:100%;max-width:360px}
 .ai-tabs button{min-height:42px;font-size:var(--fs-body);border:1px solid transparent;border-radius:6px;background:none;color:var(--ink-3);transition:background var(--t-fast),color var(--t-fast)}
 .ai-tabs button[aria-selected=true]{background:var(--card);border-color:var(--line);color:var(--accent);font-weight:600;box-shadow:0 2px 4px rgba(0,0,0,.03)}
-.ai-token{padding:20px!important;margin:0}.ai-token h2{font-size:var(--fs-h2);margin:0 0 8px}.ai-token label{font-size:var(--fs-small)}
-.ai-token-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;margin-top:8px}.ai-token-row input{min-width:0;margin:0}.ai-token-row .btn{min-height:48px;font-size:var(--fs-small);padding:10px 14px}
 .ai-summary-pane,.ai-explore-pane{min-width:0}.ai-summary-pane{padding:8px 0 0}.ai-empty{padding:24px 0 32px;text-align:center}
 .ai-date-note{font-size:var(--fs-cap);color:var(--ink-3);letter-spacing:.06em}.ai-empty h2{font-family:var(--f-display);font-size:1.9rem;line-height:1.6;font-weight:600;margin:24px 0 16px}.ai-empty p{font-size:var(--fs-body);line-height:1.9;color:var(--ink-2);margin:0 0 28px}
 .ai-empty>.btn{min-width:160px;min-height:48px}.ai-empty>.btn span{margin-left:20px}

@@ -744,7 +744,7 @@ const VAGUE = ['充实','好好','努力','认真','尽量','高效','顺利','�
 const MOMENTS = ['情绪最强的一刻','最不像自己的一刻','最有劲的一刻','别的时刻'];
 const FORMAT = 'review-archive/v1';
 const OFFLINE_APP = true;
-const APP_VERSION = 'v6.14.0';
+const APP_VERSION = 'v6.14.1';
 const LS_KEY = 'zwgcb-data-v1', LS_DRAFT = 'zwgcb-drafts-v1';
 
 /* ---------- utils ---------- */
@@ -2429,7 +2429,7 @@ function hypCard(x){
 
 function dataCard(){
   const b=backupInfo();
-  return '<section class="card" id="settings-data"><h2 class="stage">数据</h2>'+diskInfo()+'<p class="'+(b.stale?'warn':'fine')+'">'+(b.date?'上次导出：'+b.date:'还没有导出过备份。')+'</p><p class="fine">导出 JSON 可以备份或迁移全部记录。导入会保留已有记录；本机草稿、访问口令和显示偏好不进入导出。保存某一天的 Word，可到回顾页点选日期后打开“⋯”。</p><div class="row">'+(dlNs?'<button type="button" class="btn ghost" data-act="export">全部数据导出</button>':'')+'<button type="button" class="btn ghost" data-act="importPick">全部数据导入</button><button type="button" class="btn ghost" data-act="copyAll">复制全部为文字</button></div><input type="file" id="importFile" accept=".json,application/json" hidden></section>';
+  return '<section class="card" id="settings-data"><h2 class="stage">数据</h2>'+diskInfo()+'<p class="'+(b.stale?'warn':'fine')+'">'+(b.date?'上次导出：'+b.date:'还没有导出过备份。')+'</p><p class="fine">导出 JSON 可以备份或迁移全部记录。导入会保留已有记录；本机草稿和显示偏好不进入导出。保存某一天的 Word，可到回顾页点选日期后打开“⋯”。</p><div class="row">'+(dlNs?'<button type="button" class="btn ghost" data-act="export">全部数据导出</button>':'')+'<button type="button" class="btn ghost" data-act="importPick">全部数据导入</button><button type="button" class="btn ghost" data-act="copyAll">复制全部为文字</button></div><input type="file" id="importFile" accept=".json,application/json" hidden></section>';
 }
 function syncStatusText(){
   if (syncState.msg) return syncState.msg;

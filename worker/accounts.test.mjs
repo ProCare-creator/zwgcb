@@ -2,9 +2,8 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {DatabaseSync} from 'node:sqlite';
 import {readFileSync} from 'node:fs';
-import {randomBytes,timingSafeEqual} from 'node:crypto';
+import {randomBytes,createHash} from 'node:crypto';
 import {createHandler} from './worker.mjs';
-crypto.subtle.timingSafeEqual=(a,b)=>timingSafeEqual(new Uint8Array(a),new Uint8Array(b));
 const enc=n=>randomBytes(n).toString('base64url');
 test('second migration preserves existing users and gives their original credentials 600000 iterations',t=>{
  const db=new DatabaseSync(':memory:');t.after(()=>db.close());
@@ -27,8 +26,11 @@ function fixture(t){
  return {db,env,make,api};
 }
 async function users(t){
- const f=fixture(t),{db,env,make,api}=f,admin=make('owner',env.ACCESS_TOKEN);
- assert.equal((await api('auth/register',admin)).status,201);const ac=(await api('auth/login',admin)).cookie,invite=(await api('admin/invite',{},ac)).body.code;
+ const f=fixture(t),{db,env,make,api}=f,admin=make('owner',enc(32));
+ db.prepare('INSERT INTO invites(code_hash,id,created_at,expires_at) VALUES(?,?,?,?)').run(createHash('sha256').update(admin.invite).digest(), 'seed', Date.now(), Date.now()+60000);
+ assert.equal((await api('auth/register',admin)).status,201);
+ db.exec("UPDATE users SET role='admin' WHERE username='owner'");
+ const ac=(await api('auth/login',admin)).cookie,invite=(await api('admin/invite',{},ac)).body.code;
  const user=make('reader',invite);assert.equal((await api('auth/register',user)).status,201);const login=await api('auth/login',user);
  return {...f,ac,user,uc:login.cookie,id:login.body.user.id,db};
 }
@@ -78,4 +80,13 @@ test('cookie slides hourly, expires, checks origin; user cannot use legacy crede
 test('IP failure limit applies across distinct usernames; fake salts are stable and account-specific',async t=>{
  const {api}=fixture(t),salt=async n=>(await api('auth/salt?u='+n)).body.kdf_salt;assert.equal(await salt('abc'),await salt('abc'));assert.notEqual(await salt('abc'),await salt('abcd'));
  for(let i=0;i<20;i++){const r=await api('auth/login',{username:'test_'+i,authKey:enc(32)});assert.equal(r.status,i===19?429:401);if(i===19)assert.ok(Number(r.retry)>=3599);}
+});
+
+test('retired token alone grants neither registration on an empty database nor AI access',async t=>{
+ const {db,env,make,api}=fixture(t);
+ assert.equal((await api('auth/register',make('first',env.ACCESS_TOKEN))).status,401);
+ assert.equal(db.prepare('SELECT COUNT(*) AS n FROM users').get().n,0);
+ for(const path of ['health','summary','explore','chat','hyps']){
+  assert.equal((await api(path,path==='health'?undefined:{},'',{authorization:'Bearer '+env.ACCESS_TOKEN})).status,401);
+ }
 });
