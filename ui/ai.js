@@ -2,7 +2,7 @@
 // AI only runs on the Cloudflare site (and local previews). Elsewhere (GitHub Pages) there is no
 // /api backend, so the page must never show the entry, ask for the access token or call /api.
 const AI_ERRORS={bad_request:'这次没发出去，刷新后再试。',unauthorized:'请到设置重新登录管理员账号。',forbidden:'只有管理员账号可以使用 AI。',too_large:'内容太长了，少勾选几项再试。',rate_limited:'点得太快了，等一分钟。',quota_exceeded:'今天的 AI 额度用完了，明天再试。',upstream_limited:'AI 额度用完或请求太频繁，稍后再试。',upstream_error:'AI 服务暂时连不上。',timeout:'等太久了，可能是网络慢。',not_configured:'AI 尚未完成配置。',offline:'需要联网后才能和 Claude 聊一聊。'};
-const AI_GROUPS=[['review','当天复盘'],['preds','预测'],['caps','随手记'],['events','单件复盘'],['archives','对话存档'],['hyps','当天关联的假设']];
+const AI_GROUPS=[['review','当天复盘'],['preds','预测'],['caps','随手记'],['events','单件复盘'],['archives','对话存档'],['hyps','当天关联的假设'],['timeline','时序']];
 const ai={sessions:new Map(),date:null,models:null,request:null,confirm:null,texts:new Map(),diag:null,authBusy:false,authMessage:'',hypResults:new Map(),hypRequest:null};
 const AI_ON=accountHost&&accountUser?.role==='admin';
 if(accountHost&&!AI_ON)document.documentElement?.classList.add('journal-no-ai');
@@ -14,7 +14,7 @@ function aiSession(k=ai.date){
  }
  return ai.sessions.get(k);
 }
-function aiSelection(){return Object.assign({review:true,preds:true,caps:true,events:false,archives:false,hyps:false},uiPrefs.aiMaterials||{});}
+function aiSelection(){return Object.assign({review:true,preds:true,caps:true,events:false,timeline:false,archives:false,hyps:false},uiPrefs.aiMaterials||{});}
 function aiReviewText(d){
  const e=d.evening;if(!e)return '';const r=e.raw||{},lines=[],add=(label,value)=>{if(value)lines.push(label+'：'+String(value));};
  if(e.mode==='min'){add('不一样的一刻',r.q1);add('在乎的',r.q2);}
@@ -26,14 +26,14 @@ function aiGroups(k){
  (d.preds||[]).forEach(p=>{if(p.hid)ids.add(p.hid);});(d.caps||[]).forEach(c=>{if(c.hyp)ids.add(c.hyp);});
  if(d.evening&&d.evening.D&&d.evening.D.hid)ids.add(d.evening.D.hid);evs.forEach(e=>{if(e.Dres&&e.Dres.hid)ids.add(e.Dres.hid);});
  const hyps=Object.values(S.hyps).filter(h=>ids.has(h.id)||(h.ev||[]).some(e=>e.date===k));
- return {review:aiReviewText(d),preds:(d.preds||[]).map(p=>({text:p.text||'',result:p.result||'',actual:p.actual||''})),caps:(d.caps||[]).filter(c=>captureVisible(k,c)).map(c=>({time:hm(c.at),fact:c.fact||'',emos:c.emos||[],inten:c.inten||0,quote:c.quote||'',care:c.care||''})),events:evs.map(eventText).join('\n\n'),archives:arcs.map(a=>{const x=a.data||{},s=x.summary||{},deep=x.deep_dive||{};return [s.headline,...(s.points||[]),deep.moment,...(deep.timeline||[]),...(x.open_questions||[])].filter(Boolean).join('\n');}).join('\n\n'),hyps:hyps.map(h=>({no:h.no||0,text:hypText(h),sup:evCount(h,'sup'),con:evCount(h,'con')}))};
+ return {timeline:tlMaterials(d,k),review:aiReviewText(d),preds:(d.preds||[]).map(p=>({text:p.text||'',result:p.result||'',actual:p.actual||''})),caps:(d.caps||[]).filter(c=>captureVisible(k,c)).map(c=>({time:hm(c.at),fact:c.fact||'',emos:c.emos||[],inten:c.inten||0,quote:c.quote||'',care:c.care||''})),events:evs.map(eventText).join('\n\n'),archives:arcs.map(a=>{const x=a.data||{},s=x.summary||{},deep=x.deep_dive||{};return [s.headline,...(s.points||[]),deep.moment,...(deep.timeline||[]),...(x.open_questions||[])].filter(Boolean).join('\n');}).join('\n\n'),hyps:hyps.map(h=>({no:h.no||0,text:hypText(h),sup:evCount(h,'sup'),con:evCount(h,'con')}))};
 }
 function aiMaterials(k,selection){
  const g=aiGroups(k),parts=[];['review','events','archives'].forEach(key=>{if(selection[key]&&g[key])parts.push(AI_GROUPS.find(x=>x[0]===key)[1]+'\n'+g[key]);});
- return {review:parts.join('\n\n'),preds:selection.preds?g.preds:[],caps:selection.caps?g.caps:[],hyps:selection.hyps?g.hyps:[]};
+ return {...(selection.timeline?{timeline:g.timeline}:{}),review:parts.join('\n\n'),preds:selection.preds?g.preds:[],caps:selection.caps?g.caps:[],hyps:selection.hyps?g.hyps:[]};
 }
 function aiMaterialLabel(s){
- if(s.materials){const m=s.materials;return [m.review?'当天文字材料':'',m.preds.length?'预测 '+m.preds.length+' 条':'',m.caps.length?'随手记 '+m.caps.length+' 条':'',m.hyps.length?'当天关联假设 '+m.hyps.length+' 条':''].filter(Boolean).join('、')+'（本轮已固定）';}
+ if(s.materials){const m=s.materials;return [m.timeline?.length?'时序 '+m.timeline.length+' 项':'',m.review?'当天文字材料':'',m.preds.length?'预测 '+m.preds.length+' 条':'',m.caps.length?'随手记 '+m.caps.length+' 条':'',m.hyps.length?'当天关联假设 '+m.hyps.length+' 条':''].filter(Boolean).join('、')+'（本轮已固定）';}
  const selection=s.selection||aiSelection(),g=aiGroups(s.date);return AI_GROUPS.filter(([key])=>selection[key]&&(typeof g[key]==='string'?g[key].length:g[key].length)).map(([key,label])=>label+(Array.isArray(g[key])?' '+g[key].length+' 条':'')).join('、')||'尚未选择材料';
 }
 function aiSaveDraft(s){
@@ -42,7 +42,7 @@ function aiSaveDraft(s){
  drafts['ai-explore:'+s.date]={id:s.roundId,messages:clone(s.messages).concat(live?[{role:'assistant',content:live}]:[]),input:s.input,materials:clone(s.materials),selection:clone(s.selection),contextSummary:s.contextSummary,model:s.roundModel};
  const ok=saveDrafts();if(!ok)s.exploreNotice='草稿未存成功，请先保留页面。';return ok;
 }
-function aiHasRecords(k){const d=S.days[k]||{};return !!(d.evening||(d.preds||[]).length||(d.caps||[]).length||eventsOn(k).length||archivesOn(k).length||d.ai);}
+function aiHasRecords(k){const d=S.days[k]||{};return !!(d.tl?.length||d.plan?.length||d.evening||(d.preds||[]).length||(d.caps||[]).length||eventsOn(k).length||archivesOn(k).length||d.ai);}
 function aiEntry(k){
  if(!AI_ON||!aiHasRecords(k))return '';const saved=(S.days[k]||{}).ai||{},count=(saved.explores||[]).length,status=(saved.summary?'已总结':'还没总结')+(count?' · 探索 '+count+' 次':'');
  return '<button type="button" class="ai-entry" data-act="aiOpen" data-key="'+k+'"'+(!navigator.onLine?' disabled':'')+'><span>和 Claude 聊一聊</span><small>'+(!navigator.onLine?'需要联网':!saved.summary&&!count?'还没聊过':status)+'</small><span aria-hidden="true">›</span></button>';
@@ -117,7 +117,7 @@ async function aiHealth(){
  finally{d.elapsed=performance.now()-start;ai.authBusy=false;aiRender();}
 }
 function aiComposeContext(s){return {selection:s.selection||aiSelection(),materials:s.materials||aiMaterials(s.date,aiSelection())};}
-function aiHasMaterial(m){return !!(m.review.trim()||m.preds.length||m.caps.length||m.hyps.length);}
+function aiHasMaterial(m){return !!(m.timeline?.length||m.review.trim()||m.preds.length||m.caps.length||m.hyps.length);}
 function aiShowConsent(mode=null,chat=null){
  if(mode==='hyps'){aiHypConsentDialog(chat);return;}
  const s=mode==='chat'?{date:chat.date}:aiSession(),ctx=mode==='chat'?{selection:aiSelection(),materials:aiMaterials(s.date,aiSelection())}:aiComposeContext(s),g=aiGroups(s.date),locked=!!s.materials;

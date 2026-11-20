@@ -43,6 +43,7 @@ async function chatRemove(col,id){
  catch(e){if(old)S[col][id]=old;if(mode==='local'){const del=readDel();if(mark===undefined)delete del[col+'/'+id];else del[col+'/'+id]=mark;writeDel(del);}throw e;}
 }
 function chatSave(doc){
+ for(const c of Object.values(doc.cards||{}))if(c.type==='plan'&&c.replaced&&Date.now()>c.undoUntil)delete c.replaced;
  doc.updated=new Date().toISOString();const snapshot=clone(doc),id=doc.id;
  const p=(chat.queues.get(id)||Promise.resolve()).catch(()=>{}).then(()=>chatPut('meta','chat:'+id,snapshot));chat.queues.set(id,p);
  return p.then(()=>{const k='chat:'+id,d=drafts[k];if(!d)return;
@@ -54,10 +55,23 @@ function chatSave(doc){
 // Parse complete standalone lines. Incomplete streaming tags remain buffered;
 // malformed, oversized and unclosed final tags are rendered verbatim as text.
 function chatParse(raw,final=true){
- const parts=[],asks=[];let cards=0;const lines=String(raw).split('\n');
+ const parts=[],asks=[];let cards=0,hasPlan=false;const lines=String(raw).split('\n');
  const plain=text=>{if(parts.at(-1)?.type==='text')parts.at(-1).text+=text;else parts.push({type:'text',text});};
  for(let i=0;i<lines.length;i++){
   const line=lines[i],trim=line.trim(),suffix=i<lines.length-1?'\n':'';
+  if(!final&&i===lines.length-1&&('<plan'.startsWith(trim)||trim.startsWith('<plan ')&&!trim.includes('>')))break;
+  const plan=/^<plan date="(\d{4}-\d{2}-\d{2})">$/.exec(trim);
+  if(plan){
+   const end=lines.findIndex((l,j)=>j>i&&l.trim()==='</plan>');
+   if(end<0){if(final)plain(lines.slice(i).join('\n'));break;}
+   const body=lines.slice(i+1,end),good=[],bad=[];
+   for(const l of body)(tlParsePlan(l)?good:bad).push(l);
+   if(!hasPlan&&validDate(plan[1])&&good.length&&body.length<=12){
+    parts.push({type:'plan',date:plan[1],text:good.join('\n'),index:2});hasPlan=true;
+    if(bad.length)plain(bad.join('\n')+'\n');
+   }else plain(lines.slice(i,end+1).join('\n')+(end<lines.length-1?'\n':''));
+   i=end;continue;
+  }
   const m=/^<(hyp|pred|ev|ask)(\s[^>]*)?>(.*?)<\/\1>$/.exec(trim);
   if(!m){if(!final&&i===lines.length-1&&(/^<(?:hyp|pred|ev|ask)\b/.test(trim)||['<','<h','<hy','<p','<pr','<pre','<e','<a','<as'].includes(trim)))continue;plain(line+suffix);continue;}
   const [,type,attrs='',text]=m,attr={};let valid=true,left=attrs;
@@ -80,6 +94,7 @@ function chatDuplicate(card){
 }
 function chatCardAt(key){const [mi,ci]=key.split(':').map(Number),card=chatParse(chat.doc.messages[mi]?.content||'').parts.find(p=>p.type!=='text'&&p.index===ci);if(card&&chat.doc.cards[key]?.text)card.text=chat.doc.cards[key].text;return card;}
 function chatCardHTML(card,key,live=false){
+ if(card.type==='plan')return chatPlanHTML(card,key,live);
  const state=chat.doc.cards[key];if(state?.text)card={...card,text:state.text};const duplicate=chatDuplicate(card),target=card.type==='ev'?Object.values(S.hyps).find(h=>h.no===+card.no):null;
  const label=card.type==='hyp'?'假设':card.type==='pred'?(card.date===addDays(dayKey(),1)?'明天的预测':chatDateLabel(card.date)+' 的预测'):'给 H'+card.no+' 加'+(card.kind==='sup'?'支持证据':'反例');
  const attrs=' data-key="'+key+'"',busy=chat.busy.has(chat.doc.id+':'+key),edit=chat.edits.get(chat.doc.id+':'+key);

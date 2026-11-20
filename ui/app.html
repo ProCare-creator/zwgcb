@@ -704,7 +704,7 @@ to{transform:translateY(0);opacity:1}}
       <div id="week-scroller" aria-label="左右滑动切换星期"></div>
       <div id="week-notes"></div>
     </aside>
-    <section id="more-shell" aria-label="回顾月历" hidden><div class="review-heading"><h1>回顾</h1><div class="review-month-nav"><button type="button" class="dnav" data-act="calMonth" data-v="-1" data-mode="more" aria-label="上个月">‹</button><span id="review-month"></span><button type="button" class="dnav" id="review-month-next" data-act="calMonth" data-v="1" data-mode="more" aria-label="下个月">›</button></div></div><div class="review-layout"><section class="card" id="calendar-frame"><div id="month-scroller" aria-label="左右滑动切换月份"></div><div id="calendar-legend-wrap"></div></section><aside id="desktop-summary" aria-label="当天摘要"><p class="summary-placeholder" id="summary-placeholder">点选月历中的一天，<br>看看那时留下了什么。</p></aside></div></section>
+    <section id="more-shell" aria-label="回顾月历" hidden><div class="review-heading"><h1>回顾</h1><div class="review-month-nav"><button type="button" class="dnav" data-act="calMonth" data-v="-1" data-mode="more" aria-label="上个月">‹</button><span id="review-month"></span><button type="button" class="dnav" id="review-month-next" data-act="calMonth" data-v="1" data-mode="more" aria-label="下个月">›</button></div></div><div id="memo-entry"></div><div class="review-layout"><section class="card" id="calendar-frame"><div id="month-scroller" aria-label="左右滑动切换月份"></div><div id="calendar-legend-wrap"></div></section><aside id="desktop-summary" aria-label="当天摘要"><p class="summary-placeholder" id="summary-placeholder">点选月历中的一天，<br>看看那时留下了什么。</p></aside></div></section>
     <section id="writing-shell" aria-label="写作工具" hidden><div class="writing-bar"><button type="button" data-act="cancel" aria-label="先放下，保留草稿">‹ 先放下</button><span id="writing-title"></span><span id="writing-status" role="status" aria-live="polite"></span></div><nav id="writing-steps" aria-label="标准复盘章节" hidden><button type="button" data-act="writingStep" data-v="A">A 事实</button><button type="button" data-act="writingStep" data-v="B">B 对照</button><button type="button" data-act="writingStep" data-v="C">C 深挖</button><button type="button" data-act="writingStep" data-v="D">D 假设</button><button type="button" data-act="writingStep" data-v="E">E 明天</button></nav></section>
     <main tabindex="-1" id="view"></main>
   </div>
@@ -713,6 +713,7 @@ to{transform:translateY(0);opacity:1}}
   <div class="in">
     <a href="#pred" data-r="pred"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r="0.9" fill="currentColor"/></svg>预测</a>
     <a href="#capture" data-r="capture"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></svg>随手记</a>
+    <a href="#tl" data-r="tl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 7v5l4 2"/></svg>时序</a>
     <a href="#review" data-r="review"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 14.5A7.5 7.5 0 0 1 9.5 5a7.5 7.5 0 1 0 9.5 9.5z"/></svg>复盘</a>
     <a href="#hyps" data-r="hyps"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="6" width="18" height="13" rx="1.5"/><path d="M3 10h18M7 14h6"/></svg>假设</a>
     <a href="#more" data-r="more"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 9h16M9 3v4M15 3v4"/></svg>回顾</a>
@@ -723,6 +724,7 @@ to{transform:translateY(0);opacity:1}}
 <div id="undo-toast" role="status" aria-live="polite" hidden><span id="undo-text">已删除</span><button type="button" id="undo-cap" data-act="undoCap">撤销</button></div>
 <dialog id="day-summary" aria-labelledby="summary-date"><div id="summary-content"></div></dialog>
 <dialog id="hyp-actions" aria-labelledby="hyp-actions-title"></dialog>
+<dialog id="journal-dialog" aria-label="记录操作"></dialog>
 <dialog id="chat-list" aria-label="对话列表"></dialog><dialog id="chat-dialog" aria-label="聊天操作"></dialog>
 <dialog id="ai-confirm" aria-labelledby="ai-confirm-title"></dialog>
 <dialog id="day-actions" aria-labelledby="day-actions-title"><div class="row"><h2 id="day-actions-title">当天记录</h2><button type="button" class="icon-button" data-act="dayActionsClose" aria-label="关闭操作面板">×</button></div><button type="button" class="btn ghost" data-act="summaryWord">保存为 Word</button><button type="button" class="btn ghost" data-act="summaryCopy">复制给 Claude</button></dialog>
@@ -744,7 +746,7 @@ const VAGUE = ['充实','好好','努力','认真','尽量','高效','顺利','�
 const MOMENTS = ['情绪最强的一刻','最不像自己的一刻','最有劲的一刻','别的时刻'];
 const FORMAT = 'review-archive/v1';
 const OFFLINE_APP = true;
-const APP_VERSION = 'v6.14.1';
+const APP_VERSION = 'v6.15.0';
 const LS_KEY = 'zwgcb-data-v1', LS_DRAFT = 'zwgcb-drafts-v1';
 
 /* ---------- utils ---------- */
@@ -803,7 +805,7 @@ function lsWrite(){ try { const o = { savedAt:Date.now() }; COLS.forEach(c => { 
 function lsRead(){ try { return JSON.parse(localStorage.getItem(LS_KEY) || 'null'); } catch (e) { return null; } }
 function put(col, id, data){
   const previous=S[col][id];
-  data = Object.assign({}, data, { _t:Date.now() });   // change stamp, used when merging with the cloud copy
+  data = Array.isArray(data) && col==='meta' && id==='tlcats' ? data.slice() : Object.assign({}, data, { _t:Date.now() });   // change stamp, used when merging with the cloud copy
   S[col] = Object.assign({}, S[col]); S[col][id] = data;
   if (mode === 'cloud'){
     const path = col + '/' + id;
@@ -911,7 +913,7 @@ function mergeSnap(a, b){
   COLS.forEach(c => {
     const A = (a.cols && a.cols[c]) || {}, B = (b.cols && b.cols[c]) || {}, o = {};
     new Set(Object.keys(A).concat(Object.keys(B))).forEach(id => {
-      const x = A[id], y = B[id], tx = x ? (x._t || 0) : -1, ty = y ? (y._t || 0) : -1;
+      const x = A[id], y = B[id], tx = x ? (x._t || (id==='tlcats' && A.tlcatsUpdated?._t) || 0) : -1, ty = y ? (y._t || (id==='tlcats' && B.tlcatsUpdated?._t) || 0) : -1;
       let pick = ty > tx ? y : x, tp = Math.max(tx, ty);
       if (c === 'meta' && id === 'counters' && x && y) pick = Object.assign({}, pick, { hypSeq:Math.max(x.hypSeq || 0, y.hypSeq || 0) });
       const dt = out.del[c + '/' + id];
@@ -962,7 +964,7 @@ async function syncNow(){
   try {
     // give documents saved before sync existed a stamp, so they take part in the merge
     const stamps=[];const now=Date.now();
-    COLS.forEach(c=>Object.keys(S[c]||{}).forEach(id=>{if(!S[c][id]._t){const v={...S[c][id],_t:now};S[c][id]=v;stamps.push([c,id,v]);}}));
+    COLS.forEach(c=>Object.keys(S[c]||{}).forEach(id=>{if(!S[c][id]._t && !(c==='meta'&&id==='tlcats'&&Array.isArray(S[c][id]))){const v={...S[c][id],_t:now};S[c][id]=v;stamps.push([c,id,v]);}}));
     if(stamps.length){if(mode==='idb'){try{await writeRows(stamps);}catch(e){for(const [c,id,v] of stamps)if(S[c][id]===v)delete v._t;throw e;}}else lsWrite();}
     // A pending new sync password: read the cloud copy with the current one (or the new one, if a
     // half-finished change already uploaded), then always re-upload encrypted with the new one.
@@ -1049,6 +1051,7 @@ async function migrate(){
 }
 function refresh(){
   syncLabel();
+  if(route==='memo' && memoState.doc && $('#memo-text'))return;
   if (!form || !form.dirty){ if (!ui.hypOpen && !ui.hypNew) render(); }
 }
 function syncLabel(){
@@ -1547,7 +1550,7 @@ function compactMaterial(key,time,title,meta,content){
 }
 function vReview(){
   const t=dayKey(),k=sel,d=S.days[k]||newDay(k),ps=d.preds||[],caps=(d.caps||[]).filter(c=>captureVisible(k,c)).slice().sort((a,b)=>String(b.at).localeCompare(String(a.at))),evs=eventsOn(k),arcs=archivesOn(k);
-  let h=copyBox()+'<div class="journal-main">'+eveCard(k,d)+aiEntry(k);
+  let h=copyBox()+'<div class="journal-main">'+eveCard(k,d)+tlReview(k,d)+aiEntry(k);
   if(k>t)return h+'</div>';
   if(k===t&&ready&&fuseOn())h+='<aside class="review-fuse"><p>最近三次写完都觉得更沉了。可以先停一停，或只记事实，不急着分析原因。</p></aside>';
   h+='<section class="review-materials" aria-label="今天的材料"><h2 class="h2">'+(k===t?'今天':'这一天')+'的材料</h2>';
@@ -1772,6 +1775,7 @@ function updateReviewShell(){
   const shell=$('#more-shell'),wasHidden=shell.hidden,visible=reviewVisible();shell.hidden=!visible;
   if(!visible){renderSummary();return;}
   if(!ui.disclosureSeen.has('calendar:legend')){setDisclosure('calendar:legend',!uiPrefs.legendSeen);uiPrefs.legendSeen=true;saveUIPrefs();}
+  $('#memo-entry').innerHTML=memoEntry();
   const legend=foldHTML('calendar:legend','calendar-legend','图例',calendarLegend());
   if($('#calendar-legend-wrap').innerHTML!==legend)$('#calendar-legend-wrap').innerHTML=legend;
   paintMonths();if(wasHidden)centerMonth();renderSummary();
@@ -1993,7 +1997,7 @@ function captureFoldHTML(id, openLabel, closeLabel, content){
 let dayTransition = null, dayRun = 0, weekBase = null, weekPending = null, weekResetting = false, weekGesture = false, weekPointer = false;
 const reducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 const motionTime = name => parseFloat(getComputedStyle(document.documentElement).getPropertyValue(name)) || 200;
-function dayShellVisible(){ return ['pred','review','capture'].includes(route) && (!form || (form.type === 'capture' && form.key === 'new')); }
+function dayShellVisible(){ return ['tl','pred','review','capture'].includes(route) && (!form || (form.type === 'capture' && form.key === 'new')); }
 function cancelDayMotion(){
   ++dayRun;
   if (dayTransition){ dayTransition.skipTransition(); dayTransition = null; }
@@ -2009,10 +2013,10 @@ function enterDay(direction){
   });
 }
 function changeDay(k, fromWeek = false){
-  if (!validDate(k) || k > addDays(dayKey(), 1) || k === sel) return;
+  if (!validDate(k) || (route!=='tl' && k > addDays(dayKey(), 1)) || k === sel) return;
   const direction = k < sel ? -1 : 1;
   cancelDayMotion(); const run = dayRun;
-  sel = k; ui.cal = false;
+  sel = k; if(route==='tl')history.replaceState(null,'','#tl?date='+k); ui.cal = false;
   const top = $('#workspace').getBoundingClientRect().top + window.scrollY;
   if (window.scrollY > top) window.scrollTo({ top, behavior:'instant' });
   document.documentElement.dataset.dir = direction < 0 ? 'prev' : 'next';
@@ -2096,7 +2100,7 @@ function updateDateShell(){
   const t = dayKey(), relative = sel === t ? '今天' : sel === addDays(t,-1) ? '昨天' : sel === addDays(t,1) ? '明天' : '';
   $('#day-number').textContent = md(sel); $('#day-weekday').textContent = wdOf(sel);
   $('#day-relative').textContent = relative; $('#day-relative').hidden = !relative;
-  $('#day-next').disabled = sel >= addDays(t,1); $('#day-today').hidden = sel === t;
+  $('#day-next').disabled = route!=='tl' && sel >= addDays(t,1); $('#day-today').hidden = sel === t;
   $('#day-label').setAttribute('aria-expanded',String(!!ui.cal));
   $('#day-label').setAttribute('aria-label',md(sel) + ' ' + wdOf(sel) + '，选择日期');
   const picker = $('#day-picker'); picker.hidden = !ui.cal;
@@ -2204,7 +2208,8 @@ function captureSaved(){
   capFreshTimer = setTimeout(() => { ui.fresh = null; document.querySelectorAll('.just-saved').forEach(el => el.classList.remove('just-saved')); },1500);
 }
 function updateUndo(){
-  const toast = $('#undo-toast'); toast.hidden = !pendingCaps.size;
+  const toast = $('#undo-toast'); toast.hidden = !pendingCaps.size && !tlState.undo;
+  if(tlState.undo){$('#undo-text').textContent=tlState.undo.label;return;}
   $('#undo-text').textContent = pendingCaps.size > 1 ? '已删除 ' + pendingCaps.size + ' 条' : '已删除';
 }
 function scheduleCapDelete(k,id){
@@ -2539,13 +2544,13 @@ function render(force=false){
   ai.texts.clear();
   const view = $('#view'), previous = rememberView(view);
   syncLabel();
-  const tabR = route === 'week' ? 'more' : route;
+  const tabR = ['week','memo'].includes(route) ? 'more' : route;
   document.querySelectorAll('.tabs a').forEach(a => { const on = a.dataset.r === tabR; a.classList.toggle('on', on); if (on) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
   if (!form && route === 'capture') form = { type:'capture', key:'new', data:drafts['capture:new'] ? clone(drafts['capture:new']) : { fact:'', emos:[], inten:0, quote:'', body:[], did:'', wanted:'', care:'', tags:[], more:false }, dirty:false };
   if (!form && route === 'week'){ const k = ui.weekKey || weekStart(dayKey()); const w = S.weeks[k]; form = { type:'week', key:k, data:drafts['week:' + k] ? clone(drafts['week:' + k]) : (w ? clone(w) : { dir:'', said:['','',''], did:['','',''], was:'', saw:'' }), dirty:false }; }
   let html;
   if (form){ html = ({ morning:fMorning, evening:fEvening, min:fMin, capture:fCapture, week:fWeek, event:fEvent, import:fImport })[form.type](); }
-  else { const V = { pred:vPred, review:vReview, hyps:vHyps, more:vMore, settings:vSettings, ai:vAI, chat:vChat }; html = (V[route] || vPred)(); }
+  else { const V = { tl:vTimeline,memo:vMemo,pred:vPred, review:vReview, hyps:vHyps, more:vMore, settings:vSettings, ai:vAI, chat:vChat }; html = (V[route] || vPred)(); }
   const context = { route, type:form ? form.type : '', form, date:route === 'more' ? (moreLocation().day || ui.moreDay || ui.moreMonth) : sel };
   const samePage = renderedView && renderedView.route === context.route && renderedView.type === context.type;
   view.dataset.view = form ? form.type : route;
@@ -2554,13 +2559,13 @@ function render(force=false){
   view.innerHTML = html;
   updateReviewShell();
   prepareWriting();
-  aiPrepareShell();aiHydrate();chatHydrate();chatRevealTarget();
+  aiPrepareShell();aiHydrate();chatHydrate();chatRevealTarget();document.body.classList.toggle('memo-writing',!!$('#memo-text'));memoSize();tlPromptTimer();
   sizeCaptureInput();
   const excerpt=$('#review-excerpt'),toggle=$('.excerpt-toggle');if(excerpt&&toggle&&!excerpt.classList.contains('expanded'))toggle.hidden=excerpt.scrollHeight<=excerpt.clientHeight+1;
   if (samePage){
     if (renderedView.form === form && renderedView.date === context.date) previous.inputs.forEach(saved => {
       const el = findControl(view, saved.identity);
-      if (el && el.id !== 'copyArea' && !el.id.startsWith('ai-') && !el.id.startsWith('chat-') && !el.hasAttribute('data-chat-hyps')){ el.value = saved.value; if (typeof saved.checked === 'boolean') el.checked = saved.checked; }
+      if (el && el.id !== 'copyArea' && !el.id.startsWith('ai-') && !el.id.startsWith('chat-') && !el.id.startsWith('memo-') && !el.hasAttribute('data-chat-hyps')){ el.value = saved.value; if (typeof saved.checked === 'boolean') el.checked = saved.checked; }
     });
     const active = findControl(view, previous.focus);
     if (active && !active.disabled && active.getClientRects().length){
@@ -2885,7 +2890,7 @@ const A = {
     setFold(el,open);
   },
   deleteCap(el){ scheduleCapDelete(el.dataset.key,el.dataset.id); },
-  undoCap(){ undoCapDelete(); },
+  async undoCap(){if(tlState.undo){const u=tlState.undo;clearTimeout(u.timer);tlState.undo=null;updateUndo();try{await u.run();}catch{toast('撤销失败。');}}else undoCapDelete();},
   weekPick(el){ weekGesture = false; changeDay(el.dataset.key); },
   weekMove(el){ moveWeek(+el.dataset.v); },
   captureToggle(el){
@@ -3257,6 +3262,14 @@ document.addEventListener('click', e => {
   const tab = e.target.closest('.tabs a');
   if (tab && tab.getAttribute('href') === (location.hash || '#review')){ e.preventDefault(); onHash(); return; }
   const el = e.target.closest('[data-act]'); if (!el) return;
+  const journalAction=TL_ACTIONS[el.dataset.act]||MEMO_ACTIONS[el.dataset.act]||PLAN_ACTIONS[el.dataset.act];
+  if(journalAction){
+    e.preventDefault();
+    if(tlState.busy)return;
+    tlState.busy=true;
+    Promise.resolve().then(()=>journalAction(el)).catch(err=>showJournalError(err.message||'保存失败。')).finally(()=>{tlState.busy=false;});
+    return;
+  }
   const f = CHAT_ACTIONS[el.dataset.act] || AI_ACTIONS[el.dataset.act] || A[el.dataset.act]; if (f){ e.preventDefault(); f(el, e); }
 });
 document.addEventListener('input', e => {
@@ -3269,13 +3282,16 @@ document.addEventListener('input', e => {
   if (el.dataset.live === 'hyp'){ const w = $('#w-hyp'); if (w) w.textContent = hypWarn((form.data.D.sit || '') + (form.data.D.rea || '')); }
 });
 const ROUTE_ALIAS = { today:'pred', log:'more' };   // links and icons saved from older versions
-function resolveRoute(hash){ const r = (hash || '#review').slice(1).split('?')[0], a = ROUTE_ALIAS[r] || r; return ['pred','capture','review','hyps','more','week','settings','ai','chat'].includes(a) && (!['ai','chat'].includes(a) || AI_ON) ? a : 'review'; }
+function resolveRoute(hash){ const r = (hash || '#review').slice(1).split('?')[0], a = ROUTE_ALIAS[r] || r; return ['tl','memo','pred','capture','review','hyps','more','week','settings','ai','chat'].includes(a) && (!['ai','chat'].includes(a) || AI_ON) ? a : 'review'; }
 function onHash(){
+  if(route==='memo'){memoFlush().catch(e=>toast(e.message));memoState.doc=null;}if(journalDialog().open)jClose();
   ai.hypRequest?.ctl.abort();
   if(ai.request){ai.request.stopped=true;ai.request.ctl.abort();}
   aiDialogClose();
   cancelDayMotion();cancelReviewMotion();closeHypActions(false);if($('#day-actions').open)$('#day-actions').close();
-  route = resolveRoute(location.hash);if(!AI_ON&&location.hash.startsWith('#chat'))history.replaceState(null,'','#review');chatRoute(); ui.cal = false;
+  route = resolveRoute(location.hash);
+if(route==='tl'){const date=new URLSearchParams(location.hash.split('?')[1]).get('date');sel=validDate(date)?date:dayKey();}
+if(!AI_ON&&location.hash.startsWith('#chat'))history.replaceState(null,'','#review');chatRoute(); ui.cal = false;
   if(route==='ai'){const k=new URLSearchParams(location.hash.split('?')[1]||'').get('day');ai.date=validDate(k)?k:sel;sel=ai.date;}
   const panel = moreLocation(), returning = route === 'more' && !panel.section && panel.day && ui.moreReturn && ui.moreReturn.day === panel.day;
   if (panel.day){ ui.moreDay = panel.day; ui.moreMonth = returning ? ui.moreReturn.month : panel.day.slice(0, 7); }
@@ -3345,6 +3361,8 @@ document.addEventListener('focusout',() => setTimeout(updateKeyboard,0));
 
 document.addEventListener('change', e => { if (e.target && e.target.id === 'importFile' && e.target.files && e.target.files[0]) importFile(e.target.files[0]); });
 route = resolveRoute(location.hash);
+if(route==='tl'){const date=new URLSearchParams(location.hash.split('?')[1]).get('date');sel=validDate(date)?date:dayKey();}
+
 if(!AI_ON&&location.hash.startsWith('#chat'))history.replaceState(null,'','#review');
 const initialMore = moreLocation();
 if (initialMore.day){ ui.moreDay = initialMore.day; ui.moreMonth = initialMore.day.slice(0, 7); }

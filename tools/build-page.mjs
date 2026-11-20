@@ -6,9 +6,12 @@ let html=await fs.readFile(new URL('ui/app.html',root),'utf8');
 for(const [tag,files] of [['/* ACCOUNT_BOOT */',['account-boot.js']],['/* ACCOUNT_UI */',['account-crypto.js','accounts.js']]]){
  const chunks=await Promise.all(files.map(f=>fs.readFile(new URL('ui/'+f,root),'utf8')));html=html.replace(tag,()=>chunks.join('\n'));
 }
+const journalFiles=['timeline-core.js','timeline.js','memo.js','chat-plan.js'];
+const journal=(await Promise.all(journalFiles.map(f=>fs.readFile(new URL('ui/'+f,root),'utf8')))).join('\n');
+html=html.replace('/* AI_UI_START */',()=>journal+'\n/* AI_UI_START */');
 const storage=await fs.readFile(new URL('ui/storage.js',root),'utf8');
 html=html.replace('/* LOCAL_DOCUMENT_STORE */',()=>storage);
-const js=(await fs.readFile(new URL('ui/ai.js',root),'utf8'))+'\n'+(await fs.readFile(new URL('ui/chat.js',root),'utf8')),css=(await fs.readFile(new URL('ui/ai.css',root),'utf8'))+'\n'+(await fs.readFile(new URL('ui/chat.css',root),'utf8'));
+const js=(await fs.readFile(new URL('ui/ai.js',root),'utf8'))+'\n'+(await fs.readFile(new URL('ui/chat.js',root),'utf8')),css=(await fs.readFile(new URL('ui/timeline.css',root),'utf8'))+'\n'+(await fs.readFile(new URL('ui/ai.css',root),'utf8'))+'\n'+(await fs.readFile(new URL('ui/chat.css',root),'utf8'));
 html=html.replace('/* AI_CSS_START */',()=>'/* AI_CSS_START */\n'+css).replace('/* AI_UI_START */',()=>'/* AI_UI_START */\n'+js);
 for(const match of [...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g)]){
  const result=await minify(match[1],{
