@@ -14,19 +14,20 @@ test('second migration preserves existing users and gives their original credent
  const {kdf_iter,...after}=db.prepare('SELECT * FROM users').get();assert.equal(kdf_iter,600000);assert.deepEqual(after,{...before});
  assert.throws(()=>db.exec('UPDATE users SET kdf_iter=99999'));
 });
-function fixture(t){
+function fixture(t,sync=false){
  const db=new DatabaseSync(':memory:');t.after(()=>db.close());
  db.exec('PRAGMA foreign_keys=ON;'+readFileSync(new URL('./migrations/0001_accounts.sql',import.meta.url),'utf8'));
  db.exec(readFileSync(new URL('./migrations/0002_user_kdf_iter.sql',import.meta.url),'utf8'));
- const wrap=(sql,v=[])=>{const q=db.prepare(sql);return {bind:(...a)=>wrap(sql,a.map(x=>x instanceof ArrayBuffer?new Uint8Array(x):x)),first:async()=>q.get(...v),all:async()=>({results:q.all(...v),meta:{size_after:4096}}),run:async()=>({meta:{changes:q.run(...v).changes}}),query:/^SELECT/i.test(sql)};};
+ if(sync)db.exec(readFileSync(new URL('./migrations/0003_cloud_sync.sql',import.meta.url),'utf8'));
+ const wrap=(sql,v=[])=>{const q=db.prepare(sql);return {bind:(...a)=>wrap(sql,a.map(x=>x instanceof ArrayBuffer?new Uint8Array(x):x)),first:async()=>q.get(...v),all:async()=>({results:q.all(...v),meta:{size_after:4096}}),run:async()=>({meta:{changes:q.run(...v).changes}}),query:/^SELECT|RETURNING /i.test(sql)};};
  const VAULT={prepare:wrap,batch:async ops=>{db.exec('BEGIN');try{const result=[];for(const op of ops)result.push(await (op.query?op.all():op.run()));db.exec('COMMIT');return result;}catch(e){db.exec('ROLLBACK');throw e;}}};
- const env={VAULT,ALLOWED_ORIGIN:'https://zwgcb.cn',AUTH_PEPPER:enc(32),ACCESS_TOKEN:enc(24),AI_RATE_LIMITER:{limit:async()=>({success:true})}};
+ const env={VAULT,SYNC_RATE_LIMITER:{limit:async()=>({success:true})},ALLOWED_ORIGIN:'https://zwgcb.cn',AUTH_PEPPER:enc(32),ACCESS_TOKEN:enc(24),AI_RATE_LIMITER:{limit:async()=>({success:true})}};
  const make=(username,invite)=>({username,invite,kdf_salt:enc(16),authKey:enc(32),recoveryAuth:enc(32),wrapped_keys:enc(92),recovery_wrapped:enc(92)});
  const api=async(path,b,c='',headers={})=>{const r=await createHandler()(new Request(env.ALLOWED_ORIGIN+'/api/'+path,{method:b===undefined?'GET':'POST',headers:{origin:env.ALLOWED_ORIGIN,'content-type':'application/json',Cookie:c,...headers},body:JSON.stringify(b)}),env);return {status:r.status,body:await r.json(),cookie:r.headers.get('set-cookie')?.split(';')[0],retry:r.headers.get('retry-after')};};
  return {db,env,make,api};
 }
-async function users(t){
- const f=fixture(t),{db,env,make,api}=f,admin=make('owner',enc(32));
+async function users(t,sync=false){
+ const f=fixture(t,sync),{db,env,make,api}=f,admin=make('owner',enc(32));
  db.prepare('INSERT INTO invites(code_hash,id,created_at,expires_at) VALUES(?,?,?,?)').run(createHash('sha256').update(admin.invite).digest(), 'seed', Date.now(), Date.now()+60000);
  assert.equal((await api('auth/register',admin)).status,201);
  db.exec("UPDATE users SET role='admin' WHERE username='owner'");
@@ -89,4 +90,35 @@ test('retired token alone grants neither registration on an empty database nor A
  for(const path of ['health','summary','explore','chat','hyps']){
   assert.equal((await api(path,path==='health'?undefined:{},'',{authorization:'Bearer '+env.ACCESS_TOKEN})).status,401);
  }
+});
+
+test('sync CAS, per-account sequences, partial conflicts, history, deletion, quota and pagination',async t=>{
+ const {db,api,ac,uc,id}=await users(t,true);
+ const make=(k,baseVer=null)=>({k,baseVer,deleted:false,mtime:100,body:randomBytes(40).toString('base64')});
+ const a=make(enc(32)),b=make(enc(32)),c=make(enc(32));
+ const push=(docs,cookie=uc)=>api('sync/push',{docs},cookie);
+ assert.equal((await push([a,b])).body.written.length,2);
+ assert.deepEqual((await api('sync/pull?since=0&limit=1',undefined,uc)).body.docs.map(d=>d.k),[a.k]);
+ const mixed=await push([a,c]);assert.equal(mixed.body.conflicts[0].ver,1);assert.equal(mixed.body.conflicts[0].body,a.body);assert.equal(mixed.body.written[0].seq,3);
+ assert.equal((await api('sync/pull?since=1&user_id='+id,undefined,ac)).body.docs.length,0);
+ assert.equal((await api('sync/push',{user_id:id,docs:[a]},ac)).body.written[0].seq,1);
+ assert.equal((await push([{...a,baseVer:1}])).body.written[0].ver,2);
+ db.prepare('UPDATE users SET quota_bytes=120 WHERE id=?').run(id);
+ const failed=await push([{...a,baseVer:2},make(enc(32))]);assert.equal(failed.status,413);assert.equal(failed.body.error.code,'quota_exceeded');
+ const current=(await api('sync/pull?since=0',undefined,uc)).body;assert.equal(current.stats.seq,4);assert.equal(current.stats.bytes,120);
+ assert.equal((await push([{...a,baseVer:2,deleted:true,body:null}])).body.written[0].seq,5);
+ const variant=()=>({...make(a.k,3),archiveOnly:true,variant:enc(32)});
+ const loser=variant(),other=variant();
+ for(const doc of [loser,other,loser])assert.deepEqual((await push([doc])).body.conflicts,[]);
+ const saved=(await api('sync/backup',undefined,uc)).body;assert.equal(saved.docs.length,3);assert.equal(saved.docs.filter(x=>x.deleted).length,1);
+ assert.equal(db.prepare('SELECT COUNT(*) AS n FROM history WHERE user_id=?').get(id).n,4);assert.equal(saved.history.length,4);assert.ok(saved.history.some(h=>h.body===other.body));
+});
+test('sync rejects invalid origin, missing cookies and oversize docs before writing; limiter separate from AI',async t=>{
+ const {env,api,uc}=await users(t,true),d={k:enc(32),baseVer:null,body:randomBytes(1900001).toString('base64'),deleted:false,mtime:1};
+ assert.equal((await api('sync/push',{docs:[d]},uc)).body.error.code,'doc_too_large');
+ assert.equal((await api('sync/push',{docs:Array(101).fill(null)},uc)).status,400);
+ assert.equal((await api('sync/push',{docs:[]},uc,{origin:'https://other.example'})).status,403);
+ assert.equal((await api('sync/backup')).status,401);
+ env.AI_RATE_LIMITER.limit=async()=>({success:false});assert.equal((await api('sync/pull',undefined,uc)).status,200);
+ env.SYNC_RATE_LIMITER.limit=async()=>({success:false});assert.equal((await api('sync/pull',undefined,uc)).status,429);
 });

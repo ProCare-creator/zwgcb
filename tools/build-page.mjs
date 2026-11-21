@@ -3,7 +3,7 @@ import {gzipSync} from 'node:zlib';
 import {minify} from 'terser';
 const root=new URL('../',import.meta.url);
 let html=await fs.readFile(new URL('ui/app.html',root),'utf8');
-for(const [tag,files] of [['/* ACCOUNT_BOOT */',['account-boot.js']],['/* ACCOUNT_UI */',['account-crypto.js','accounts.js']]]){
+for(const [tag,files] of [['/* ACCOUNT_BOOT */',['account-boot.js']],['/* ACCOUNT_UI */',['account-crypto.js','accounts.js','vault-sync.js','vault-claim.js']]]){
  const chunks=await Promise.all(files.map(f=>fs.readFile(new URL('ui/'+f,root),'utf8')));html=html.replace(tag,()=>chunks.join('\n'));
 }
 const journalFiles=['timeline-core.js','timeline.js','memo.js','chat-plan.js'];
@@ -22,6 +22,6 @@ for(const match of [...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g
  html=html.replace(match[0],()=>'<script>\n'+result.code+'\n</script>');
 }
 html=html.replace(/\r\n/g,'\n'); // Keep byte counts and artifacts identical across checkouts.
-if(Buffer.byteLength(html)>380000)throw Error('index.html exceeds the 380 KB limit: '+Buffer.byteLength(html));
+if(Buffer.byteLength(html)>450000)throw Error('index.html exceeds the 450 KB limit: '+Buffer.byteLength(html));
 await fs.writeFile(new URL('index.html',root),html);
 console.log('Built single-file page: '+Buffer.byteLength(html)+' bytes; gzip: '+gzipSync(html).length+' bytes');

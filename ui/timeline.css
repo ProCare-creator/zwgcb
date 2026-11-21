@@ -5,7 +5,7 @@ body.has-chat .tabs .in{grid-template-columns:repeat(7,minmax(0,1fr));gap:0}
 .tl-page,.tl-page section,.memo-editor{min-width:0}
 .tl-page{display:grid;gap:14px}
 .tl-page .card,.journal-link{margin:0}
-.tl-page h2,.memo-head h1,#journal-dialog h2{margin:0 0 .4em;font-size:1.22rem}
+.tl-page h2,.memo-head h1,#vault-claim h2,#journal-dialog h2{margin:0 0 .4em;font-size:1.22rem}
 #tl-now p:empty{display:none}#tl-now .btn{display:inline-flex;width:auto;margin-right:6px}.tl-board{scroll-margin-top:80px}
 .tl-elapsed{font-weight:400;font-size:.85rem;color:var(--ink-2)}
 .tl-cats{display:grid;grid-template-columns:repeat(auto-fit,minmax(96px,1fr));gap:6px}
@@ -22,8 +22,8 @@ body.has-chat .tabs .in{grid-template-columns:repeat(7,minmax(0,1fr));gap:0}
 .tl-row-main,.tl-inline{line-height:1.2;font-size:12px;text-align:left;padding:2px}
 .tl-row-main{font-weight:650}.tl-row-main::after{content:'';position:absolute;inset:0}.tl-block .tl-inline{position:relative;z-index:1}.tl-inline{color:var(--accent);text-decoration:underline}
 .tl-gap{font-size:11px;color:var(--ink-2);text-align:center;border:1px dashed var(--line);border-radius:4px;padding:0}
-#journal-dialog{background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:12px;padding:18px;width:min(410px,94vw);max-height:85dvh;overflow:auto}
-#journal-dialog::backdrop{background:#1118}
+#vault-claim,#journal-dialog{background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:12px;padding:18px;width:min(410px,94vw);max-height:85dvh;overflow:auto}
+#vault-claim::backdrop,#journal-dialog::backdrop{background:#1118}
 #journal-dialog label{display:block;margin:10px 0;font-weight:600}
 #journal-dialog input,#journal-dialog select{display:block;width:100%;min-width:0}
 .tl-times,.memo-head{display:flex;align-items:center;gap:8px}.tl-times input{flex:1}.tl-times button{flex:none}

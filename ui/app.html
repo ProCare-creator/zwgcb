@@ -746,7 +746,7 @@ const VAGUE = ['充实','好好','努力','认真','尽量','高效','顺利','�
 const MOMENTS = ['情绪最强的一刻','最不像自己的一刻','最有劲的一刻','别的时刻'];
 const FORMAT = 'review-archive/v1';
 const OFFLINE_APP = true;
-const APP_VERSION = 'v6.15.0';
+const APP_VERSION = 'v6.16.0';
 const LS_KEY = 'zwgcb-data-v1', LS_DRAFT = 'zwgcb-drafts-v1';
 
 /* ---------- utils ---------- */
@@ -850,14 +850,14 @@ function draftLater(){if(form)draftStatus.set(form.type+':'+form.key,'正在保�
 
 /* ---------- cloud sync (offline app only): encrypted file in a private GitHub repo ---------- */
 const SYNC_KEY = 'zwgcb-sync', DEL_KEY = 'zwgcb-del', SYNC_PATH = 'zwgcb-data.json';
-let syncCfg = null; try { syncCfg = JSON.parse(localStorage.getItem(SYNC_KEY) || 'null'); } catch (e) {}
+let syncCfg = null; if(!accountHost)try { syncCfg = JSON.parse(localStorage.getItem(SYNC_KEY) || 'null'); } catch (e) {}
 let syncBusy = false, syncAgain = false, syncT = null, syncDirty = false, localRev = 0;
 let syncState = { ok:null, msg:'', at:null };
 function saveSyncCfg(){ try { if (syncCfg) localStorage.setItem(SYNC_KEY, JSON.stringify(syncCfg)); else localStorage.removeItem(SYNC_KEY); } catch (e) {} }
 function readDel(){ try { return JSON.parse(localStorage.getItem(DEL_KEY) || '{}') || {}; } catch (e) { return {}; } }
 function writeDel(o){ try { localStorage.setItem(DEL_KEY, JSON.stringify(o)); } catch (e) {} }
 function noteLocalChange(){ localRev++; syncDirty = true; syncLater(); }
-function syncLater(ms){ if (!OFFLINE_APP || !syncCfg || !syncCfg.token) return; clearTimeout(syncT); syncT = setTimeout(() => syncNow(), ms || 4000); }
+function syncLater(ms){ if(accountHost){vaultSchedule(ms??3000);return;} if (!OFFLINE_APP || !syncCfg || !syncCfg.token) return; clearTimeout(syncT); syncT = setTimeout(() => syncNow(), ms || 4000); }
 const b64enc = u8 => { let s = ''; for (let i = 0; i < u8.length; i += 0x8000) s += String.fromCharCode.apply(null, u8.subarray(i, i + 0x8000)); return btoa(s); };
 const b64dec = str => Uint8Array.from(atob(String(str).replace(/\s/g, '')), c => c.charCodeAt(0));
 async function deriveKey(pass, salt){
@@ -957,6 +957,7 @@ function setSync(ok, msg){
   if (route === 'more' && !form && !ui.syncEdit && syncCfg) render();
 }
 async function syncNow(){
+  if(accountHost)return vaultRun();
   if (!OFFLINE_APP || !syncCfg || !syncCfg.token || !syncCfg.repo || !syncCfg.pass || !ready) return;
   if (syncBusy){ syncAgain = true; return; }
   if (navigator.onLine === false){ setSync(false, '没联网，联网后会自动同步。'); return; }
@@ -1089,7 +1090,7 @@ function saveFile(filename, data){
 async function init(){
   dlNs = { save:({ filename, data }) => saveFile(filename, data) };
   requestPersistence();
-  if(accountHost){render();await startJournal();}else useLocal();
+  if(accountHost){render();await startJournal();await vaultStart();}else useLocal();
   syncLater(1500);
   window.addEventListener('online', () => syncLater(800));
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') syncLater(1000); else if (syncDirty) syncNow(); });
@@ -1814,7 +1815,7 @@ function openHypActions(id){
 }
 function vSettings(){
   const theme=['light','dark'].includes(uiPrefs.theme)?uiPrefs.theme:'system';
-  return copyBox()+'<h1 class="h">设置</h1><div class="settings-stack">'+accountCard()+(accountUser?'':syncCard())+dataCard()+aiSettings()+chatSettings()+'<section class="card"><h2 class="stage">显示</h2><div class="theme-options" role="group" aria-label="主题">'+[['system','跟随系统'],['light','浅色'],['dark','深色']].map(([v,label])=>'<button type="button" data-act="theme" data-v="'+v+'" aria-pressed="'+(theme===v)+'">'+label+'</button>').join('')+'</div></section><section class="card"><h2 class="stage">关于</h2><p class="fine">自我观察本 · <span class="mono">'+APP_VERSION+'</span></p><p class="fine">记录默认只存在这台设备。开启云端同步后，会额外保存一份加密备份；本机草稿与显示偏好不进入同步。</p></section></div>';
+  return copyBox()+'<h1 class="h">设置</h1><div class="settings-stack">'+accountCard()+(accountHost?vaultCard():syncCard())+dataCard()+aiSettings()+chatSettings()+'<section class="card"><h2 class="stage">显示</h2><div class="theme-options" role="group" aria-label="主题">'+[['system','跟随系统'],['light','浅色'],['dark','深色']].map(([v,label])=>'<button type="button" data-act="theme" data-v="'+v+'" aria-pressed="'+(theme===v)+'">'+label+'</button>').join('')+'</div></section><section class="card"><h2 class="stage">关于</h2><p class="fine">自我观察本 · <span class="mono">'+APP_VERSION+'</span></p><p class="fine">记录默认只存在这台设备。开启云端同步后，会额外保存一份加密备份；本机草稿与显示偏好不进入同步。</p></section></div>';
 }
 
 /* ---------- forms ---------- */
@@ -2389,12 +2390,12 @@ function importFile(f){
     if (o && o.format === FORMAT){ toast('这是一份对话复盘存档，请用「导入对话复盘」，把内容粘贴进去。'); return; }
     if (!o || typeof o !== 'object' || !o.days || typeof o.days !== 'object'){ toast('这个文件里没有自我观察本的数据。确认是用「全部数据导出」得到的 JSON。'); return; }
     if (!needReady()) return;
-    let n = 0, skipped = 0; const ops = [];
+    let n = 0, skipped = 0; const ops = [],rows=[];
     COLS.forEach(col => {
       const src = (o[col] && typeof o[col] === 'object') ? o[col] : {};
-      Object.keys(src).forEach(id => { if (S[col] && S[col][id]) skipped++; else { ops.push(put(col, id, src[id])); n++; } });
+      Object.keys(src).forEach(id => { if (S[col] && S[col][id]) skipped++; else { if(mode==='idb')rows.push([col,id,src[id]]);else ops.push(put(col,id,src[id])); n++; } });
     });
-    try { await Promise.all(ops); } catch (e) { return; }
+    try { if(rows.length)await journalWrite(rows);await Promise.all(ops); } catch (e) { toast('导入未保存，请检查本机空间。');return; }
     hypsMigrated = false; await migrateHyps();
     toast('导入了 ' + n + ' 条' + (skipped ? '，跳过 ' + skipped + ' 条这里已经有的' : '') + '。');
     render();

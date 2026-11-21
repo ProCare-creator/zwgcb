@@ -14,7 +14,7 @@ function accountCard(){
  const v=acct.view,n=accountUser;
  let h=n?'<p>当前账号：<b>'+esc(n.username)+'</b> '+esc(n.nickname||'')+'</p>':'<p>用邀请码注册，也可以不登录，继续只存本机。</p>';
  if(n){try{const raw=localStorage.getItem('zwgcb-kdf-ms');if(raw!==null&&/^\d+$/.test(raw))h+='<p id="ac-kdf-time" class="fine">这台设备计算一次密码用时 '+(Number(raw)/1000).toFixed(2)+' 秒</p>';}catch{}}
- if(!n)h+='<p class="fine">云端同步开放后，记录会在这台设备上加密，再存到 zwgcb.cn。管理员能看到用户名、注册时间、最近使用时间和占用空间，看不到记录内容。当前版本只提供账号，记录还未上传。</p>';
+ if(!n)h+='<p class="fine">登录后，记录会在这台设备上加密，再存到 zwgcb.cn。换设备后登录同一账号即可恢复。管理员只能查看账号信息和占用空间。</p>';
  if(!v)h+=n?acctButton('password','修改密码')+acctButton('logout','退出登录')+(n.role==='admin'?acctButton('manage','管理账号和邀请码'):''):acctButton('login','登录')+acctButton('register','用邀请码注册')+acctButton('recover','忘记密码');
  else if(v==='receipt'){h+='<p>注册成功。这台设备计算一次密码用时 '+(acct.pending.p.ms/1000).toFixed(2)+' 秒。请抄下七组恢复码，离开后不会再显示。如果密码和恢复码都丢了，云端记录无法解开。</p><code id="ac-receipt">'+esc(acct.pending.code)+'</code><label><input type="checkbox" id="ac-ack">我已抄下恢复码</label>'+acctButton('ack','继续登录','disabled');}
  else if(v==='logout')h+='<p>退出后，此账号的数据不会出现在其他账号中。</p>'+acctButton('keep','保留这台设备上的记录')+acctButton('clear','同时清除这台设备上的记录');
@@ -44,7 +44,7 @@ async function acctEnter(username,p){
  try{const raw=await accountCrypto.unwrap(p.kek,j.wrapped_keys);try{await acctDbKeys(j.user.id,await accountCrypto.keys(raw));}finally{raw.fill(0);}}
  catch{await acctApi('auth/logout',{});throw Error('无法在这台设备上保存钥匙，未完成登录。');}
  try{nativeStore.setItem('zwgcb-kdf-ms:'+j.user.id,String(p.ms));}catch{}
- nativeStore.setItem(activeKey,JSON.stringify(j.user));location.replace('#settings');location.reload();
+ sessionStorage.removeItem('claimLater:'+j.user.id);nativeStore.setItem(activeKey,JSON.stringify(j.user));location.replace('#settings');location.reload();
 }
 async function acctAction(a,el){
  const val=k=>$('#ac-'+k)?.value||'',user=val('user').trim(),pass=val('pass'),v=acct.view,C=accountCrypto;
@@ -64,12 +64,11 @@ async function acctAction(a,el){
   async function clearDevice(){
    if(!ready||!disk.db||!navigator.locks||form?.dirty)throw Error('无法确认记录已保存，请选择保留记录退出。');
    const deny=()=>{throw Error('有未上传的记录或草稿，请先同步。当前可选择保留记录退出。');};
-   if(COLS.some(c=>Object.keys(S[c]).length)||Object.keys(drafts).length||Object.keys(readDel()).length)deny();
+   if(Object.keys(drafts).length||await vaultHasPending())deny();
    releaseLease();await leaseHeld;
    try{await navigator.locks.request(deviceLease,{ifAvailable:true},async lock=>{
     if(!lock)throw Error('请关闭此账号的其他标签页，再清除本机记录。');
-    const count=await new Promise((ok,no)=>{const q=disk.db.transaction('docs').objectStore('docs').count();q.onsuccess=()=>ok(q.result);q.onerror=()=>no(q.error);});
-    if(count||Object.keys(JSON.parse(localStorage.getItem(LS_DRAFT)||'{}')).length||Object.keys(readDel()).length)deny();
+    if(Object.keys(JSON.parse(localStorage.getItem(LS_DRAFT)||'{}')).length||await vaultHasPending())deny();
     await acctApi('auth/logout',{});disk.db.close();await new Promise((ok,no)=>{const q=indexedDB.deleteDatabase('zwgcb-u-'+accountUser.id);q.onsuccess=ok;q.onerror=no;});
     for(const k of Object.keys(nativeStore))if(k.endsWith(accountSuffix))nativeStore.removeItem(k);
     nativeStore.removeItem(activeKey);location.reload();

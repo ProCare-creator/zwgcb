@@ -62,9 +62,10 @@ function readOrMigrate(db,wasPrimary,legacy,hash,skipMerge=false){
 }
 function writeRows(changes){
   return new Promise((resolve,reject)=>{
-    const tx=disk.db.transaction('docs','readwrite'),docs=tx.objectStore('docs');
+    const tx=disk.db.transaction(accountUser?['docs','control']:['docs'],'readwrite'),docs=tx.objectStore('docs');
+    const markers=accountUser?tx.objectStore('control'):null,now=Date.now();
     tx.oncomplete=resolve;tx.onabort=()=>reject(tx.error||Error('aborted'));
-    try{for(const [c,id,value] of changes){if(value===undefined)docs.delete([c,id]);else docs.put(value,[c,id]);}}
+    try{for(const [c,id,value] of changes){if(value===undefined){docs.delete([c,id]);markers?.put(now,['vaultDeleted',c,id]);}else{docs.put(value,[c,id]);markers?.delete(['vaultDeleted',c,id]);}}}
     catch(e){tx.abort();reject(e);}
   });
 }

@@ -1,3 +1,4 @@
+import {syncAPI} from './sync.mjs';
 const LIMIT = 64 * 1024;
 const CHAT_SYSTEM=`你是陪用户聊天、帮他看清自己的对话伙伴。不是心理咨询师，不诊断，不夸赞，不下性格结论。话题不限于记录。默认没有当天记录，不得假装知道未提供的材料。
 输出纯文本，段落之间空一行，不用 Markdown 符号。只有当假设、预测或证据确实从用户说的话里出现时才用下面的标记，每条回复最多 2 个卡片标记，标记单独占一行，文字不超过 300 字：
@@ -162,6 +163,7 @@ export function createHandler({fetcher=(...args)=>fetch(...args),timeoutMs=60000
   return async function handle(request,env){
     const path=new URL(request.url).pathname;
     if(path!=='/api'&&!path.startsWith('/api/'))return env.ASSETS.fetch(request);
+    if(path.startsWith('/api/sync/'))return syncAPI(request,env,readBody);
     if(path.startsWith('/api/auth/')||path.startsWith('/api/admin/'))return accounts(request,env,readBody);
     const mode=path==='/api/summary'?'summary':path==='/api/explore'?'explore':path==='/api/chat'?'chat':path==='/api/hyps'?'hyps':path==='/api/health'?'health':null;
     if(!mode)return error(404,'not_found');
