@@ -24,7 +24,7 @@ const box = vm.createContext({
   validDate: s => /^\d{4}-\d\d-\d\d$/.test(s) && new Date(s).toISOString().startsWith(s)
 });
 
-const core = vm.runInContext(source('timeline-core.js') + '\n' + source('chat.js') + ';({tlSplit,tlSummary,tlInsert,chatParse})', box);
+const core = vm.runInContext(source('timeline-core.js') + '\n' + source('chat.js') + ';({tlSplit,tlSummary,tlLiveSlice,tlInsert,chatParse})', box);
 
 const plain = x => JSON.parse(JSON.stringify(x));
 
@@ -170,4 +170,15 @@ test('memo flush stores the optional fields, skips blank drafts and can undo a d
   assert.equal(S.meta['memo:example'], undefined);
   await box.restore();
   assert.deepEqual(plain(S.meta['memo:example']), saved);
+});
+
+test('live timer contributes only today’s elapsed unoccupied minutes to category and plan',()=>{
+ const live=core.tlLiveSlice({cat:'s',startISO:new Date(2026,10,19,23,30).toISOString(),planId:'p'},'2026-11-20',new Date(2026,10,20,1,0));
+ const s=core.tlSummary({tl:[{start:'00:00',end:'00:10',cat:'x'}],plan:[{id:'p',cat:'s',start:'08:00',end:'10:00'}]},60,live);
+ assert.equal(s.categories.get('s'),50);assert.equal(s.byPlan.get('p'),50);assert.ok(s.activePlans.has('p'));assert.equal(s.unrecorded,0);
+});
+test('overrun retains actual duration but caps both displayed rate and credited total per plan',()=>{
+ const p={id:'p',cat:'s',start:'09:00',end:'11:00'},s=core.tlSummary({plan:[p,{id:'q',cat:'x',start:'15:00',end:'17:00'}],tl:[{cat:'s',planId:'p',start:'09:00',end:'12:00'}]});
+ const fmt=vm.runInContext(source('timeline.js').split('function tlPlanLine')[1].split('function tlMaterials')[0].replace(/^/,'(function tlPlanLine')+')',box);
+ box.S={meta:{}};assert.match(fmt(p,s),/3 小时（100%，超出 1 小时）/);assert.equal(s.completed,120);
 });

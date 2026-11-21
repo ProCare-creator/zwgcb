@@ -101,37 +101,22 @@ const tlOptions = id => [ ...tlCats(), ...id && !tlCats().some(c => c.id === id)
 
 const tlTint = id => /^#[\da-f]{6}$/i.test(tlCat(id).color) ? tlCat(id).color : '#837e78';
 
-function tlLines(day, k) {
-  const now = new Date, s = tlSummary(day, k < ymd(now) ? 1440 : k > ymd(now) ? 0 : tlMinute(hm(now)));
-  // A linked timer can finish on a different date from its plan.
-    if (s.byPlan.size) {
-    for (const [date, other] of Object.entries(S.days)) {
-      if (date === k) {
-        continue;
-      }
-      for (const r of other.tl || []) {
-        if (!s.byPlan.has(r.planId)) {
-          continue;
-        }
-        const n = tlMinute(r.end) - tlMinute(r.start);
-        if (n > 0) {
-          s.byPlan.set(r.planId, s.byPlan.get(r.planId) + n);
-          s.completed += n;
-        }
-      }
+function tlLines(day,k,now=new Date()) {
+  const today=ymd(now),live=tlLiveSlice(S.meta.timer,k,now),other={};
+  if(day.plan?.length){
+    for(const [date,d] of Object.entries(S.days))if(date!==k&&d.tl)other[date]=d.tl;
+    if(S.meta.timer?.planId && day.plan.some(p=>p.id===S.meta.timer.planId)){
+      for(const {date,row} of tlSplit(S.meta.timer,now))if(date!==k)other[date]=[...(other[date]||[]),{...row,live:true}];
     }
   }
-  const lines = [ ...s.categories ].sort((a, b) => b[1] - a[1]).map(([id, n]) => tlCat(id).name + ' · ' + tlDuration(n));
-  lines.push('未记录 · ' + tlDuration(s.unrecorded));
-  return {
-    s: s,
-    lines: lines
-  };
+  const s=tlSummary(day,k<today?1440:k>today?0:tlMinute(hm(now)),live,other);
+  const lines=[...s.categories].sort((a,b)=>b[1]-a[1]).map(([id,n])=>tlCat(id).name+' · '+tlDuration(n)+(id===live?.cat?'（进行中）':''));
+  lines.push('未记录 · '+tlDuration(s.unrecorded));
+  return {s,lines};
 }
-
-function tlPlanLine(p, s) {
-  const n = s.byPlan.get(p.id) || 0;
-  return '计划 ' + p.start + '–' + p.end + ' ' + tlCat(p.cat).name + ' ' + (p.label || '') + ' → 实际做了 ' + tlDuration(n) + '（' + Math.round(100 * n / (tlMinute(p.end) - tlMinute(p.start))) + '%）';
+function tlPlanLine(p,s) {
+  const n=s.byPlan.get(p.id)||0,limit=tlMinute(p.end)-tlMinute(p.start);
+  return '计划 '+p.start+'–'+p.end+' '+tlCat(p.cat).name+' '+(p.label||'')+' → 实际做了 '+tlDuration(n)+'（'+Math.min(100,Math.round(100*n/limit))+'%'+(n>limit?'，超出 '+tlDuration(n-limit):'')+(s.activePlans.has(p.id)?'，进行中':'')+'）';
 }
 
 function tlMaterials(day, k) {
@@ -140,7 +125,7 @@ function tlMaterials(day, k) {
 }
 
 function tlReview(k, d) {
-  if (!d.tl?.length && !d.plan?.length) {
+  if (!d.tl?.length && !d.plan?.length && !tlLiveSlice(S.meta.timer,k,new Date())) {
     return '';
   }
   return '<a class="card journal-link" href="#tl?date=' + k + '"><strong>今天的时间</strong><span>' + esc(tlLines(d, k).lines.slice(0, 3).join('　')) + '</span><b>›</b></a>';
@@ -427,7 +412,9 @@ const TL_ACTIONS = {
 
 setInterval(() => {
   const el = $('.tl-elapsed'), t = S.meta.timer;
+  if(route==='review' && t && !form && !document.activeElement?.matches('textarea,input')){const link=document.querySelector('.journal-link[href^="#tl?date="] span');if(link)link.textContent=tlLines(getDay(sel),sel).lines.slice(0,3).join('　');}
   if (el && t) {
-    el.textContent = tlDuration(Math.max(0, Math.floor((Date.now() - Date.parse(t.startISO)) / 60000)));
+    if(route==='tl'&&!journalDialog().open)render(true);
+    else el.textContent = tlDuration(Math.max(0, Math.floor((Date.now() - Date.parse(t.startISO)) / 60000)));
   }
 }, 60000);

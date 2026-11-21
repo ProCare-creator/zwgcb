@@ -78,38 +78,46 @@ function tlInsert(rows, row, crop = false) {
   };
 }
 
-function tlSummary(day, horizon = 1440) {
-  const actual = day.tl || [], plans = day.plan || [], categories = new Map, done = new Set, byPlan = new Map(plans.map(p => [ p.id, 0 ]));
-  let recorded = 0;
-  for (const row of actual) {
-    const a = tlMinute(row.start), b = tlMinute(row.end);
-    if (!(b > a)) {
-      continue;
-    }
-    categories.set(row.cat, (categories.get(row.cat) || 0) + b - a);
-    recorded += Math.max(0, Math.min(b, horizon) - a);
-    for (const p of plans) {
-      const linked = row.planId === p.id;
-      if (!linked && row.cat !== p.cat) {
-        continue;
+// Project the timer onto the selected civil day without writing a partial row.
+function tlLiveSlice(timer,date,now) {
+  if (!timer || !date) return null;
+  const start=new Date(timer.startISO);
+  if (!(start<=now) || date<ymd(start) || date>ymd(now)) return null;
+  return {...timer,start:date===ymd(start)?hm(start):'00:00',end:date===ymd(now)?hm(now):'24:00',live:true};
+}
+function tlSummary(day,horizon=1440,live=null,otherDays={}) {
+  const actual=day.tl||[], plans=day.plan||[], categories=new Map(), occupied=new Set();
+  const minutes=new Map(plans.map(p=>[p.id,new Set()]));
+  const activePlans=new Set();
+  function count(row, local, date='') {
+    const start=tlMinute(row.start), end=tlMinute(row.end);
+    for(let m=start;m<end;m++) {
+      if(local) {
+        if(occupied.has(m))continue;
+        occupied.add(m);
+        categories.set(row.cat,(categories.get(row.cat)||0)+1);
       }
-      const lo = linked ? a : Math.max(a, tlMinute(p.start)), hi = linked ? b : Math.min(b, tlMinute(p.end));
-      if (hi <= lo) {
-        continue;
-      }
-      byPlan.set(p.id, byPlan.get(p.id) + hi - lo);
-      for (let m = lo; m < hi; m++) {
-        done.add(m);
+      for(const p of plans){
+        if(row.planId!==p.id && !(local && row.cat===p.cat && m>=tlMinute(p.start) && m<tlMinute(p.end))) continue;
+        minutes.get(p.id).add(date+':'+m);
+        if(row.live)activePlans.add(p.id);
       }
     }
   }
-  return {
-    categories: categories,
-    unrecorded: Math.max(0, horizon - recorded),
-    byPlan: byPlan,
-    completed: done.size,
-    planned: plans.reduce((n, p) => n + tlMinute(p.end) - tlMinute(p.start), 0)
-  };
+  for(const r of actual) count(r,true);
+  if(live){if(!categories.has(live.cat))categories.set(live.cat,0);count(live,true);}
+  if(plans.length)for(const [date,rows] of Object.entries(otherDays))for(const r of rows)if(minutes.has(r.planId))count(r,false,date);
+  const credited=new Set(),byPlan=new Map();
+  // Count each minute once. An overlapping plan can still use otherwise uncredited minutes.
+  for(const p of plans){
+    const matched=minutes.get(p.id);
+    byPlan.set(p.id,matched.size);
+    let budget=tlMinute(p.end)-tlMinute(p.start);
+    for(const m of matched){if(budget<=0)break;if(!credited.has(m)){credited.add(m);budget--;}}
+  }
+  return {categories,byPlan,activePlans,completed:credited.size,
+    unrecorded:Math.max(0,horizon-[...occupied].filter(m=>m<horizon).length),
+    planned:plans.reduce((n,p)=>n+tlMinute(p.end)-tlMinute(p.start),0)};
 }
 
 const tlDefaultNames = [ '上课', '学习', '运动', '吃饭', '娱乐', '社交', '休息', '睡觉', '通勤', '杂事' ];
