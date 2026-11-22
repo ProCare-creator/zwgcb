@@ -77,7 +77,15 @@ async function vaultEncrypt(item) {
 }
 
 async function vaultDecrypt(row) {
-  const raw = Uint8Array.from(atob(row.body), c => c.charCodeAt(0)), flag = raw[0];
+  let raw;
+  if (typeof Uint8Array.fromBase64 === 'function') {
+    raw = Uint8Array.fromBase64(row.body);
+  } else {
+    const binary = atob(row.body);
+    raw = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) raw[i] = binary.charCodeAt(i);
+  }
+  const flag = raw[0];
   if (flag > 1) {
     throw Error('云端密文格式无效。');
   }

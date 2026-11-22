@@ -1738,9 +1738,9 @@ const Pi=async t=>Ri(await crypto.subtle.digest("SHA-256",_i.encode(JSON.stringi
 ;let r=_i.encode(JSON.stringify({col:e,id:a,stamp:s,value:i})),c=0;if(r.length>=256&&typeof CompressionStream==="function"){
 const t=new Uint8Array(await new Response(new Blob([r]).stream().pipeThrough(new CompressionStream("gzip"))).arrayBuffer());if(t.length<r.length){c=1;r=t}}
 const l=crypto.getRandomValues(new Uint8Array(12)),d=_i.encode(n.id+"/"+o+"/"+c);const u=await crypto.subtle.encrypt({name:"AES-GCM",iv:l,additionalData:d},qi.keys.dek,r)
-;const p=new Uint8Array(13+u.byteLength);p[0]=c;p.set(l,1);p.set(new Uint8Array(u),13);return Ri(p)}async function Bi(t){
-const e=Uint8Array.from(atob(t.body),t=>t.charCodeAt(0)),a=e[0];if(a>1){throw Error("云端密文格式无效。")}const s=await crypto.subtle.decrypt({name:"AES-GCM",iv:e.slice(1,13),
-additionalData:_i.encode(n.id+"/"+t.k+"/"+a)},qi.keys.dek,e.slice(13));const i=new Blob([s]).stream()
+;const p=new Uint8Array(13+u.byteLength);p[0]=c;p.set(l,1);p.set(new Uint8Array(u),13);return Ri(p)}async function Bi(t){let e;if(typeof Uint8Array.fromBase64==="function"){
+e=Uint8Array.fromBase64(t.body)}else{const a=atob(t.body);e=new Uint8Array(a.length);for(let t=0;t<a.length;t++)e[t]=a.charCodeAt(t)}const a=e[0];if(a>1){throw Error("云端密文格式无效。")}
+const s=await crypto.subtle.decrypt({name:"AES-GCM",iv:e.slice(1,13),additionalData:_i.encode(n.id+"/"+t.k+"/"+a)},qi.keys.dek,e.slice(13));const i=new Blob([s]).stream()
 ;const o=JSON.parse(await new Response(a?i.pipeThrough(new DecompressionStream("gzip")):i).text())
 ;if(!Z.includes(o.col)||typeof o.id!=="string"||["__proto__","constructor","prototype"].includes(o.id)||!o.value||typeof o.value!=="object"||!Number.isSafeInteger(o.stamp)||await Hi(o.col,o.id)!==t.k||o.stamp!==t.mtime){
 throw Error("云端记录校验失败。")}return o}async function Ji(t,e){const a=await fetch("/api/sync/"+t,{method:e?"POST":"GET",cache:"no-store",headers:{"x-journal-account":n.id,...e?{

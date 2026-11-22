@@ -99,7 +99,7 @@ test('sync CAS, per-account sequences, partial conflicts, history, deletion, quo
  const push=(docs,cookie=uc)=>api('sync/push',{docs},cookie);
  assert.equal((await push([a,b])).body.written.length,2);
  assert.deepEqual((await api('sync/pull?since=0&limit=1',undefined,uc)).body.docs.map(d=>d.k),[a.k]);
- const mixed=await push([a,c]);assert.equal(mixed.body.conflicts[0].ver,1);assert.equal(mixed.body.conflicts[0].body,a.body);assert.equal(mixed.body.written[0].seq,3);
+ const mixed=await push([a,c]);assert.deepEqual(mixed.body.conflicts,[{k:a.k,ver:1}]);assert.equal(mixed.body.written[0].seq,3);
  assert.equal((await api('sync/pull?since=1&user_id='+id,undefined,ac)).body.docs.length,0);
  assert.equal((await api('sync/push',{user_id:id,docs:[a]},ac)).body.written[0].seq,1);
  assert.equal((await push([{...a,baseVer:1}])).body.written[0].ver,2);

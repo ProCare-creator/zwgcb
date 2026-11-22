@@ -20,9 +20,10 @@ function encode(body) {
     return null;
   }
   const bytes = new Uint8Array(body);
+  if (typeof bytes.toBase64 === 'function') return bytes.toBase64();
   let str = '';
-  for (let i = 0; i < bytes.length; i += 16384) {
-    str += String.fromCharCode(...bytes.subarray(i, i + 16384));
+  for (let i = 0; i < bytes.length; i += 8192) {
+    str += String.fromCharCode.apply(null, bytes.subarray(i, i + 8192));
   }
   return btoa(str);
 }
@@ -79,22 +80,25 @@ function decodeDoc(d, seen) {
   if (d.body.length > 4 * Math.ceil(DOC_LIMIT / 3)) {
     throw Error('doc_too_large');
   }
-  let raw;
+  let bytes;
   try {
-    raw = atob(d.body);
+    if (typeof Uint8Array.fromBase64 === 'function') {
+      bytes = Uint8Array.fromBase64(d.body);
+    } else {
+      const raw = atob(d.body);
+      bytes = new Uint8Array(raw.length);
+      for (let i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i);
+    }
   } catch {
     throw Error('invalid');
   }
-  if (raw.length > DOC_LIMIT) {
+  if (bytes.length > DOC_LIMIT) {
     throw Error('doc_too_large');
   }
-  if (raw.length < 29) {
+  if (bytes.length < 29) {
     throw Error('invalid');
   }
-  return {
-    ...d,
-    bytes: Uint8Array.from(raw, ch => ch.charCodeAt(0)).buffer
-  };
+  return {...d, bytes:bytes.buffer};
 }
 
 // Negative versions preserve independent offline edits. A keyed content tag deduplicates retries.
@@ -160,40 +164,10 @@ async function push(req, db, uid, readBody) {
       conflicts: []
     });
   }
-  const sizes = await db.batch(missing.map(k => db.prepare('SELECT size FROM docs WHERE user_id=? AND k=?').bind(uid, k)));
-  let offset = 0;
-  const enc = new TextEncoder;
-  const stream = new ReadableStream({
-    async pull(controller) {
-      if (!offset) {
-        controller.enqueue(enc.encode('{"written":' + JSON.stringify(written) + ',"stats":' + JSON.stringify(totals) + ',"conflicts":['));
-      }
-      const start = offset;
-      let size = 0;
-      do {
-        size += sizes[offset++].results[0]?.size || 0;
-      } while (offset < missing.length && size + (sizes[offset].results[0]?.size || 0) <= 58e5);
-      const keys = missing.slice(start, offset);
-      const current = await db.batch(keys.map(k => db.prepare('SELECT k,ver,seq,size,body,deleted,mtime,updated_at FROM docs WHERE user_id=? AND k=?').bind(uid, k)));
-      for (let i = 0; i < keys.length; i++) {
-        const row = current[i].results[0];
-        controller.enqueue(enc.encode((start + i ? ',' : '') + JSON.stringify(row ? docRow(row) : {
-          k: keys[i],
-          ver: null
-        })));
-      }
-      if (offset === missing.length) {
-        controller.enqueue(enc.encode(']}'));
-        controller.close();
-      }
-    }
-  });
-  return new Response(stream, {
-    headers: {
-      'content-type': 'application/json',
-      'cache-control': 'no-store'
-    }
-  });
+  const current = await db.batch(missing.map(k =>
+    db.prepare('SELECT ver FROM docs WHERE user_id=? AND k=?').bind(uid, k)));
+  const conflicts = missing.map((k, i) => ({k, ver:current[i].results[0]?.ver ?? null}));
+  return response({written, stats:totals, conflicts});
 }
 
 const stats = (db, uid) => db.prepare('SELECT seq,sync_count AS count,sync_bytes AS bytes,quota_bytes AS quota FROM users WHERE id=?').bind(uid).first();
