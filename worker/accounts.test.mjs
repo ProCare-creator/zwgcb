@@ -115,7 +115,8 @@ test('sync CAS, per-account sequences, partial conflicts, history, deletion, quo
  for(const doc of [loser,other,loser])assert.deepEqual((await push([doc])).body.conflicts,[]);
  assert.equal((await api('sync/pull',undefined,uc)).body.stats.bytes,240);
  const saved=(await api('sync/backup',undefined,uc)).body;assert.equal(saved.docs.length,3);assert.equal(saved.docs.filter(x=>x.deleted).length,1);
- assert.equal(db.prepare('SELECT COUNT(*) AS n FROM history WHERE user_id=?').get(id).n,4);assert.equal(saved.history.length,4);assert.ok(saved.history.some(h=>h.body===other.body));
+ const next=(await api('sync/backup?cursor='+encodeURIComponent(saved.next),undefined,uc)).body;
+ assert.equal(next.next,null);assert.equal(db.prepare('SELECT COUNT(*) AS n FROM history WHERE user_id=?').get(id).n,4);assert.equal(next.history.length,4);assert.ok(next.history.some(h=>h.body===other.body));
 });
 test('sync rejects invalid origin, missing cookies and oversize docs before writing; limiter separate from AI',async t=>{
  const {env,api,uc}=await users(t,true),d={k:enc(32),baseVer:null,body:randomBytes(1900001).toString('base64'),deleted:false,mtime:1};
@@ -159,6 +160,9 @@ test('backup detects a simultaneous history replacement even when row count and 
   }
   return prepare(sql);
  };
- await assert.rejects(api('sync/backup',undefined,uc),/backup_changed/);
- assert.equal((await api('sync/backup',undefined,uc)).body.history.length,10);
+ const start=await api('sync/backup',undefined,uc);
+ const read=cursor=>api('sync/backup?cursor='+encodeURIComponent(cursor),undefined,uc);
+ assert.equal((await read(start.body.next)).body.error.code,'backup_changed');
+ assert.equal((await read(start.body.next)).status,409);
+ assert.equal((await read((await api('sync/backup',undefined,uc)).body.next)).body.history.length,10);
 });

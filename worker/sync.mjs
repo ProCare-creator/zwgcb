@@ -1,6 +1,8 @@
 import { accountSession, withRenewal } from './accounts.mjs';
+import {syncLimits} from './sync-limits.mjs';
 
-const DOC_LIMIT = 19e5, REQUEST_LIMIT = 4e6, PAGE_BYTES = 28e5;
+const {docBytes:DOC_LIMIT,batchBytes:PAGE_BYTES,maxDocs,pageRows}=syncLimits;
+const REQUEST_LIMIT = 4*Math.ceil(PAGE_BYTES/3)+512*maxDocs+32;
 
 const response = (data, status = 200) => Response.json(data, {
   status: status,
@@ -19,7 +21,8 @@ function encode(body) {
   if (body == null) {
     return null;
   }
-  const bytes = new Uint8Array(body);
+  const bytes = Array.isArray(body) ? new Uint8Array(body.length) : new Uint8Array(body);
+  if (Array.isArray(body)) bytes.set(body);
   if (typeof bytes.toBase64 === 'function') return bytes.toBase64();
   let str = '';
   for (let i = 0; i < bytes.length; i += 8192) {
@@ -40,7 +43,7 @@ async function page(db, uid, since, limit) {
   const meta = await db.prepare('SELECT seq,size FROM docs WHERE user_id=? AND seq>? ORDER BY seq LIMIT ?').bind(uid, since, limit).all();
   let end = since, bytes = 0;
   for (const row of meta.results) {
-    if (bytes + row.size > PAGE_BYTES) {
+    if (end !== since && bytes + row.size > PAGE_BYTES) {
       break;
     }
     bytes += row.size;
@@ -116,7 +119,7 @@ async function push(req, db, uid, readBody) {
   } catch (e) {
     return error(e.message === 'too_large' ? 413 : 400, e.message === 'too_large' ? 'request_too_large' : 'invalid');
   }
-  if (!Array.isArray(payload?.docs) || payload.docs.length > 100) {
+  if (!Array.isArray(payload?.docs) || payload.docs.length > maxDocs) {
     return error(400, 'invalid');
   }
   const seen = new Set;
@@ -127,6 +130,7 @@ async function push(req, db, uid, readBody) {
     return error(e.message === 'doc_too_large' ? 413 : 400, e.message);
   }
   const now = Date.now();
+  if (docs.reduce((n,d)=>n+(d.bytes?.byteLength||0),0)>PAGE_BYTES) return error(413,'request_too_large');
   const ops = docs.map(d => {
     if (d.archiveOnly === true) {
       return db.prepare(archiveSQL).bind(d.bytes, d.bytes?.byteLength || 0, now, d.variant, uid, d.k, d.baseVer);
@@ -172,69 +176,61 @@ async function push(req, db, uid, readBody) {
 
 const stats = (db, uid) => db.prepare('SELECT seq,sync_count AS count,sync_bytes AS bytes,quota_bytes AS quota FROM users WHERE id=?').bind(uid).first();
 
-async function backup(db, uid) {
+// Escape metadata normally. Only the generated ASCII base64 bypasses JSON escaping.
+function pageResponse(field, rows, meta) {
+  const pieces = [JSON.stringify(meta).slice(0,-1), ',"' + field + '":['];
+  for (const [i, {body, ...fields}] of rows.entries()) {
+    if (i) pieces.push(',');
+    pieces.push(JSON.stringify(fields).slice(0,-1), ',"body":');
+    if (body == null) pieces.push('null}');
+    else pieces.push('"', body, '"}');
+  }
+  pieces.push(']}');
+  const bytes = new Uint8Array(pieces.reduce((n,s) => n + s.length, 0));
+  const encoder = new TextEncoder();
+  let offset = 0;
+  for (const s of pieces) offset += encoder.encodeInto(s, bytes.subarray(offset)).written;
+  return new Response(new ReadableStream({start(c){c.enqueue(bytes);c.close();}}),
+    {headers:{'content-type':'application/json','cache-control':'no-store'}});
+}
+
+async function backup(db, uid, cursor) {
   const revision = () => db.prepare('SELECT seq,history_rev FROM users WHERE id=?').bind(uid).first();
-  const initial = await revision(), enc = new TextEncoder;
-  let since = 0, phase = 'docs', key = '', version = 0, first = true, wrote = false;
-  const stream = new ReadableStream({
-    async pull(controller) {
-      const send = s => controller.enqueue(enc.encode(s));
-      function append(row) {
-        send((wrote ? ',' : '') + JSON.stringify(row));
-        wrote = true;
-      }
-      if (first) {
-        first = false;
-        send('{"format":"zwgcb-encrypted-v1","docs":[');
-      }
-      if (phase === 'docs') {
-        const part = await page(db, uid, since, 2e3);
-        part.docs.forEach(append);
-        since = part.next;
-        if (!part.more) {
-          send('],"history":[');
-          phase = 'history';
-          wrote = false;
-        }
-        return;
-      }
-      const select = ' FROM history WHERE user_id=? AND (k,ver)>(?,?)';
-      const meta = (await db.prepare('SELECT k,ver,size' + select + ' ORDER BY k,ver LIMIT 2000').bind(uid, key, version).all()).results;
-      let end, bytes = 0;
-      for (const r of meta) {
-        if (bytes + r.size > PAGE_BYTES) {
-          break;
-        }
-        end = r;
-        bytes += r.size;
-      }
-      if (end) {
-        const batch = await db.prepare('SELECT k,ver,body,size,saved_at' + select + ' AND (k,ver)<=(?,?) ORDER BY k,ver').bind(uid, key, version, end.k, end.ver).all();
-        batch.results.forEach(r => append({
-          ...r,
-          body: encode(r.body)
-        }));
-        key = end.k;
-        version = end.ver;
-        if (meta.length === 2e3 || meta.at(-1) !== end) {
-          return;
-        }
-      }
-      const current = await revision();
-      if (!current || current.seq !== initial.seq || current.history_rev !== initial.history_rev) {
-        throw Error('backup_changed');
-      }
-      send('],"seq":' + initial.seq + '}');
-      controller.close();
+  const initial = await revision();
+  let phase = 'docs', since = 0, key = '', ver = 0;
+  if (cursor !== null) {
+    let c;
+    try { c = JSON.parse(atob(cursor)); } catch { return error(400,'invalid'); }
+    if (!Array.isArray(c) || c.length !== 6 || !['docs','history'].includes(c[2]) ||
+        !Number.isSafeInteger(c[3]) || c[3] < 0 || typeof c[4] !== 'string' ||
+        (c[4] !== '' && !/^[\w-]{43}$/.test(c[4])) || !Number.isSafeInteger(c[5])) return error(400,'invalid');
+    if (c[0] !== initial.seq || c[1] !== initial.history_rev) return error(409,'backup_changed');
+    [, , phase, since, key, ver] = c;
+  }
+  let rows, next = null;
+  const token = (p,s,k,v) => btoa(JSON.stringify([initial.seq,initial.history_rev,p,s,k,v]));
+  if (phase === 'docs') {
+    const part = await page(db, uid, since, pageRows);
+    rows = part.docs;
+    next = part.more ? token('docs',part.next,'',0) : token('history',0,'',0);
+  } else {
+    const select = ' FROM history WHERE user_id=? AND (k,ver)>(?,?)';
+    const meta = (await db.prepare('SELECT k,ver,size'+select+' ORDER BY k,ver LIMIT ?').bind(uid,key,ver,pageRows).all()).results;
+    let end, used=0;
+    for(const row of meta) {
+      if (used + row.size > PAGE_BYTES && end) break;
+      used+=row.size; end=row;
     }
-  });
-  return new Response(stream, {
-    headers: {
-      'content-type': 'application/json',
-      'cache-control': 'no-store',
-      'content-disposition': 'attachment; filename="journal-encrypted.json"'
+    rows=[];
+    if (end) {
+      const batch=await db.prepare('SELECT k,ver,body,size,saved_at'+select+' AND (k,ver)<=(?,?) ORDER BY k,ver').bind(uid,key,ver,end.k,end.ver).all();
+      rows=batch.results.map(r=>({...r,body:encode(r.body)}));
+      if (meta.length===pageRows || end!==meta.at(-1)) next=token('history',0,end.k,end.ver);
     }
-  });
+  }
+  const current = await revision();
+  if (!current || current.seq!==initial.seq || current.history_rev!==initial.history_rev) return error(409,'backup_changed');
+  return pageResponse(phase,rows,{seq:initial.seq,next});
 }
 
 export async function syncAPI(req, env, readBody) {
@@ -269,17 +265,15 @@ export async function syncAPI(req, env, readBody) {
       result = await push(req, db, uid, readBody);
     } else {
       if (op === 'backup') {
-        result = await backup(db, uid);
+        result = await backup(db, uid, url.searchParams.get('cursor'));
       } else {
         const totals = await stats(db, uid);
         const since = Number(url.searchParams.get('since') || 0), limit = Number(url.searchParams.get('limit') || 200);
         if (!Number.isSafeInteger(since) || since < 0 || !Number.isInteger(limit) || limit < 1 || limit > 200) {
           return error(400, 'invalid');
         }
-        result = response({
-          ...await page(db, uid, since, limit),
-          stats: totals
-        });
+        const {docs,next,more}=await page(db, uid, since, Math.min(limit,pageRows));
+        result = pageResponse('docs',docs,{next,more,stats:totals});
       }
     }
     return withRenewal(result, session);

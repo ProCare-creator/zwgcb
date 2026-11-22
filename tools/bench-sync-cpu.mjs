@@ -6,12 +6,63 @@ import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { cpus } from 'node:os';
 import { adminCookie, sessionVault } from '../worker/session-fixture.mjs';
+import {syncLimits} from '../worker/sync-limits.mjs';
 
 const args = Object.fromEntries(process.argv.slice(2).map(s => s.replace(/^--/, '').split('=')));
 const { createHandler } = await import(args.worker ? pathToFileURL(resolve(args.worker)).href : '../worker/worker.mjs');
 const handle = createHandler();
 const origin = 'https://bench.invalid';
 const usage = process.threadCpuUsage?.bind(process) ?? process.cpuUsage.bind(process);
+
+// Isolate V8 primitives used after D1 has returned a row. Prepare each stage's
+// input outside its timer. Whole-route samples below also cover composed costs.
+async function stages(size) {
+  const {rows}=fixture(1,size), row=rows[0], array=row.body;
+  const bytes=new Uint8Array(array);
+  const base64=bytes.toBase64();
+  const doc={...row,body:base64,deleted:false};
+  const page={docs:[doc],next:1,more:false};
+  const json=JSON.stringify(page), encoder=new TextEncoder(), chunk=encoder.encode(json);
+  async function sample(label,fn) {
+    let keep;
+    for(let i=0;i<4;i++) keep=await fn();
+    const blocks=[];
+    for(let block=0;block<5;block++) {
+      const start=usage(); let n=0, cpu=0;
+      do {
+        keep=await fn(); n++;
+        const elapsed=usage(start); cpu=elapsed.system+elapsed.user;
+      } while(cpu<120000);
+      blocks.push(cpu/n/1000);
+    }
+    assert.ok(keep);
+    console.log(label,blocks.sort((a,b)=>a-b)[2].toFixed(3));
+  }
+  await sample('D1 array -> Uint8Array (constructor)',()=>new Uint8Array(array));
+  await sample('D1 array -> Uint8Array (set)',()=>{const b=new Uint8Array(array.length);b.set(array);return b;});
+  await sample('native base64',()=>bytes.toBase64());
+  await sample('pull JSON.stringify',()=>JSON.stringify(page));
+  await sample('backup row JSON.stringify',()=>JSON.stringify(doc));
+  await sample('UTF-8 encode',()=>encoder.encode(json));
+  const fragments=()=> {
+    const {body,...fields}=doc;
+    return [JSON.stringify({next:1,more:false}).slice(0,-1),',"docs":[',
+      JSON.stringify(fields).slice(0,-1),',"body":"',body,'"}]}'];
+  };
+  await sample('optimized metadata JSON',fragments);
+  const parts=fragments();
+  await sample('optimized fragments -> UTF-8',()=>{
+    const out=new Uint8Array(parts.reduce((n,s)=>n+s.length,0));
+    let offset=0;
+    for(const s of parts) offset+=encoder.encodeInto(s,out.subarray(offset)).written;
+    return out;
+  });
+  await sample('write and drain response stream',async()=>{
+    const res=new Response(new ReadableStream({start(c){c.enqueue(chunk);c.close();}}));
+    for await(const part of res.body) assert.equal(part.length,chunk.length);
+    return true;
+  });
+}
 
 function fixture(count, size) {
   const bytes = Buffer.alloc(size, 165);
@@ -81,8 +132,10 @@ async function measure(route, fixture) {
 
 const cases = args.bytes ? [[Number(args.count||1),Number(args.bytes)]] :
   args.sweep ? [[1,65536],[1,131072],[1,262144],[1,524288],[100,1310]] :
-  [[100,3000], [100,29850], [1,1900000], [100,28000]];
+  args.worker ? [[100,3000],[100,29850],[1,1900000],[100,28000]] :
+  [[1,syncLimits.docBytes],[syncLimits.maxDocs,Math.floor(syncLimits.batchBytes/syncLimits.maxDocs)]];
 console.log(process.version, cpus()[0].model, 'CPU ms: median / slowest block average');
+if(args.stages){await stages(Number(args.bytes??1900000));process.exit(0);}
 for(const [count,size] of cases) {
   const f=fixture(count,size);
   const routes=args.routes?.split(',') ?? (count===100 && size===29850 ? ['push','backup'] : ['push','pull','backup']);

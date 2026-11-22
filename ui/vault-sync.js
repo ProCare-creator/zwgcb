@@ -1,5 +1,7 @@
 // Account sync metadata lives beside the non-exportable device keys in IndexedDB control.
+/* CLOUD_SYNC_LIMITS */
 const vault = {
+  oversized: new Map(),
   enabled: false,
   keys: null,
   job: null,
@@ -127,17 +129,40 @@ async function vaultRequest(path, docs) {
     const code = (await r.json().catch(() => ({}))).error?.code;
     const err = Error({
       quota_exceeded: '云端空间已满，本机修改已保留。',
+      backup_changed: '下载期间记录有变化，请重新下载加密备份。',
       no_session: '请重新登录后继续同步。',
       account_changed: '账号已切换，请刷新。',
       rate_limited: '同步较频繁，稍后重试。',
-      doc_too_large: '单条加密记录超过 1.9 MB。'
+      doc_too_large: '单条加密记录超过 '+storageSize(syncLimits.docBytes)+'。'
     }[code] || '云端暂时不可用，本机修改已保留。');
     if (r.status === 429) {
       err.retryAfter = Number(r.headers.get('retry-after')) || 60;
     }
     throw err;
   }
-  return path === 'backup' ? r : await r.json();
+  return r.json();
+}
+
+async function vaultBackup() {
+  const docs=[], history=[];
+  let cursor=null, seq;
+  do {
+    let part;
+    try {
+      part=await vaultRequest(cursor?'backup?cursor='+encodeURIComponent(cursor):'backup');
+    } catch(e) {
+      if (!e.retryAfter) throw e;
+      await new Promise(done=>setTimeout(done,e.retryAfter*1000));
+      continue;
+    }
+    seq=part.seq;
+    for(const [name,target] of [['docs',docs],['history',history]]) {
+      for(const row of part[name]||[]) target.push((target.length?',':'')+JSON.stringify(row));
+    }
+    cursor=part.next;
+    if (!cursor) break;
+  } while (true);
+  return new Blob(['{"format":"zwgcb-encrypted-v1","docs":[',...docs,'],"history":[',...history,'],"seq":'+seq+'}'],{type:'application/json'});
 }
 
 async function vaultSnapshot(db = disk.db) {
@@ -203,17 +228,28 @@ const vaultWire = async (r, baseVer) => ({
   body: r.deleted ? null : await vaultEncrypt(r)
 });
 
-async function vaultBatches(items, send) {
-  let batch = [], size = 16;
+function vaultBytes(doc) {
+  const b=doc.body;
+  return b ? b.length/4*3 - (b.endsWith('==')?2:b.endsWith('=')?1:0) : 0;
+}
+
+function vaultTooLarge(doc, record) {
+  if (vaultBytes(doc)<=syncLimits.docBytes) return false;
+  const value=record?.value||{};
+  const label=value.title || value.date || value.created?.slice?.(0,10) || record?.id || '';
+  vault.oversized.set(doc.k,{col:record?.col||'',label:String(label)});
+  return true;
+}
+
+async function vaultBatches(items, send, local) {
+  let batch = [], size = 0;
   for (const item of items) {
-    const n = JSON.stringify(item).length + 1;
-    if (n > 3999900) {
-      throw Error('单条加密记录过大，本机修改已保留。');
-    }
-    if (batch.length === 100 || size + n > 3999900) {
+    if (vaultTooLarge(item,local.get(item.k))) continue;
+    const n = vaultBytes(item);
+    if (batch.length === syncLimits.maxDocs || size + n > syncLimits.batchBytes) {
       await send(batch);
       batch = [];
-      size = 16;
+      size = 0;
     }
     batch.push(item);
     size += n;
@@ -358,19 +394,22 @@ const vaultArchiveRange = () => IDBKeyRange.bound(['vaultArchive'], ['vaultArchi
 // Archive before-images only after the last pull page. A crash before acknowledgment
 // leaves the encrypted copy here; the Worker deduplicates retries by its keyed variant.
 async function vaultUploadArchives(state) {
+  let after;
   while (true) {
     const store = disk.db.transaction('control').objectStore('control');
-    const keys = await idbValue(store.getAllKeys(vaultArchiveRange(), 100));
+    const range=after?IDBKeyRange.bound(after,['vaultArchive',[]],true):vaultArchiveRange();
+    const keys = await idbValue(store.getAllKeys(range, syncLimits.maxDocs));
     if (!keys.length) return true;
     const docs = [], seen = new Set();
-    let bytes = 16;
+    let bytes = 0;
     for (const key of keys) {
       if (seen.has(key[1])) break;
       const doc = await vaultControl(key);
-      if (!doc) continue;
+      if (!doc || vaultTooLarge(doc,state.index[doc.k])) {after=key;continue;}
       doc.baseVer = state.index[doc.k].ver;
-      const size = JSON.stringify(doc).length + 1;
-      if (docs.length && bytes + size > 3999900) break;
+      const size = vaultBytes(doc);
+      if (docs.length && bytes + size > syncLimits.batchBytes) break;
+      after=key;
       seen.add(doc.k);
       docs.push(doc);
       bytes += size;
@@ -396,6 +435,7 @@ async function vaultCycle() {
     index: {}
   };
   let local = await vaultLocal(state.index);
+  vault.oversized.clear();
   for (let attempt = 0; attempt <= 3; attempt++) {
     let part;
     do {
@@ -431,7 +471,7 @@ async function vaultCycle() {
         };
       }
       await vaultSet('vaultState', state);
-    });
+    },local);
     if (!conflicts) {
       vault.last = Date.now();
       await vaultSet('vaultLast', {
@@ -513,7 +553,9 @@ function vaultCard() {
   const button = (a, label) => '<button class="btn ghost sm" data-vault="' + a + '">' + label + '</button>';
   const used = vault.stats ? storageSize(vault.stats.bytes) : '—';
   const content = vault.enabled ? '<p>上次同步：' + (vault.last ? esc(new Date(vault.last).toLocaleString()) : '尚未完成') + '</p><p>云端 ' + (vault.stats?.count ?? '—') + ' 条 · 含历史共 ' + used + '</p><div class="row">' + button('sync', '立即同步') + button('backup', '下载加密备份') + acctButton('password', '修改密码') + button('stop', '在这台设备停止同步') + '</div>' : '<p>开启后，记录在这台设备上加密，登录同一账号即可在其他设备恢复。</p>' + (vault.unlock ? '<label>当前密码<input id="vault-password" type="password" autocomplete="current-password"></label>' + button('unlock', '确认开启') : button('enable', '开启云端存储'));
-  return '<section class="card" id="vault-card"><h2>云端存储</h2>' + content + '<p role="status" class="fine">' + esc(vault.message) + '</p></section>';
+  const large=vault.oversized.size?'<details><summary>'+vault.oversized.size+' 条记录太大，只保存在这台设备上</summary><ul>'+
+    Array.from(vault.oversized.values(),r=>'<li>'+esc(r.col)+' · '+esc(r.label)+'</li>').join('')+'</ul></details>':'';
+  return '<section class="card" id="vault-card"><h2>云端存储</h2>' + content + large + '<p role="status" class="fine">' + esc(vault.message) + '</p></section>';
 }
 
 async function vaultStart() {
@@ -574,8 +616,7 @@ document.addEventListener('click', async e => {
 
      case 'backup':
       {
-        const r = await vaultRequest('backup');
-        const data = await r.blob();
+        const data = await vaultBackup();
         const url = URL.createObjectURL(data), a = document.createElement('a');
         a.href = url;
         a.download = '自我观察本-加密备份-' + dayKey() + '.json';

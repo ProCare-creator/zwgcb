@@ -538,17 +538,17 @@ async function run() {
     days: {},
     meta: {}
   };
-  for (let i = 0; i < 2990; i++) {
+  for (let i = 0; i < 2920; i++) {
     bulk.meta['memo:bulk' + i] = memo('bulk' + i, '容量样本 ' + i);
   }
-  for (let i = 0; i < 10; i++) {
+  for (let i = 0; i < 80; i++) {
     bulk.meta['chat:bulk' + i] = {
       id: 'bulk' + i,
       title: '容量样例',
       cards: {},
       messages: [ {
         role: 'user',
-        content: randomBytes(786432).toString('base64')
+        content: randomBytes(98304).toString('base64')
       } ]
     };
   }
@@ -564,6 +564,8 @@ async function run() {
   metrics.uploadSeconds = +((performance.now() - start) / 1e3).toFixed(2);
   at('capacity download');
   const fresh = await page();
+  const counts=()=>sql.prepare('SELECT seq,sync_count FROM users WHERE id=?').get(benchId);
+  const beforeRestore=counts();
   let restorePushes = 0, restorePages = 0;
   fresh.on('request', r => {
     const route = new URL(r.url()).pathname;
@@ -575,6 +577,7 @@ async function run() {
   await sync(fresh);
   metrics.restoreSeconds = +((performance.now() - loadStart) / 1e3).toFixed(2);
   assert.equal(restorePushes, 0);
+  assert.deepEqual(counts(),beforeRestore);
   assert.ok(restorePages >= 15);
   metrics.restorePages = restorePages;
   metrics.restorePushes = restorePushes;
@@ -601,9 +604,29 @@ async function run() {
   metrics.deltaSeconds = +((performance.now() - inc) / 1e3).toFixed(2);
   assert.ok((await exp(fresh)).meta['memo:delta']);
   await shot(fresh, '#vault-card', '05-capacity');
+  metrics.cloud = sql.prepare('SELECT sync_count AS docs,sync_bytes AS ciphertextBytes FROM users WHERE id=?').get(benchId);
+  at('one oversized record leaves other records syncable on repeated attempts');
+  const {syncLimits}=await import('../worker/sync-limits.mjs');
+  const largeId='chat:oversize';
+  const localOnly={id:'oversize', title:'<b>本机超限样本</b>',messages:[
+    {role:'user',content:randomBytes(syncLimits.docBytes+4096).toString('base64')}],cards:{}};
+  for(let round=1;round<=2;round++) {
+    const small='memo:small'+round;
+    await imp(bench,{days:{},meta:{...(round===1?{[largeId]:localOnly}:{}),[small]:memo('small'+round,'可上传')}});
+    await sync(bench);
+    await bench.getByText('1 条记录太大，只保存在这台设备上').waitFor();
+    assert.equal(await bench.locator('#vault-card details li b').count(),0);
+    assert.ok((await bench.locator('#vault-card details li').textContent()).includes(localOnly.title));
+    await sync(fresh);
+    const remote=await exp(fresh);
+    assert.ok(remote.meta[small]);
+    assert.equal(remote.meta[largeId],undefined);
+  }
+  assert.equal((await exp(bench)).meta[largeId].messages[0].content,localOnly.messages[0].content);
+  await bench.locator('#vault-card summary').click();
+  await shot(bench,'#vault-card','06-oversized');
   metrics.bulkDocuments = 3e3;
   metrics.chatBytes = 10485760;
-  metrics.cloud = sql.prepare('SELECT sync_count AS docs,sync_bytes AS ciphertextBytes FROM users WHERE id=?').get(benchId);
   assert.deepEqual(errors, []);
   fs.writeFileSync(path.join(out, 'metrics.json'), JSON.stringify(metrics, null, 2));
   console.log(JSON.stringify(metrics));
