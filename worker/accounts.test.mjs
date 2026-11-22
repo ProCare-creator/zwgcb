@@ -18,7 +18,7 @@ function fixture(t,sync=false){
  const db=new DatabaseSync(':memory:');t.after(()=>db.close());
  db.exec('PRAGMA foreign_keys=ON;'+readFileSync(new URL('./migrations/0001_accounts.sql',import.meta.url),'utf8'));
  db.exec(readFileSync(new URL('./migrations/0002_user_kdf_iter.sql',import.meta.url),'utf8'));
- if(sync)db.exec(readFileSync(new URL('./migrations/0003_cloud_sync.sql',import.meta.url),'utf8'));
+ if(sync)for(const migration of ['0003_cloud_sync.sql','0004_history_quota.sql'])db.exec(readFileSync(new URL('./migrations/'+migration,import.meta.url),'utf8'));
  const wrap=(sql,v=[])=>{const q=db.prepare(sql);return {bind:(...a)=>wrap(sql,a.map(x=>x instanceof ArrayBuffer?new Uint8Array(x):x)),first:async()=>q.get(...v),all:async()=>({results:q.all(...v),meta:{size_after:4096}}),run:async()=>({meta:{changes:q.run(...v).changes}}),query:/^SELECT|RETURNING /i.test(sql)};};
  const VAULT={prepare:wrap,batch:async ops=>{db.exec('BEGIN');try{const result=[];for(const op of ops)result.push(await (op.query?op.all():op.run()));db.exec('COMMIT');return result;}catch(e){db.exec('ROLLBACK');throw e;}}};
  const env={VAULT,SYNC_RATE_LIMITER:{limit:async()=>({success:true})},ALLOWED_ORIGIN:'https://zwgcb.cn',AUTH_PEPPER:enc(32),ACCESS_TOKEN:enc(24),AI_RATE_LIMITER:{limit:async()=>({success:true})}};
@@ -48,7 +48,7 @@ test('iterations belong to the credential and update atomically on password chan
  assert.equal((await params('reader')).kdf_iter,750000);
 });
 test('invitations expire or revoke; deletion requires the exact name and leaves the admin intact',async t=>{
- const {db,ac,id,uc,api,make}=await users(t);
+ const {db,ac,id,uc,api,make}=await users(t,true);
  for(const kind of ['revoked','expired']){
   const code=(await api('admin/invite',{},ac)).body.code;
   if(kind==='revoked'){const {id}=db.prepare('SELECT id FROM invites WHERE used_by IS NULL AND revoked=0').get();await api('admin/revoke',{id},ac);}
@@ -56,9 +56,9 @@ test('invitations expire or revoke; deletion requires the exact name and leaves 
   assert.notEqual((await api('auth/register',make('new_'+kind,code))).status,201);
  }
  assert.equal((await api('admin/user',{action:'delete',id,confirm:'typo'},ac)).status,400);
- db.exec('CREATE TABLE docs(user_id TEXT,k TEXT, size INTEGER,deleted INTEGER); CREATE TABLE history(user_id TEXT,k TEXT);');
- db.prepare('INSERT INTO docs VALUES(?,?,?,0)').run(id,'sample',128);db.prepare('INSERT INTO history VALUES(?,?)').run(id,'sample');
- const stats=(await api('admin/overview',undefined,ac)).body.users.find(x=>x.id===id);assert.equal(stats.doc_count,1);assert.equal(stats.used_bytes,128);assert.ok(!('k' in stats));
+ db.prepare('INSERT INTO docs(user_id,k,ver,seq,size,mtime,body,deleted,updated_at) VALUES(?,?,1,1,128,0,zeroblob(128),0,0)').run(id,'sample');
+ db.prepare('INSERT INTO history(user_id,k,ver,body,size,saved_at) VALUES(?,?,-1,zeroblob(40),40,0)').run(id,'sample');
+ const stats=(await api('admin/overview',undefined,ac)).body.users.find(x=>x.id===id);assert.equal(stats.doc_count,1);assert.equal(stats.used_bytes,168);assert.ok(!('k' in stats));
  assert.equal((await api('admin/user',{action:'delete',id,confirm:'reader'},ac)).status,200);assert.equal((await api('auth/me',undefined,uc)).status,401);
  for(const table of ['docs','history'])assert.equal(db.prepare('SELECT COUNT(*) AS n FROM '+table).get().n,0);
  assert.equal((await api('auth/me',undefined,ac)).body.user.role,'admin');
@@ -103,13 +103,17 @@ test('sync CAS, per-account sequences, partial conflicts, history, deletion, quo
  assert.equal((await api('sync/pull?since=1&user_id='+id,undefined,ac)).body.docs.length,0);
  assert.equal((await api('sync/push',{user_id:id,docs:[a]},ac)).body.written[0].seq,1);
  assert.equal((await push([{...a,baseVer:1}])).body.written[0].ver,2);
- db.prepare('UPDATE users SET quota_bytes=120 WHERE id=?').run(id);
+ db.prepare('UPDATE users SET quota_bytes=200 WHERE id=?').run(id);
  const failed=await push([{...a,baseVer:2},make(enc(32))]);assert.equal(failed.status,413);assert.equal(failed.body.error.code,'quota_exceeded');
- const current=(await api('sync/pull?since=0',undefined,uc)).body;assert.equal(current.stats.seq,4);assert.equal(current.stats.bytes,120);
+ const current=(await api('sync/pull?since=0',undefined,uc)).body;assert.equal(current.stats.seq,4);assert.equal(current.stats.bytes,160);
+ db.prepare('UPDATE users SET quota_bytes=1 WHERE id=?').run(id);
  assert.equal((await push([{...a,baseVer:2,deleted:true,body:null}])).body.written[0].seq,5);
  const variant=()=>({...make(a.k,3),archiveOnly:true,variant:enc(32)});
  const loser=variant(),other=variant();
+ assert.equal((await push([loser])).body.error.code,'quota_exceeded');
+ db.prepare('UPDATE users SET quota_bytes=240 WHERE id=?').run(id);
  for(const doc of [loser,other,loser])assert.deepEqual((await push([doc])).body.conflicts,[]);
+ assert.equal((await api('sync/pull',undefined,uc)).body.stats.bytes,240);
  const saved=(await api('sync/backup',undefined,uc)).body;assert.equal(saved.docs.length,3);assert.equal(saved.docs.filter(x=>x.deleted).length,1);
  assert.equal(db.prepare('SELECT COUNT(*) AS n FROM history WHERE user_id=?').get(id).n,4);assert.equal(saved.history.length,4);assert.ok(saved.history.some(h=>h.body===other.body));
 });
@@ -121,4 +125,40 @@ test('sync rejects invalid origin, missing cookies and oversize docs before writ
  assert.equal((await api('sync/backup')).status,401);
  env.AI_RATE_LIMITER.limit=async()=>({success:false});assert.equal((await api('sync/pull',undefined,uc)).status,200);
  env.SYNC_RATE_LIMITER.limit=async()=>({success:false});assert.equal((await api('sync/pull',undefined,uc)).status,429);
+});
+
+test('history migration counts existing ciphertext and releases bytes when old versions expire',async t=>{
+ const {db,id}=await users(t);
+ const migrate=file=>db.exec(readFileSync(new URL('./migrations/'+file,import.meta.url),'utf8'));
+ migrate('0003_cloud_sync.sql');
+ const day=86400000, now=Date.now();
+ db.prepare('INSERT INTO docs(user_id,k,ver,seq,size,mtime,body,deleted,updated_at) VALUES(?,?,1,1,40,0,zeroblob(40),0,0)').run(id,'sample');
+ const archive=db.prepare('INSERT INTO history(user_id,k,ver,body,size,saved_at) VALUES(?,?,?,zeroblob(30),30,?)');
+ for(let version=1;version<=12;version++)archive.run(id,'sample',version,now-40*day+version);
+ const used=()=>db.prepare('SELECT sync_bytes AS n FROM users WHERE id=?').get(id).n;
+ assert.equal(used(),40);
+ migrate('0004_history_quota.sql');
+ assert.equal(used(),400);
+ archive.run(id,'sample',-1,now);
+ assert.equal(used(),340); // live + the most recent ten histories
+ for(let n=2;n<=15;n++)archive.run(id,'sample',-n,now+n);
+ assert.equal(used(),490); // all fifteen recent versions survive
+});
+
+test('backup detects a simultaneous history replacement even when row count and bytes stay equal',async t=>{
+ const {db,env,api,id,uc}=await users(t,true);
+ const insert=db.prepare('INSERT INTO history(user_id,k,ver,body,size,saved_at) VALUES(?,?,?,zeroblob(40),40,?)');
+ const now=Date.now(),old=now-40*86400000;
+ for(let n=1;n<=10;n++)insert.run(id,'sample',n,old+n);
+ const prepare=env.VAULT.prepare;
+ let replaced=false;
+ env.VAULT.prepare=sql=>{
+  if(!replaced && sql.startsWith('SELECT k,ver,size FROM history')){
+   replaced=true;
+   insert.run(id,'sample',-1,now); // retention removes the oldest version
+  }
+  return prepare(sql);
+ };
+ await assert.rejects(api('sync/backup',undefined,uc),/backup_changed/);
+ assert.equal((await api('sync/backup',undefined,uc)).body.history.length,10);
 });

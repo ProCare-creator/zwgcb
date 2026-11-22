@@ -198,9 +198,9 @@ async function push(req, db, uid, readBody) {
 
 const stats = (db, uid) => db.prepare('SELECT seq,sync_count AS count,sync_bytes AS bytes,quota_bytes AS quota FROM users WHERE id=?').bind(uid).first();
 
-async function backup(db, uid, initial) {
-  const historyCount = async () => (await db.prepare('SELECT COUNT(*) AS n FROM history WHERE user_id=?').bind(uid).first()).n;
-  const count = await historyCount(), enc = new TextEncoder;
+async function backup(db, uid) {
+  const revision = () => db.prepare('SELECT seq,history_rev FROM users WHERE id=?').bind(uid).first();
+  const initial = await revision(), enc = new TextEncoder;
   let since = 0, phase = 'docs', key = '', version = 0, first = true, wrote = false;
   const stream = new ReadableStream({
     async pull(controller) {
@@ -246,7 +246,8 @@ async function backup(db, uid, initial) {
           return;
         }
       }
-      if ((await stats(db, uid)).seq !== initial.seq || await historyCount() !== count) {
+      const current = await revision();
+      if (!current || current.seq !== initial.seq || current.history_rev !== initial.history_rev) {
         throw Error('backup_changed');
       }
       send('],"seq":' + initial.seq + '}');
@@ -293,10 +294,10 @@ export async function syncAPI(req, env, readBody) {
     if (op === 'push') {
       result = await push(req, db, uid, readBody);
     } else {
-      const totals = await stats(db, uid);
       if (op === 'backup') {
-        result = await backup(db, uid, totals);
+        result = await backup(db, uid);
       } else {
+        const totals = await stats(db, uid);
         const since = Number(url.searchParams.get('since') || 0), limit = Number(url.searchParams.get('limit') || 200);
         if (!Number.isSafeInteger(since) || since < 0 || !Number.isInteger(limit) || limit < 1 || limit > 200) {
           return error(400, 'invalid');

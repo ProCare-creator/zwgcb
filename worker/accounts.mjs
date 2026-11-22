@@ -82,7 +82,8 @@ export async function accounts(req,e,readBody){
  if(!path.startsWith('admin/'))fail(404,'not_found');if(s.user.role!=='admin')fail(403,'forbidden');
  if(path==='admin/overview'){
   const haveDocs=await stmt(e,"SELECT 1 FROM sqlite_schema WHERE type='table' AND name='docs'").first();
-  const totals=haveDocs?'SELECT u.id,u.username,u.nickname,u.role,u.disabled,u.quota_bytes,u.created_at,u.last_seen,COUNT(d.k) AS doc_count,COALESCE(SUM(d.size),0) AS used_bytes FROM users u LEFT JOIN docs d ON d.user_id=u.id AND d.deleted=0 GROUP BY u.id ORDER BY u.created_at':'SELECT id,username,nickname,role,disabled,quota_bytes,created_at,last_seen,0 AS doc_count,0 AS used_bytes FROM users ORDER BY created_at';
+  const usage=haveDocs?'sync_count AS doc_count,sync_bytes AS used_bytes':'0 AS doc_count,0 AS used_bytes';
+  const totals='SELECT id,username,nickname,role,disabled,quota_bytes,created_at,last_seen,'+usage+' FROM users ORDER BY created_at';
  const [users,invites]=await e.VAULT.batch([stmt(e,totals),stmt(e,'SELECT id,expires_at,used_by,revoked FROM invites ORDER BY created_at DESC')]);
  return reply({users:users.results,invites:invites.results,db_bytes:users.meta.size_after});
  }

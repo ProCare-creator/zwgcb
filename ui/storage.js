@@ -109,10 +109,13 @@ async function startJournal(){
   }
   await convertChatDrafts();ready=true;refresh();migrateHyps();
 }
+function storageSize(bytes){
+  return bytes<1024?bytes+' B':bytes<1048576?(bytes/1024).toFixed(1)+' KiB':(bytes/1048576).toFixed(2)+' MiB';
+}
 function diskInfo(){
   if(!accountHost)return '';
   let count=0,bytes=0;const enc=new TextEncoder();
   for(const c of COLS)for(const v of Object.values(S[c])){count++;bytes+=enc.encode(JSON.stringify(v)).length;}
-  const size=bytes<1024?bytes+' B':bytes<1048576?(bytes/1024).toFixed(1)+' KiB':(bytes/1048576).toFixed(2)+' MiB';
+  const size=storageSize(bytes);
   return '<div id="disk-info"><p>本机存储：'+(mode==='idb'?'IndexedDB':'localStorage')+' · '+count+' 条记录 · '+size+'</p><p class="fine">大小按记录内容计算。持久存储：<span id="disk-persist">'+disk.persistent+'</span></p>'+(disk.backupUntil?'<p class="fine">旧格式备份保留到 '+md(ymd(new Date(disk.backupUntil)))+'，到期后首次打开时清理。</p>':'')+(disk.notice?'<p class="warn">'+disk.notice+'</p>':'')+'</div>';
 }

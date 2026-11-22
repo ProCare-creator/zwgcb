@@ -110,6 +110,10 @@ async function vaultRequest(path, docs) {
       })
     } : {},
     signal: AbortSignal.timeout(9e4)
+  }).catch(err => {
+    if (err.name === 'TimeoutError') throw Error('同步请求超时，本机修改已保留，可重新同步。');
+    if (err instanceof TypeError) throw Error('暂时无法连接云端，本机修改已保留，可重新同步。');
+    throw err;
   });
   if (!r.ok) {
     const code = (await r.json().catch(() => ({}))).error?.code;
@@ -213,7 +217,7 @@ async function vaultBatches(items, send) {
 
 // Compare the durable preimage in the same transaction as the incoming record and cursor.
 // A tab that edits during decryption wins a retry instead of losing its edit.
-async function vaultApply(state, changes) {
+async function vaultApply(state, changes, archives = []) {
   const visible = changes.map(x => S[x.col][x.id]);
   const tx = disk.db.transaction([ 'docs', 'control' ], 'readwrite'), done = idbDone(tx), docs = tx.objectStore('docs');
   let stale = false;
@@ -235,7 +239,9 @@ async function vaultApply(state, changes) {
       }
     };
   }
-  tx.objectStore('control').put(state, 'vaultState');
+  const control = tx.objectStore('control');
+  for (const doc of archives) control.put(doc, ['vaultArchive', doc.k, doc.variant]);
+  control.put(state, 'vaultState');
   try {
     await done;
   } catch (e) {
@@ -281,8 +287,9 @@ async function vaultMerge(page, state, local) {
       deleted: row.deleted,
       sig: sig
     };
-    if (mine && !vaultClean(mine, old) && !vaultClean(mine, base) && mine.stamp > base.stamp) {
-      if (col === 'meta' && id === 'counters' && remote && mine.value && remote.value.hypSeq > mine.value.hypSeq) {
+    const localWins = mine && (mine.stamp > base.stamp || (mine.deleted && mine.stamp === base.stamp));
+    if (localWins && !vaultClean(mine, base)) {
+      if (col === 'meta' && id === 'counters' && remote && mine.value && remote.value.hypSeq > (mine.value.hypSeq || 0)) {
         const value = {
           ...mine.value,
           hypSeq: remote.value.hypSeq
@@ -309,7 +316,7 @@ async function vaultMerge(page, state, local) {
         });
       }
       let value = remote?.value;
-      if (col === 'meta' && id === 'counters' && value && mine?.value?.hypSeq > value.hypSeq) {
+      if (col === 'meta' && id === 'counters' && value && mine?.value?.hypSeq > (value.hypSeq || 0)) {
         value = {
           ...value,
           hypSeq: mine.value.hypSeq
@@ -334,14 +341,42 @@ async function vaultMerge(page, state, local) {
     }
     state.index[row.k] = base;
   }
-  await vaultBatches(archives, async batch => {
-    const history = await vaultRequest('push', batch);
-    if (history.conflicts.length) {
-      throw Error('云端刚有更新，已保留本机修改，下次同步时重试。');
-    }
-  });
   state.seq = page.next;
-  await vaultApply(state, changes);
+  await vaultApply(state, changes, archives);
+}
+
+const vaultArchiveRange = () => IDBKeyRange.bound(['vaultArchive'], ['vaultArchive', []]);
+
+// Archive before-images only after the last pull page. A crash before acknowledgment
+// leaves the encrypted copy here; the Worker deduplicates retries by its keyed variant.
+async function vaultUploadArchives(state) {
+  while (true) {
+    const store = disk.db.transaction('control').objectStore('control');
+    const keys = await idbValue(store.getAllKeys(vaultArchiveRange(), 100));
+    if (!keys.length) return true;
+    const docs = [], seen = new Set();
+    let bytes = 16;
+    for (const key of keys) {
+      if (seen.has(key[1])) break;
+      const doc = await vaultControl(key);
+      if (!doc) continue;
+      doc.baseVer = state.index[doc.k].ver;
+      const size = JSON.stringify(doc).length + 1;
+      if (docs.length && bytes + size > 3999900) break;
+      seen.add(doc.k);
+      docs.push(doc);
+      bytes += size;
+    }
+    if (!docs.length) continue;
+    const result = await vaultRequest('push', docs);
+    const conflicts = new Set(result.conflicts.map(row => row.k));
+    const tx = disk.db.transaction('control', 'readwrite'), done = idbDone(tx);
+    for (const doc of docs) {
+      if (!conflicts.has(doc.k)) tx.objectStore('control').delete(['vaultArchive', doc.k, doc.variant]);
+    }
+    await done;
+    if (conflicts.size) return false;
+  }
 }
 
 async function vaultCycle() {
@@ -360,6 +395,7 @@ async function vaultCycle() {
       vault.stats = part.stats;
       await vaultMerge(part, state, local);
     } while (part.more);
+    if (!await vaultUploadArchives(state)) continue;
     local = await vaultLocal(state.index);
     const dirty = [];
     for (const [k, r] of local) {
@@ -467,7 +503,8 @@ function vaultCard() {
     return '';
   }
   const button = (a, label) => '<button class="btn ghost sm" data-vault="' + a + '">' + label + '</button>';
-  const content = vault.enabled ? '<p>上次同步：' + (vault.last ? esc(new Date(vault.last).toLocaleString()) : '尚未完成') + '</p><p>云端 ' + (vault.stats?.count ?? '—') + ' 条 · ' + ((vault.stats?.bytes || 0) / 1048576).toFixed(2) + ' MiB</p><div class="row">' + button('sync', '立即同步') + button('backup', '下载加密备份') + acctButton('password', '修改密码') + button('stop', '在这台设备停止同步') + '</div>' : '<p>开启后，记录在这台设备上加密，登录同一账号即可在其他设备恢复。</p>' + (vault.unlock ? '<label>当前密码<input id="vault-password" type="password" autocomplete="current-password"></label>' + button('unlock', '确认开启') : button('enable', '开启云端存储'));
+  const used = vault.stats ? storageSize(vault.stats.bytes) : '—';
+  const content = vault.enabled ? '<p>上次同步：' + (vault.last ? esc(new Date(vault.last).toLocaleString()) : '尚未完成') + '</p><p>云端 ' + (vault.stats?.count ?? '—') + ' 条 · 含历史共 ' + used + '</p><div class="row">' + button('sync', '立即同步') + button('backup', '下载加密备份') + acctButton('password', '修改密码') + button('stop', '在这台设备停止同步') + '</div>' : '<p>开启后，记录在这台设备上加密，登录同一账号即可在其他设备恢复。</p>' + (vault.unlock ? '<label>当前密码<input id="vault-password" type="password" autocomplete="current-password"></label>' + button('unlock', '确认开启') : button('enable', '开启云端存储'));
   return '<section class="card" id="vault-card"><h2>云端存储</h2>' + content + '<p role="status" class="fine">' + esc(vault.message) + '</p></section>';
 }
 
@@ -507,6 +544,7 @@ async function vaultHasPending() {
   if (vault.job) {
     await vault.job;
   }
+  if (await idbValue(disk.db.transaction('control').objectStore('control').count(vaultArchiveRange()))) return true;
   const state = await vaultControl('vaultState') || {
     index: {}
   };

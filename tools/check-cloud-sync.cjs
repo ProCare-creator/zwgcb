@@ -113,6 +113,10 @@ async function run() {
       serviceWorkers: 'block'
     }), p = await c.newPage();
     p.setDefaultTimeout(12e3);
+    p.on('requestfailed', req => {
+      const route = new URL(req.url()).pathname;
+      if (route.startsWith('/api/sync/')) console.log('sync connection', stage, route, req.failure()?.errorText);
+    });
     p.on('response', r => {
       if (r.status() >= 400 && new URL(r.url()).pathname.startsWith('/api/sync/')) {
         console.log('sync response', stage, r.status());
@@ -286,8 +290,8 @@ async function run() {
       'memo:b': memo('b', '离线乙')
     }
   });
-  async function editMemo(p, text) {
-    await p.evaluate(() => location.hash = '#memo?id=hello');
+  async function editMemo(p, text, id = 'hello') {
+    await p.evaluate(id => location.hash = '#memo?id=' + id, id);
     await p.locator('#memo-text').fill(text);
     await p.waitForFunction(() => document.querySelector('#memo-status')?.textContent === '已保存');
     await p.evaluate(() => location.hash = '#settings');
@@ -295,23 +299,55 @@ async function run() {
   }
   await editMemo(a, '先写的虚构内容');
   await editMemo(b, '后写的虚构内容');
-  await a.context().setOffline(false);
-  await sync(a);
   await b.context().setOffline(false);
   await sync(b);
+  // Simulate losing connectivity between the merge and the history acknowledgment.
+  const archiveRoute = '**/api/sync/push';
+  let interrupted = false;
+  await a.route(archiveRoute, async route => {
+    if (route.request().postDataJSON().docs.some(doc => doc.archiveOnly)) {
+      interrupted = true;
+      return route.fulfill({status: 503, json: {error: {code: 'sync_unavailable'}}});
+    }
+    await route.continue();
+  });
+  await a.context().setOffline(false);
+  await a.locator('[data-vault=sync]').click();
+  await status(a, '云端暂时不可用');
+  assert.ok(interrupted);
+  await a.unroute(archiveRoute);
+  await a.reload();
   await sync(a);
+  await sync(b);
   data = await exp(a);
   assert.equal(data.meta['memo:hello'].text, '后写的虚构内容');
   assert.ok(data.meta['memo:a'] && data.meta['memo:b']);
   assert.ok(sql.prepare('SELECT COUNT(*) AS n FROM history WHERE user_id=?').get(uid).n >= 1);
+  at('deletion and edit in the same millisecond');
+  await a.context().setOffline(true);
+  await b.context().setOffline(true);
+  const tie = Date.now();
+  for (const p of [a,b]) await p.evaluate(t => {
+    window.restoreClock = Date.now;
+    Date.now = () => t;
+  }, tie);
   await a.evaluate(() => location.hash = '#memo?id=a');
   await a.locator('[data-act=memoMenu]').click();
   await a.locator('[data-act=memoDelete]').click();
   await a.locator('#memo-search').waitFor();
   await a.evaluate(() => location.hash = '#settings');
+  await editMemo(b, '同刻编辑', 'a');
+  for (const p of [a,b]) await p.evaluate(() => {
+    Date.now = window.restoreClock;
+    delete window.restoreClock;
+  });
+  await b.context().setOffline(false);
+  await sync(b);
+  await a.context().setOffline(false);
   await sync(a);
   await sync(b);
-  assert.equal((await exp(b)).meta['memo:a'], undefined);
+  assert.ok(!Object.hasOwn((await exp(b)).meta, 'memo:a'), 'equal-time deletion must win on both devices');
+  assert.ok(!Object.hasOwn((await exp(a)).meta, 'memo:a'));
   at('quota, owner scope, ciphertext, backup');
   await call(owner, 'admin/user', {
     id: uid,
@@ -344,12 +380,46 @@ async function run() {
   const backup = JSON.parse(fs.readFileSync(await (await down).path()));
   assert.ok(backup.history.length >= 1);
   metrics.backupHistory = backup.history.length;
+  // Open the losing offline edit with this synthetic account's non-exportable device key.
+  const hasLoser = await a.evaluate(async ({uid, history}) => {
+    const db = await new Promise((resolve, reject) => {
+      const open = indexedDB.open('zwgcb-u-' + uid);
+      open.onsuccess = () => resolve(open.result);
+      open.onerror = () => reject(open.error);
+    });
+    try {
+      const keys = await new Promise((resolve, reject) => {
+        const get = db.transaction('control').objectStore('control').get('accountKeys');
+        get.onsuccess = () => resolve(get.result);
+        get.onerror = () => reject(get.error);
+      });
+      for (const row of history.filter(r => r.ver < 0 && r.body)) {
+        const packed = Uint8Array.from(atob(row.body), c => c.charCodeAt(0));
+        const plain = await crypto.subtle.decrypt({
+          name: 'AES-GCM', iv: packed.slice(1,13),
+          additionalData: new TextEncoder().encode(uid + '/' + row.k + '/' + packed[0])
+        }, keys.dek, packed.slice(13));
+        const stream = new Blob([plain]).stream();
+        const doc = await new Response(packed[0] ? stream.pipeThrough(new DecompressionStream('gzip')) : stream).json();
+        if (doc.col === 'meta' && doc.id === 'memo:hello' && doc.value.text === '先写的虚构内容') return true;
+      }
+      return false;
+    } finally { db.close(); }
+  }, {uid, history: backup.history});
+  assert.ok(hasLoser, 'encrypted backup must contain the offline edit that lost');
   assert.equal(backup.docs.length, (await call(a, 'sync/pull?since=0')).json.docs.length);
   await act(owner, 'manage').click();
   await owner.getByText('数据库总量', {
     exact: true
   }).waitFor();
-  await shot(owner, '#account-card', '04-admin');
+  const readerStats = (await call(owner, 'admin/overview')).json.users.find(u => u.id === uid);
+  assert.equal(readerStats.doc_count, rows.length);
+  const retainedBytes = [...backup.docs, ...backup.history].reduce((sum, row) => sum + row.size, 0);
+  assert.equal(readerStats.used_bytes, retainedBytes);
+  const readerCard = owner.locator('#account-card article').filter({hasText: 'reader'});
+  await readerCard.getByText(new RegExp(readerStats.doc_count + ' 条 · ' + retainedBytes + ' B')).waitFor();
+  await readerCard.scrollIntoViewIfNeeded();
+  await owner.screenshot({path: path.join(out, '04-admin.png'), animations: 'disabled'});
   assert.ok(!(await owner.locator('#account-card').innerText()).includes('虚构'));
   at('password rotation and paused device');
   await act(a, 'password').click();
@@ -361,6 +431,23 @@ async function run() {
   assert.equal((await call(b, 'sync/pull')).status, 401);
   const beforeWrong = sql.prepare('SELECT seq FROM users WHERE id=?').get(uid).seq;
   await b.reload();
+  const localRecords = () => b.evaluate(async uid => {
+    const open = indexedDB.open('zwgcb-u-' + uid);
+    const db = await new Promise((ok, no) => {
+      open.onsuccess = () => ok(open.result);
+      open.onerror = () => no(open.error);
+    });
+    try {
+      const docs = db.transaction('docs').objectStore('docs');
+      const read = req => new Promise((ok, no) => {
+        req.onsuccess = () => ok(req.result);
+        req.onerror = () => no(req.error);
+      });
+      const snapshot = await Promise.all([read(docs.getAllKeys()), read(docs.getAll())]);
+      return Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(JSON.stringify(snapshot)))));
+    } finally { db.close(); }
+  }, uid);
+  const beforeLocal = await localRecords();
   await act(b, 'login').click();
   await fill(b, 'user', 'reader');
   await fill(b, 'pass', password);
@@ -369,6 +456,7 @@ async function run() {
     hasText: '不正确'
   }).waitFor();
   assert.equal(sql.prepare('SELECT seq FROM users WHERE id=?').get(uid).seq, beforeWrong);
+  assert.deepEqual(await localRecords(), beforeLocal);
   await fill(b, 'pass', nextPass);
   await act(b, 'submit').click();
   await act(b, 'logout').waitFor();
@@ -476,10 +564,20 @@ async function run() {
   metrics.uploadSeconds = +((performance.now() - start) / 1e3).toFixed(2);
   at('capacity download');
   const fresh = await page();
+  let restorePushes = 0, restorePages = 0;
+  fresh.on('request', r => {
+    const route = new URL(r.url()).pathname;
+    if (route === '/api/sync/push') restorePushes++;
+    if (route === '/api/sync/pull') restorePages++;
+  });
   const loadStart = performance.now();
   await login(fresh, 'capacity', benchPass);
   await sync(fresh);
   metrics.restoreSeconds = +((performance.now() - loadStart) / 1e3).toFixed(2);
+  assert.equal(restorePushes, 0);
+  assert.ok(restorePages >= 15);
+  metrics.restorePages = restorePages;
+  metrics.restorePushes = restorePushes;
   const restored = await exp(fresh);
   for (const [k, v] of Object.entries(bulk.meta)) {
     const got = restored.meta[k];
